@@ -525,10 +525,16 @@ export function swapSource(card, item) {
 /**
  * Our own lookahead instead of loading="lazy": Chromium's native margin is up to 3000 px (unknown connection type),
  * which fetched every fan poster at load, and it never loads thumbs clipped inside a horizontal rail ahead of time.
- * One root:document observer per group (fan box, chapter body) assigns every data-src in it 1.5 viewports ahead.
+ * One root:document observer per group (fan box, chapter body, the CHANEL spotlight) assigns every data-src (and
+ * data-srcset) in it 1.5 viewports ahead. The spotlight's static <img>s use it too, with a <noscript> copy for no-JS:
+ * before site.js has rendered the chapters the page is short, so native lazy-loading fetched them at first view.
  */
 function loadImgs(root) {
-  root.querySelectorAll('img[data-src]').forEach((img) => { img.src = img.dataset.src; img.removeAttribute('data-src'); });
+  root.querySelectorAll('img[data-src]').forEach((img) => {
+    if (img.dataset.srcset) { img.srcset = img.dataset.srcset; img.removeAttribute('data-srcset'); }
+    img.src = img.dataset.src;
+    img.removeAttribute('data-src');
+  });
 }
 
 function lazyImages(groups) {
@@ -546,7 +552,7 @@ function lazyImages(groups) {
 export function boot(ctx) {
   renderChapters(ctx.data && ctx.data.videos);
   document.querySelectorAll('[data-vcard]').forEach(register);
-  lazyImages([...document.querySelectorAll('#content .fan, [data-chapter-body]')]);
+  lazyImages([...document.querySelectorAll('#content .fan, [data-chapter-body], #content .spotlight')]);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) states.forEach((s) => { if (s.v && !s.v.paused) s.v.pause(); });
     schedule();

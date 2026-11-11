@@ -655,6 +655,9 @@ html:not(.js) .fan__hint{ display: none; }
 .spotlight__item--a{ width: 70%; }
 .spotlight__item--b{ width: 58%; margin: -28% 0 0 auto; }
 .spotlight__item--b .frame{ box-shadow: 0 0 0 6px var(--bg), var(--shadow-soft); }
+/* its <img>s load through video.js's lookahead (data-src); without JS the <noscript> copy shows instead */
+html:not(.js) .spotlight .frame > img[data-src]{ display: none; }
+.spotlight .frame > noscript > img{ position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
 /* === /section: content === */
 
 /* ======================================================================== */

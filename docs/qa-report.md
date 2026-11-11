@@ -415,3 +415,168 @@ The full suite (`qa/run-all.sh`) ran once against this round's changes, with **1
 - **Preconnect reuse** is not measurable in this sandbox (§8.1, finding 4): check it in WebPageTest or Chrome DevTools against the Pages URL.
 - **iPhone checks** from §7.7 are still open (layer memory, clip repaint cost). The block faces make the condensed-fallback check moot.
 - **Copy for client approval:** the gallery caption "Food · Avocado & mango" replaces "Food · Long lunch". The rest of the §7.7 list stands.
+
+## 9. Batch 2 (2026-11-11): new media, the CHANEL centrepiece and spotlight, copy and gallery decisions
+
+This batch put in the client files from `docs/inbox.md` (restaurant, fashion and stays videos, and the two CHANEL photos), applied the lead's copy and gallery decisions, and fixed the two Numbers regressions from the round-2 verify. The signature swap ran in parallel in another session and is not covered here. The test scripts are temporary, in `/tmp/claude-0/-home-user-lorena/c832ad17-6cd8-58af-aaaa-5c402c797f09/scratchpad/batch2/b2/`:
+- `qa/` is the §9 suite, adapted;
+- `vid.js` checks `start`, the loop, `view`, `audio:false` and the photo swaps;
+- `pill.js` checks the Numbers fixes;
+- `walk.js` takes the screenshots, and `rec2.js` records the video.
+
+### 9.1 Media and data (`data/videos.json`, `scripts/make-images.py`)
+
+**Every Food and Fashion item is now a real file.** Each item's alt text was rewritten from frames of its footage.
+
+| Item | File | Duration, audio | Notes |
+|---|---|---|---|
+| `restaurants-01` Gnocchi night with Pronto Light | `pronto-gnocchi.mp4` | 23.8 s, −14.4 LUFS | `start` 15.5 s (at the table; frame 0 is a fridge door) |
+| `restaurants-02` A colorful table | `salad-table.mp4` | 24.5 s, music fading in from about −44 to −23 LUFS | kept `audio: true`: the track is music, not noise |
+| `restaurants-03` A glass of white | `wine-tasting.mp4` | 34.9 s, −16.2 LUFS | `start` 3.6 s (the first sip), and `view` [0, 0.644], see below |
+| `restaurants-04` Breakfast among plants | `garden-breakfast.mp4` | 31.0 s, −14.4 LUFS | now the Food feature |
+| `fashion-01` Burgundy blazer, red sneakers | `burgundy-blazer.mp4` | 30.0 s, −14.0 LUFS | |
+| `fashion-02` A teal dress at golden hour | `teal-dress-deck.mp4` | 26.6 s, −15.5 LUFS | `start` 3.0 s (frame 0 is a hem and feet) |
+| `fashion-03` Yellow satin by the lake | `yellow-satin-lake.mp4` | 26.2 s, **`audio: false`** | the track is digital silence (−91 dB) |
+| `fashion-04` Sandals & a picnic | `picnic.mp4` | 18.8 s, **−6.9 LUFS** | `start` 10.6 s; the track is loud (see 9.7) |
+| `fashion-07` At the CHANEL boutique (new) | `chanel-boutique.mp4` | 35.6 s, −15.8 LUFS | `start` 21.2 s: she holds N°5 to her cheek (frame 0 is a blurred shop interior). The fan's centre and the Fashion feature. |
+| `fashion-08` Towel turban, ALVA in hand (new) | `alva-towel.mp4` | 7.3 s, −14.1 LUFS | the last item of the Fashion rail |
+| `stays-08` Cushions above the forest (new) | `deck-cushions.mp4` | 22.8 s, **`audio: false`** | the track is a steady hiss at −42 LUFS (LRA 3 LU); 11th of the 12 Stays rail items |
+
+- **Removed:** `fashion-05` and `fashion-06` (no originals): their data, posters and thumbs. Their `_ref` JPGs stay in the repo.
+- **`start` (new, optional):**
+  - `video.js` loads the item from `src#t=<start>`, and `make-images.py` builds its poster and thumb from that frame with ffmpeg, so the first frame on screen is the poster.
+  - `loop` still wraps to 0:00: in Chromium, a seek to 0.4 s before the end continued at 0.9 s.
+- **`view` (new, optional): `wine-tasting.mp4` is a screen recording of an Instagram carousel.**
+  - The picture is only rows 0–823 of 1280. Below it is a white band, and the carousel's "2/2" badge and mute icon sit at its right edge.
+  - `make-images.py` cuts the poster and thumb from that band.
+  - `video.js` scales the `<video>` 1.5528× from its top centre (inline `transform`, set in `cardHTML` and on every `swapSource`). The band fills the card, and the badge and icon fall outside it.
+  - Verified: the transform is `matrix(1.5528 …)` with origin `50% 0` after a thumb swap, and back to `none` on the next item. In the screenshot, no white shows.
+- **Rails:**
+  - **Stays:** 12 items, alternating video and photo; `stays-08` comes before the bath photo.
+  - **Food:** an explicit rail with the feature first: `restaurants-04`, `-01`, `-02`, `-03`. It stays video-only, because the only unused real food photo (`gallery/07`) repeats the salad video.
+  - **Fashion is now a mixed rail**, 10 items: `fashion-07`, gown, `-01`, zebra print, `-02`, tailoring, `-03`, boots, `-04`, `-08`.
+    - The 4 photo items are real media-kit photos not used anywhere else on the page: `gallery/21`, `26`, `12` and `25`.
+    - They are cover-cropped to 9:16 into `fashion-{gown,print,tailoring,boots}-{card,thumb}.webp`.
+- **Features:** Stays `stays-01` (unchanged), Food `restaurants-04` (was `-03`), Fashion `fashion-07`. The client asked for CHANEL in Fashion as well, so it is both a feature and the fan's centre card.
+
+### 9.2 The fan (client: CHANEL in the centre)
+
+- **The fan:** `fashion-01` burgundy blazer · `restaurants-02` salad table · `stays-03` bath with a view · **`fashion-07` CHANEL (index 3, z-index 10, scale 1, upright)** · `restaurants-03` glass of white · `stays-05` inside the A-frame · `fashion-02` teal dress.
+- **All 7 cards are real videos with sound.**
+- **Composition:**
+  - The categories alternate: Fashion, Food, Stays, *CHANEL*, Food, Stays, Fashion.
+  - Each side has one warm and one cool colour: burgundy and the teal-walled salad, then the green dome on the left; red, white and blue at the wine, the orange A-frame and the teal dress on the right.
+- **The static caption in `site.html`** (shown before JS runs) now reads "Fashion / At the CHANEL boutique / More fashion ↓" (`#fashion`).
+- **Sound now always follows a swipe**, because no poster-only fan card is left (6.4). The fan test was adapted:
+  - a swipe and the prev button pass the sound on;
+  - the sound button releases it;
+  - card 0's label is "Sound for Burgundy blazer, red sneakers".
+
+### 9.3 CHANEL spotlight
+
+- **Placement:** the end of the Fashion chapter, after its rail (`<section class="spotlight">` in `site.html`; static layout in the `site.css` content block). The rail drives the feature card, so the spotlight comes after it rather than between them. It is the last thing in the content section before Numbers.
+- **The head:** eyebrow "Spotlight" (line highlight), lockup "CHANEL / *Chance & N°5*" (h4, oval reveal), and the caption "Two portraits at the boutique."
+  - The lockup follows the type rules: the sans line is 6 caps characters and the serif line is sentence case.
+  - Nothing is invented: the two products are the ones in the photos, and the N°5 photo shows the boutique.
+- **The pair:**
+  - Chance is 70% wide at 4:5. N°5 is 58% wide at 2:3 and overlaps Chance's lower right by 28% of the column (`margin-top: -28%`), cut out by a 6 px Vanilla ring.
+  - Each frame has the curtain with the Sand wash (the second staggered by 0.12 s; trigger `.spotlight__pair`) and the inner parallax, as in the gallery pairs.
+  - From 672 px the pair is capped at 520 px and centred.
+  - Alt texts describe each photo. The page never says "hair mist": the Chance bottle's label reads "PARFUM CHEVEUX / HAIR MIST", not Eau Vive as the inbox note had it.
+- **Loading:** the two `<img>`s use `data-src`/`data-srcset`, filled by `video.js`'s lookahead 1.5 viewports ahead, with a `<noscript>` copy.
+  - With native `loading="lazy"`, Chromium fetched both photos at first view (+100 KB). Before `site.js` renders the chapters the page is short, so the pair sits inside the lazy-load margin.
+  - Without JS, the `data-src` copies are `display: none` and the `<noscript>` copies fill the frames.
+- **WebP:** `chanel-chance-{480,800}` and `chanel-n5-boutique-{480,800}` (`PHOTOS` in `make-images.py`).
+- **Motion, recorded at 390 × 844:**
+  - the Fashion card deals in and the CHANEL film starts on the N°5 frame;
+  - the "Tap for sound" hint flashes once;
+  - then the eyebrow highlight and the oval lockup play, and the two Sand curtains open, the overlapping frame 0.12 s later;
+  - the parallax drifts as the pair passes.
+  - Checked at 320 (reduced), 390 (motion and no JS) and 1440 (screenshots `shots/m390-_spotlight*.png`, `r320-*`, `nojs-*`, `d1440-*`).
+
+### 9.4 Gallery and copy (lead's decisions)
+
+- **Gallery:**
+  - "Beauty · Chanel" (`gallery/02`, the hair-mist product) was already replaced by "Travel · Sailing" in polish round 1 (§7.1). No CHANEL product photo was left in the gallery, so there was nothing to swap.
+  - "Wellness · Massage" (`gallery/09`) is replaced by **"Stays · Kitchen view"**, the client's `dsc02726`: barefoot in a white beanie, cropped tee and wide trousers at a marble island in a glass-walled kitchen, with hills beyond.
+    - New web master `assets/img/stays/kitchen-view.jpg`: sRGB, 1600 × 2400, q86.
+    - New derivatives `stays-kitchen-view-{480,800}.webp`.
+    - The 3 × (pair + single) rhythm stays.
+  - The gallery categories now read Portrait, Details, Food / Fashion, Travel, Stays / Fashion, Portrait, Food.
+  - `gallery-09-*.webp` is deleted, and `09` is out of `GALLERY`. `dsc01104` (the couple on the deck) was not used: it is already the Stays rail's "Golden hour on the deck".
+- **Instagram intro:**
+  - Before: "Eight years of sponsored content, *one point of view.*"
+  - After: "**39.2K** followers, *one point of view.*"
+  - The number is bound to `profile.stats[1].value` (`data-metric` plus its `.u` unit), so it follows `metrics.json`.
+- **About bio:**
+  - Before: "Film graduate. Eight years creating sponsored content on Instagram, and creative direction for national and international brands in fashion, beauty, food and fitness."
+  - After: "Film graduate. Eight years of sponsored content on Instagram, from stays to food and fashion, and creative direction for national and international brands."
+  - The niches qualify the sponsored content (media-kit pages 4–6). `content.json` only lists fashion, beauty, food and fitness for the creative direction, so no niche is claimed for it.
+- **The page has no "serum", "hair mist", "hair care", "self-care" or "skin" in any text, `alt` or `aria-label`**, including the new alts. The CHANEL film's alt says "the red N°1 bottle".
+
+### 9.5 Numbers regressions
+
+| # | Finding | Fix | Verified (`pill.js`) |
+|---|---|---|---|
+| i | At 320–340 px, "Show the full screen" covered the chart's date labels: the pill sat 1–2 px over them, and only 1–3 px clear at 360–390 | The chart labels end 7.3cqw above the 118cqw cut. The pill's fixed −38 px became `margin-top: calc(-8px - 6cqw)`, so it still straddles the cut and keeps a gap at every width | Gap from the labels to the pill: **12 px** at 320/330/340, 13 at 360–414, 14 at 430 and ≥ 700. Screenshot `num/pills.png`: "Oct 10 · Oct 24 · Nov 8" whole above the pill. |
+| ii | At ≥ 700 px the 120 px right-edge fade hid part of the last screen when the rail was scrolled to its end | The mask is sized `100% + 120px` and sits at −120 px. `proof.js` sets `.is-end` when nothing remains to the right (or the rail cannot scroll; it also re-checks on resize), and the mask then slides to 0 so the fade leaves the box (.45 s) | 700/768/1024/1440: mask at −120 px at the start, and `is-end` with the mask at 0 px at the end of the rail. Screenshot `num/num-768-end.png`: Audience whole. |
+
+### 9.6 Checks (§9 core)
+
+The suite ran once in full: 187 PASS. The 11 FAILs were 10 hero signature checks and the old Ken Burns test (both below).
+After the spotlight lookahead change it ran again without the hero part (`run-b2.sh`): 182 PASS and 1 FAIL, the no-JS image count, which needed a test adaptation. With that adaptation `main.js` runs **59/59**.
+
+- **Test adaptations, all for this batch's intended changes:**
+  - the fan's centre is `fashion-07`, and the slot after it is `restaurants-03`;
+  - sound follows every swipe (no poster-only fan card);
+  - the moving-sound test's fan owner is `fashion-07`;
+  - item 45's Ken Burns pass is checked on a photo item swapped into the Fashion feature: every feature is now a real video;
+  - the no-JS image count skips `display:none` images (the spotlight's JS-only copies).
+- **Items 1–3, 6:** 183 referenced paths are relative and resolve. The hosts are unchanged.
+- **Item 5:** no console errors through full scroll-throughs, on both pages. The only aborted requests are Chromium's usual `.mp4` range cancels.
+- **Item 7:** no horizontal scroll at 320, 360, 375, 390, 414 and 430, in motion and reduced modes, with the menu open and closed, nor at 1440.
+- **Items 11–12:** complete at rest without JS (14/14 visible images, including the spotlight's `<noscript>` pair; 9 gallery captions) and in reduced motion (spotlight screenshot at 320).
+- **Items 13–14, 42:** nothing armed before scrolling, and none of 75 arm records armed while visible. In the cross-origin iframe, 63 records, none while visible.
+- **Items 23–33d, 43–45:** all pass:
+  - the fan, sound inheritance, thumb swaps and the pause button;
+  - reduced motion plays only on a tap;
+  - `stays-08` and `fashion-03` play muted with no sound button;
+  - a photo swap hides sound and pause;
+  - rails 12/4/10 with one current thumb each.
+- **Item 39:** 116 (motion) and 111 (reduced) text elements meet their ratio.
+- **Item 40:** CLS 0.0000 in motion and in reduced mode.
+- **Item 41, first view (3× DPR, excluding the CDN):** 394 KB on Pages and 355 KB on the Artifact. It was 388 / 349 KB. Before the lookahead change it measured 494 / 454 KB.
+- **Hero items 19–22:**
+  - All reduced-motion checks pass.
+  - In motion, the only FAILs are two signature checks per context: "21 inked 50% ± 10% at 0.85H" reads 85%, and "back at 0: sig undrawn" reads 0.71. Both come from the real-signature swap in the parallel session (`js/signature.js`, the hero markup), which this batch did not touch. The hero test needs the new signature's draw targets.
+
+### 9.7 Still open
+
+- **`picnic.mp4` is loud:** −6.9 LUFS, about 8–10 LU above the other clips. iOS ignores `video.volume`, so the fix is a re-encode, `loudnorm=I=-16:TP=-1.5`, in `scripts/encode-video.sh`'s pass.
+- **`wine-tasting.mp4`:** a re-encode cropped to the picture (`crop=464:824:128:0,scale=720:1280`) would let `view` go, and would sharpen the card: it is now a 1.55× upscale of a 720 px-wide screen recording.
+- **The Artifact publish is now about 111 MB in 183 files.** 107 MB of it is video: this batch added 11 MP4s, about 72 MB. A single publish takes 64 MB, so publish in two passes to the same URL (for example the videos in a second call), as the tool allows.
+- **Copy for client approval:**
+  - the Instagram intro and the About bio (9.4);
+  - the spotlight's eyebrow, lockup and caption;
+  - the new titles (`restaurants-02`, `fashion-01/02/04/07/08`, `stays-08`, and the 4 Fashion photos);
+  - the gallery caption "Stays · Kitchen view".
+- **The hero test's signature checks** must be updated for the real signature (9.6).
+
+### 9.8 Publish list changes (Artifact)
+
+- **Removed:**
+  - `assets/img/web/gallery-09-{480,800}.webp`;
+  - `assets/video/posters/fashion-0{5,6}.webp` and `assets/video/thumbs/fashion-0{5,6}.webp`.
+- **Added, images:**
+  - `assets/img/web/chanel-chance-{480,800}.webp`, `chanel-n5-boutique-{480,800}.webp`, `stays-kitchen-view-{480,800}.webp`;
+  - `fashion-{gown,print,tailoring,boots}-{card,thumb}.webp`;
+  - `assets/video/posters/` and `thumbs/` `fashion-07`, `fashion-08`, `stays-08` (`.webp`).
+- **Added, video:**
+  - `assets/video/restaurants/` `pronto-gnocchi`, `salad-table`, `wine-tasting`, `garden-breakfast`;
+  - `assets/video/fashion/` `chanel-boutique`, `burgundy-blazer`, `teal-dress-deck`, `yellow-satin-lake`, `picnic`, `alva-towel`;
+  - `assets/video/stays/deck-cushions` (all `.mp4`).
+- **Changed in place:**
+  - images: `assets/video/posters/` and `thumbs/` `restaurants-01…04` and `fashion-01…04`, now cut from the real footage;
+  - code and data: `data/videos.json`, `site.html`, `css/site.css`, `js/video.js`, `js/proof.js`.
+  - `scripts/make-images.py` changed too, but it is not published.
+- **Not published:** the masters `assets/img/fashion/*.jpg` and `assets/img/stays/kitchen-view.jpg`, and the first-frame `.jpg`s next to the MP4s.
