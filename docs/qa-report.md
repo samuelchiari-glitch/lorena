@@ -183,7 +183,7 @@ All 20/20 motion checks and 4/4 reduced checks pass in all five contexts.
    - The kit uses `font-display:auto`. Text waits up to about 3 s for the kit on a cold slow connection, but `fonts.ready` caps the split wait at 1.5 s.
    - The EB Garamond italic stand-in is still preloaded by `site.html` (29 KB on Pages). It serves only as a glyph fallback there.
    - Verified: no lockup wraps at 320 with The Seasons.
-6. **Inbox not integrated, by design** (`docs/inbox.md`): `dome-breakfast.mp4`, `pousada-pool.mp4` and the new photos. Adding a video means a `videos.json` entry with `src`, `poster`, `duration` and `audio`.
+6. **Inbox integrated after this report** (2026-11-11, see `docs/inbox.md`): `dome-breakfast.mp4` is now `stays-01`, `pousada-pool.mp4` is the new `stays-07`, and the client's photos went into About, a new Stays photo pair and the gallery. The full §9 regression was re-run and passes. Item 41's first view grew to 498 KB on Pages and 471 KB on the Artifact, still within budget; `docs/inbox.md` says why. The file list in §6 below is updated.
 7. **Copy fallback.** After a successful `execCommand` copy, the value stays selected (`ui.js`). This is harmless.
 8. **Content gaps:**
    - Poster-only feature captions show only the category (there is no duration).
@@ -192,7 +192,7 @@ All 20/20 motion checks and 4/4 reduced checks pass in all five contexts.
 
 ## 6. Files the page needs at runtime (Artifact publish list)
 
-The list has 142 files, about 27.9 MB, plus `site.html` itself. Every path was verified to exist, to be requested or referenced at runtime, and to be served with 200. A coverage run requested 127 of them; the other 15 are reached only through `srcset` at higher DPR or desktop widths, or through a thumb swap. Nothing outside the list was requested.
+The list has 150 files, about 43 MB, plus `site.html` itself (updated for the inbox integration; the coverage figures below are from the original run). Every path was verified to exist, to be requested or referenced at runtime, and to be served with 200. A coverage run requested 127 of them; the other 15 are reached only through `srcset` at higher DPR or desktop widths, or through a thumb swap. Nothing outside the list was requested.
 
 - **CSS:** `css/site.css`, `css/hero.css`, `css/content.css`, `css/proof.css`, `css/insights.css`
 - **JS:** `js/site.js`, `scroll.js`, `ui.js`, `reveals.js`, `hero.js`, `signature.js`, `fan.js`, `video.js`, `brands.js`, `proof.js`, `insights.js`, `motion.js`
@@ -202,9 +202,10 @@ The list has 142 files, about 27.9 MB, plus `site.html` itself. Every path was v
   - `assets/img/avatar.jpg` (IG profile, via `metrics.json`)
   - `assets/img/web/` hero-828/1242/1527
   - about-480/800
+  - stays-aframe-deck, stays-ofuro-deck, stays-kitchen-above, portrait-white-floor, portrait-wood-shoulder (each -480/800)
   - contact-06-320/480
-  - gallery-{02,03,08,09,14,17,18,22,29}-{480,800}
+  - gallery-{02,03,09,17,18,22}-{480,800}
 - **Logos:** `assets/logos/*.svg` (46 files; no PNGs)
-- **Video:** `assets/video/posters/*.webp` (22) and `assets/video/thumbs/*.webp` (22); `assets/video/stays/dome-bathtub.mp4`, `aframe-living-room.mp4`, `aframe-one-day.mp4`
+- **Video:** `assets/video/posters/*.webp` (23) and `assets/video/thumbs/*.webp` (23); `assets/video/stays/dome-bathtub.mp4`, `aframe-living-room.mp4`, `aframe-one-day.mp4`, `dome-breakfast.mp4`, `pousada-pool.mp4`
 
-Not published, and not referenced: `lab/`, `docs/`, `_source/`, `scripts/`, the original JPEGs in `assets/img/*`, `assets/logos/png/`, `assets/video/_ref/`, the `assets/video/stays/*.jpg` first-frame posters, `dome-breakfast.mp4` and `pousada-pool.mp4`. `index.html` is the Pages wrapper and is not part of the Artifact.
+Not published, and not referenced: `lab/`, `docs/`, `_source/`, `scripts/`, the original JPEGs in `assets/img/*`, `assets/logos/png/`, `assets/video/_ref/`, the `assets/video/stays/*.jpg` first-frame posters. `index.html` is the Pages wrapper and is not part of the Artifact.

@@ -12,9 +12,9 @@ Raw files are in `_source/drive-2/` (gitignored, downloaded from the client's Dr
 | `img-9196.jpg` (white shirt, wood wall, hands in her hair) | `assets/img/portrait-wood-hands.jpg` | **About** photo (`about-480/800.webp`). It replaces the kit's black-outfit portrait. `portrait-about.jpg` stays in the repo but is no longer referenced. |
 | `img-9201.jpg` (white shirt, wood wall, over the shoulder) | `assets/img/portrait-wood-shoulder.jpg` | **Gallery**, group 3, right: "Portrait · Linen". It replaces `14` (pendant). |
 | `img-9560.jpg` (lying on a white background) | `assets/img/portrait-white-floor.jpg` | **Gallery**, group 1, left (it opens the gallery): "Portrait · On white". It replaces `08` (glamping dome walk). |
-| `dsc01358.jpg` (A-frame glass deck) | `assets/img/stays/aframe-deck.jpg` | **Stays chapter**, a new photo pair under the thumb rail, left: "Cabin · Glass A-frame". |
+| `dsc01358.jpg` (A-frame glass deck) | `assets/img/stays/aframe-deck.jpg` | **Stays chapter**, a new photo pair under the thumb rail, left: "Cabin · A-frame". |
 | `dsc02763.jpg` (deck with an ofurô tub) | `assets/img/stays/ofuro-deck.jpg` | **Stays chapter** pair, right: "Deck · Hot tub". |
-| `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | **Gallery**, group 3, single (it closes the gallery): "Stays · Kitchen, from above". It replaces `29` (wine, black & white). |
+| `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | **Gallery**, group 3, single (it closes the gallery): "Stays · Kitchen". It replaces `29` (wine, black & white). |
 | `img-9204.jpg` | — | Not used. It is a near-duplicate of `img-9201` (same shirt, wall and over-the-shoulder pose), and About already uses this shoot. |
 | `dsc02726.jpg` (kitchen with a view) | — | Not used. It shows the same kitchen and outfit as `dsc02755`, which is the more graphic frame. One kitchen shot is enough. |
 | `dsc01104.jpg` (deck, parasol, couple) | — | Not used. The couple is the subject, and the site features Lorena alone. Good golden-hour light: the first pick if the client wants a couples' stays image. |
@@ -60,3 +60,26 @@ Regenerated under the same names:
 Removed: `assets/img/web/gallery-{08,14,29}-{480,800}.webp`.
 
 The publish grows by about 14.9 MB of video and 0.7 MB of images, to about 43 MB in total, under the 64 MB per-publish limit. The masters in `assets/img/` and `assets/img/stays/` are not referenced at runtime.
+
+## Checks after the integration (2026-11-11)
+
+The full §9 regression from `docs/qa-report.md` was re-run against the wrapped `index.html` and the Artifact-like page, and everything passes:
+- no console errors;
+- no horizontal scroll from 320 to 430 px, in motion and reduced modes;
+- complete at rest, with no JS and in reduced motion;
+- nothing armed while visible: 67 arm records, and 64 in the cross-origin iframe, including the two new Stays frames;
+- the hero contexts, the fan, the video rules (27–33d), CLS 0.0001 and the contrast checks.
+
+Item 31's poster-only swap test now taps `stays-02`, because `stays-01` has a real video.
+
+The thumb swaps were checked in motion and reduced modes:
+- `stays-01` plays with sound;
+- `stays-07` plays muted, with no sound button;
+- `stays-02` shows its poster only.
+
+**First view (item 41)** still passes, at 498 KB on Pages and 471 KB on the Artifact (3× DPR, CDN excluded), against the 700 KB budget. It grew by about 140 KB. Chromium's native lazy-load margin fetches the Stays pair at load (`stays-aframe-deck-800`, `stays-ofuro-deck-480`), because before `site.js` runs, the hero is only 100svh tall and the chapter bodies are empty, so the pair sits within the margin. Other photos follow the spec's native `loading="lazy"` too. If those bytes matter, move the pair to the `data-src` lookahead that `video.js` uses for posters, with a `<noscript>` fallback.
+
+## Signature (received 2026-11-11 18:35)
+- `_source/drive-3/assinatura-lorena.svg` is Lorena's real "LM" signature: a filled outline exported from Illustrator.
+- The animated kit is being built in `assets/signature/` (outline masked by pen paths drawn in writing order; see its README).
+- After the polish round, the lead swaps it in for the placeholder EMS Allure signature. That means `js/signature.js` (hero scrub and the footer play-once) and `scripts/make-signature.mjs`, which then becomes obsolete.
