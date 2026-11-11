@@ -2,8 +2,8 @@
    hero layout stays in site.css (=== section: hero ===). Everything here is scoped under .motion,
    except the load settle (a CSS animation, so it starts on first paint, before any JS runs). */
 
-/* Load settle (§4.1): the wrapper, not the img, breathes 1.06 -> 1 from the arch top, so the arch top
-   stays put under the lockup. The individual `scale` property composes with nothing else on this
+/* Load settle (§4.1): the wrapper, not the img, breathes 1.06 -> 1 (origin 50% 40%, the face), so it
+   is a slow zoom-out of the cover. The individual `scale` property composes with nothing else on this
    element (the scrub only tweens its clip-path). Off under reduced motion; visible throughout. */
 @media (prefers-reduced-motion: no-preference){
   .hero__photo{ animation: hero-settle 1.8s var(--ease-out) backwards; }
@@ -15,13 +15,16 @@
 .motion .hero__stage{ position: sticky; top: 0; }
 .motion .hero__photo img{ will-change: transform; }
 /* hero.js tweens the 12-value inset() string as --hero-clip (Chrome would re-serialize a clip-path
-   tween's ends compactly and break the interpolation); the fallback is the static arch of site.css. */
-.motion .hero--live .hero__photo{ clip-path: var(--hero-clip, inset(var(--arch-top) var(--arch-x) 0px var(--arch-x)
-  round var(--arch-rx) var(--arch-rx) 0px 0px / var(--arch-ry) var(--arch-ry) 0px 0px)); }
+   tween's ends compactly and break the interpolation); without it the photo stays full-bleed. */
+.motion .hero--live .hero__photo{ clip-path: var(--hero-clip, none); }
 
-/* Nav theme switch (§4.0): its top crosses the header line at scroll = 0.5 H. */
-.motion .hero__dark-zone{ display: block; position: absolute; left: 0; width: 1px; bottom: 0;
-  top: calc(50svh + 32px + env(safe-area-inset-top, 0px)); pointer-events: none; }
+/* Nav theme zones (§4.0; the .hero itself is dark: Vanilla ink over the scrimmed cover).
+   Light: from the scroll where the shrinking photo's top edge passes the header line (hero.js sets
+   --hero-light-top from the scrub's ease; ≈ 0.31 H at 844 tall) until the dark zone takes over.
+   Dark: its top crosses the header line at scroll = 0.5 H. Later in document order wins. */
+.motion .hero__light-zone, .motion .hero__dark-zone{ display: block; position: absolute; left: 0; width: 1px; bottom: 0; pointer-events: none; }
+.motion .hero__light-zone{ top: var(--hero-light-top, calc(30svh + 32px + env(safe-area-inset-top, 0px))); }
+.motion .hero__dark-zone{ top: calc(50svh + 32px + env(safe-area-inset-top, 0px)); }
 
 /* Scroll-only layers: above the photo (1) and the copy (2). */
 .motion .sig--hero, .motion .hero__handle{ display: block; position: absolute; z-index: 3; pointer-events: none; }

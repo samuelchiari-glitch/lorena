@@ -318,6 +318,7 @@ function flashHint(s, ms) {
 export function toggleSound(card) {
   const s = register(card);
   if (!s || !hasSrc(s) || (s.fan && !s.eligible)) return;
+  clearTimeout(s.hoverT); // a click decides: a pending hover intent must not undo it
   if (!autoplayOK()) { userPlayPause(s); return; }
   if (!hasAudio(s)) return;
   if (owner === s && (s.pinned || !qFine.matches)) { sound(s, false, { instant: true }); return; }
