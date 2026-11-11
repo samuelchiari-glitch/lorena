@@ -1,0 +1,975 @@
+/* ==========================================================================
+   insights.css — live recreations of Instagram iOS "Your dashboard" screens.
+   Self-contained: everything is scoped under .ig-shot, nothing global.
+
+   Sizing: every length is written in iPhone points via var(--u), where
+   --u = (card width / device width). The card is a size container, so the
+   whole screen scales as one piece and keeps the original proportions at
+   any width. Device width defaults to 430pt (the client's screenshots come
+   from a 430pt-wide iPhone); data-ig-device="390" lays out for a 390pt one.
+
+   Tokens it reads from the site (both optional, with fallbacks):
+     --shadow-shot   the floating "screenshot" shadow
+     --radius-shot   the screenshot card's corner radius
+   ========================================================================== */
+
+.ig-shot {
+  --ig-text: #0b1014;
+  --ig-text-2: #666f79;
+  --ig-black: #000;
+  --ig-bg: #fff;
+  --ig-wash: #eff2f5;
+  --ig-grid: #e6eaee;
+  --ig-hairline: #e3e7eb;
+  --ig-green: #0a8937;
+  --ig-line: #e705cb;
+  --ig-magenta: #d301c5;
+  --ig-purple: #8f0185;
+  --ig-link: #00376b;
+  --ig-blue: #0095f6;
+  --ig-red: #ff3040;
+  --ig-ios-green: #34c759;
+  --ig-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, Roboto, Arial, sans-serif;
+
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: var(--ig-shot-width, 430px);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.ig-shot *,
+.ig-shot *::before,
+.ig-shot *::after {
+  box-sizing: border-box;
+}
+
+/* The floating screenshot ------------------------------------------------- */
+
+.ig-shot__card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: inline-size;
+  background: var(--ig-bg);
+  border-radius: var(--radius-shot, 26px);
+  box-shadow: var(
+    --shadow-shot,
+    0 0 0 1px rgba(64, 44, 22, 0.06),
+    0 1px 1px rgba(64, 44, 22, 0.04),
+    0 2px 4px -1px rgba(64, 44, 22, 0.05),
+    0 6px 12px -3px rgba(64, 44, 22, 0.06),
+    0 14px 28px -6px rgba(64, 44, 22, 0.08),
+    0 32px 64px -14px rgba(64, 44, 22, 0.14)
+  );
+  transform-origin: 50% 40%;
+  backface-visibility: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A hairline highlight that keeps the white card crisp on light pages. */
+.ig-shot__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.035);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ig-screen {
+  --ig-w: 430;
+  --ig-status-h: 59;
+  --u: 1px;
+  position: relative;
+  display: block;
+  width: 100%;
+  background: var(--ig-bg);
+  color: var(--ig-text);
+  font-family: var(--ig-font);
+  font-size: calc(14 * var(--u));
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-ig-device="390"] .ig-screen {
+  --ig-w: 390;
+  --ig-status-h: 54;
+}
+
+@supports (width: 1cqw) {
+  .ig-screen {
+    --u: calc(100cqw / var(--ig-w));
+  }
+}
+
+.ig-screen svg {
+  display: block;
+  overflow: visible;
+}
+
+:where(.ig-screen) :where(p, h2, h3, ul, li, figure) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: inherit;
+}
+
+.ig-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* iOS status bar ---------------------------------------------------------- */
+
+.ig-status {
+  position: relative;
+  height: calc(var(--ig-status-h) * var(--u));
+  color: var(--ig-black);
+}
+
+.ig-status__time {
+  position: absolute;
+  left: 0;
+  width: 35.4%;
+  top: calc((var(--ig-status-h) / 2 - 9.5) * var(--u));
+  text-align: center;
+  font-size: calc(17 * var(--u));
+  line-height: calc(22 * var(--u));
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ig-status__right {
+  position: absolute;
+  left: 64.6%;
+  right: 0;
+  justify-content: center;
+  top: calc((var(--ig-status-h) / 2 - 6.5) * var(--u));
+  height: calc(14 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+}
+
+.ig-status__signal {
+  width: calc(18 * var(--u));
+  height: calc(12 * var(--u));
+}
+
+.ig-status__net {
+  font-size: calc(15 * var(--u));
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ig-status__battery {
+  width: calc(32 * var(--u));
+  height: calc(13 * var(--u));
+}
+
+/* Navigation bar ---------------------------------------------------------- */
+
+.ig-nav {
+  position: relative;
+  height: calc(44 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-nav__title {
+  font-size: calc(17 * var(--u));
+  line-height: calc(22 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ig-nav__left,
+.ig-nav__right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(18 * var(--u));
+}
+
+.ig-nav__left {
+  left: calc(10 * var(--u));
+}
+
+.ig-nav__right {
+  right: calc(14 * var(--u));
+}
+
+.ig-icon {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+  color: var(--ig-text);
+}
+
+.ig-icon--sm {
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
+}
+
+/* Tabs -------------------------------------------------------------------- */
+
+.ig-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: calc(39 * var(--u));
+  border-top: max(1px, calc(0.4 * var(--u))) solid var(--ig-hairline);
+  border-bottom: max(1px, calc(0.4 * var(--u))) solid var(--ig-hairline);
+}
+
+.ig-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(13.5 * var(--u));
+  line-height: calc(17 * var(--u));
+  font-weight: 600;
+  color: var(--ig-text-2);
+  white-space: nowrap;
+  padding-bottom: calc(3.6 * var(--u));
+}
+
+.ig-tab.is-active {
+  color: var(--ig-text);
+}
+
+.ig-tab__label {
+  position: relative;
+  padding: 0 calc(2 * var(--u));
+}
+
+.ig-tab.is-active .ig-tab__label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-12.3 * var(--u));
+  height: calc(2.3 * var(--u));
+  background: var(--ig-text);
+}
+
+/* Page + sections --------------------------------------------------------- */
+
+.ig-page {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+  background: var(--ig-wash);
+}
+
+.ig-page--end {
+  padding-bottom: calc(8 * var(--u));
+}
+
+.ig-section {
+  position: relative;
+  background: var(--ig-bg);
+  border-radius: calc(12 * var(--u));
+  padding: calc(24.5 * var(--u)) 0 calc(16 * var(--u));
+}
+
+.ig-section:first-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ig-section--cut {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.ig-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(16 * var(--u));
+}
+
+.ig-h1 {
+  font-size: calc(20 * var(--u));
+  line-height: calc(24 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+
+.ig-range {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  margin-right: calc(4 * var(--u));
+  position: relative;
+  top: calc(1.2 * var(--u));
+  font-size: calc(14 * var(--u));
+  line-height: calc(18 * var(--u));
+  font-weight: 500;
+  color: var(--ig-text-2);
+  white-space: nowrap;
+}
+
+.ig-range svg {
+  width: calc(13 * var(--u));
+  height: calc(13 * var(--u));
+}
+
+.ig-h2 {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding: 0 calc(16 * var(--u));
+  font-size: calc(16 * var(--u));
+  line-height: calc(20 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.008em;
+  white-space: nowrap;
+}
+
+.ig-h2 svg {
+  position: relative;
+  top: calc(-1.2 * var(--u));
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
+  flex: none;
+}
+
+.ig-section:has(.ig-bars) {
+  padding-bottom: calc(24 * var(--u));
+}
+
+/* Stat cards -------------------------------------------------------------- */
+
+.ig-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: calc(97 * var(--u));
+  padding: calc(15.2 * var(--u)) calc(16 * var(--u)) 0;
+  background: var(--ig-wash);
+  border-radius: calc(12 * var(--u));
+  overflow: hidden;
+}
+
+.ig-card.is-selected {
+  box-shadow: inset 0 0 0 calc(2.2 * var(--u)) var(--ig-text);
+}
+
+.ig-card__label {
+  display: block;
+  font-size: calc(13 * var(--u));
+  line-height: calc(17 * var(--u));
+  font-weight: 500;
+  color: var(--ig-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-card__label--sm {
+  font-size: calc(11.5 * var(--u));
+}
+
+.ig-card__value {
+  display: block;
+  margin-top: calc(10.8 * var(--u));
+  font-size: calc(20 * var(--u));
+  line-height: calc(24 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.ig-card__delta {
+  display: block;
+  margin-top: calc(3.1 * var(--u));
+  font-size: calc(10 * var(--u));
+  line-height: calc(12 * var(--u));
+  font-weight: 400;
+  color: var(--ig-green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Summary (Home tab) */
+
+.ig-summary {
+  display: grid;
+  grid-template-columns: 50.5fr 49.5fr;
+  grid-template-rows: calc(97 * var(--u)) calc(97 * var(--u));
+  gap: calc(12 * var(--u));
+  margin-top: calc(16.3 * var(--u));
+  padding: 0 calc(16 * var(--u));
+}
+
+.ig-summary .ig-card--feature {
+  grid-row: 1 / span 2;
+  height: auto;
+  padding-top: calc(17.1 * var(--u));
+}
+
+.ig-card--feature .ig-card__value {
+  margin-top: calc(4.7 * var(--u));
+}
+
+.ig-summary .ig-card__delta {
+  margin-top: calc(0.1 * var(--u));
+  font-size: calc(13 * var(--u));
+  line-height: calc(16 * var(--u));
+}
+
+.ig-summary .ig-card--feature .ig-card__delta {
+  margin-top: calc(4.7 * var(--u));
+}
+
+.ig-summary .ig-card:not(.ig-card--feature) {
+  padding-top: calc(16 * var(--u));
+}
+
+.ig-summary .ig-card:not(.ig-card--feature) .ig-card__value {
+  margin-top: calc(11 * var(--u));
+  font-size: calc(18 * var(--u));
+  line-height: calc(22 * var(--u));
+}
+
+.ig-spark {
+  position: absolute;
+  left: calc(16 * var(--u));
+  right: calc(16 * var(--u));
+  top: calc(91 * var(--u));
+  height: calc(81 * var(--u));
+}
+
+.ig-spark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ig-spark__x {
+  position: absolute;
+  left: calc(16 * var(--u));
+  right: calc(16 * var(--u));
+  top: calc(178.2 * var(--u));
+  display: flex;
+  justify-content: space-between;
+  font-size: calc(10.5 * var(--u));
+  line-height: calc(13 * var(--u));
+  color: var(--ig-text-2);
+}
+
+/* Horizontal card rail (Performance / Audience) */
+
+.ig-rail {
+  position: relative;
+  margin-top: calc(8.3 * var(--u));
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+
+.ig-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.ig-rail__track {
+  display: flex;
+  gap: calc(12.8 * var(--u));
+  width: max-content;
+  padding: 0 calc(16 * var(--u));
+}
+
+.ig-rail .ig-card {
+  flex: none;
+  width: calc(150.8 * var(--u));
+}
+
+/* Line chart -------------------------------------------------------------- */
+
+.ig-chart {
+  position: relative;
+  height: calc(133 * var(--u));
+  margin-top: calc(62 * var(--u));
+}
+
+.ig-chart__plot {
+  position: absolute;
+  top: 0;
+  left: calc(51 * var(--u));
+  right: calc(35 * var(--u));
+  height: calc(95.5 * var(--u));
+}
+
+.ig-chart__plot svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ig-chart__y {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(42 * var(--u));
+  height: calc(95.5 * var(--u));
+}
+
+.ig-chart__y span,
+.ig-chart__x span {
+  position: absolute;
+  font-size: calc(12 * var(--u));
+  line-height: calc(14 * var(--u));
+  color: var(--ig-text-2);
+  white-space: nowrap;
+}
+
+.ig-chart__y span {
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.ig-chart__x {
+  position: absolute;
+  left: calc(51 * var(--u));
+  right: calc(35 * var(--u));
+  top: calc(103.4 * var(--u));
+  height: calc(14 * var(--u));
+}
+
+.ig-chart__x span:nth-child(1) {
+  left: 0;
+}
+
+.ig-chart__x span:nth-child(2) {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ig-chart__x span:nth-child(3) {
+  right: 0;
+}
+
+/* Bar lists (content type, gender, age) ----------------------------------- */
+
+.ig-legend {
+  display: flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  margin-top: calc(12 * var(--u));
+  padding: 0 calc(16 * var(--u));
+  font-size: calc(13 * var(--u));
+  line-height: calc(16 * var(--u));
+  color: var(--ig-text);
+}
+
+.ig-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+}
+
+.ig-legend i {
+  display: block;
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+  border-radius: 50%;
+  background: var(--ig-magenta);
+}
+
+.ig-legend i.is-2 {
+  background: var(--ig-purple);
+}
+
+.ig-bars {
+  margin-top: calc(11.1 * var(--u));
+  padding: 0 calc(16 * var(--u));
+}
+
+.ig-bars--after-legend {
+  margin-top: calc(8 * var(--u));
+}
+
+.ig-bar {
+  position: relative;
+  padding-bottom: calc(13 * var(--u));
+}
+
+.ig-bar:last-child {
+  padding-bottom: 0;
+}
+
+.ig-bar__label {
+  display: block;
+  font-size: calc(13.5 * var(--u));
+  line-height: calc(17 * var(--u));
+  color: var(--ig-black);
+  white-space: nowrap;
+}
+
+.ig-bar__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: calc(6 * var(--u));
+  height: calc(7.7 * var(--u));
+}
+
+.ig-bar__track {
+  position: relative;
+  flex: none;
+  width: calc(100% - 57 * var(--u));
+  height: 100%;
+  background: var(--ig-wash);
+  border-radius: calc(2 * var(--u));
+}
+
+.ig-bar__fill {
+  position: absolute;
+  inset: 0;
+}
+
+.ig-bar__seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: calc(2 * var(--u));
+  border-radius: calc(2 * var(--u));
+  background: var(--ig-magenta);
+}
+
+.ig-bar__seg.is-2 {
+  background: var(--ig-purple);
+}
+
+.ig-bar__value {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: calc(14 * var(--u));
+  line-height: calc(17 * var(--u));
+  font-weight: 600;
+  color: var(--ig-black);
+  white-space: nowrap;
+}
+
+/* Interactions teaser (the screenshot keeps going below the fold) */
+
+.ig-chips {
+  display: flex;
+  gap: calc(8 * var(--u));
+  margin-top: calc(14 * var(--u));
+  padding: 0 calc(16 * var(--u));
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ig-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  height: calc(32 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  border-radius: calc(9 * var(--u));
+  background: var(--ig-wash);
+  font-size: calc(14 * var(--u));
+  font-weight: 600;
+  color: var(--ig-text);
+}
+
+.ig-chip.is-active {
+  background: var(--ig-text);
+  color: #fff;
+}
+
+.ig-chip svg {
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+}
+
+/* Profile header (Screen A) ----------------------------------------------- */
+
+.ig-profile {
+  padding-bottom: calc(16 * var(--u));
+}
+
+.ig-ptop {
+  position: relative;
+  height: calc(50 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-ptop__left,
+.ig-ptop__right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(20 * var(--u));
+}
+
+.ig-ptop__left {
+  left: calc(14 * var(--u));
+}
+
+.ig-ptop__right {
+  right: calc(14 * var(--u));
+}
+
+.ig-ptop__user {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  font-size: calc(19 * var(--u));
+  line-height: calc(24 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+
+.ig-ptop__user .ig-verified {
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  margin-left: calc(1 * var(--u));
+}
+
+.ig-ptop__chev {
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+}
+
+.ig-ptop__dot {
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  border-radius: 50%;
+  background: var(--ig-red);
+  margin-left: calc(1 * var(--u));
+}
+
+.ig-badge-wrap {
+  position: relative;
+  display: block;
+}
+
+.ig-badge {
+  position: absolute;
+  top: calc(-6 * var(--u));
+  left: calc(13 * var(--u));
+  min-width: calc(19 * var(--u));
+  height: calc(17 * var(--u));
+  padding: 0 calc(4.5 * var(--u));
+  border-radius: calc(9 * var(--u));
+  background: var(--ig-red);
+  color: #fff;
+  box-shadow: 0 0 0 calc(2 * var(--u)) var(--ig-bg);
+  font-size: calc(11 * var(--u));
+  line-height: calc(17 * var(--u));
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ig-phead {
+  display: flex;
+  align-items: center;
+  gap: calc(20 * var(--u));
+  padding: calc(6 * var(--u)) calc(16 * var(--u)) 0;
+}
+
+.ig-avatar {
+  position: relative;
+  flex: none;
+  width: calc(88 * var(--u));
+  height: calc(88 * var(--u));
+  border-radius: 50%;
+  padding: calc(4 * var(--u));
+  box-shadow: inset 0 0 0 calc(1.5 * var(--u)) #dbdfe4;
+}
+
+.ig-avatar__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #dfe3e8 radial-gradient(circle at 50% 38%, #c9ced5 0 18%, transparent 19%) no-repeat;
+  overflow: hidden;
+}
+
+.ig-avatar__img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-avatar__plus {
+  position: absolute;
+  right: calc(-1 * var(--u));
+  bottom: calc(-1 * var(--u));
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+  border-radius: 50%;
+  background: var(--ig-text);
+  box-shadow: 0 0 0 calc(3 * var(--u)) var(--ig-bg);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.ig-avatar__plus svg {
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+}
+
+.ig-phead__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ig-phead__name {
+  font-size: calc(15 * var(--u));
+  line-height: calc(19 * var(--u));
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-pstats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: calc(6 * var(--u));
+  padding-right: calc(14 * var(--u));
+}
+
+.ig-pstat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ig-pstat b {
+  font-size: calc(16 * var(--u));
+  line-height: calc(20 * var(--u));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ig-pstat span {
+  font-size: calc(14 * var(--u));
+  line-height: calc(18 * var(--u));
+}
+
+.ig-pbio {
+  padding: calc(12 * var(--u)) calc(16 * var(--u)) 0;
+  font-size: calc(14 * var(--u));
+  line-height: calc(18 * var(--u));
+}
+
+.ig-pbio__cat {
+  color: var(--ig-text-2);
+}
+
+.ig-pbio a,
+.ig-pbio .ig-mention {
+  color: var(--ig-link);
+  text-decoration: none;
+}
+
+.ig-pills {
+  display: flex;
+  gap: calc(8 * var(--u));
+  padding: calc(10 * var(--u)) calc(16 * var(--u)) 0;
+}
+
+.ig-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  height: calc(26 * var(--u));
+  padding: 0 calc(10 * var(--u)) 0 calc(8 * var(--u));
+  border-radius: calc(13 * var(--u));
+  background: var(--ig-wash);
+  font-size: calc(13 * var(--u));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ig-pill svg {
+  width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+}
+
+.ig-dash {
+  margin: calc(14 * var(--u)) calc(16 * var(--u)) 0;
+  padding: calc(11 * var(--u)) calc(14 * var(--u)) calc(12 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: var(--ig-wash);
+}
+
+.ig-dash__title {
+  font-size: calc(14 * var(--u));
+  line-height: calc(18 * var(--u));
+  font-weight: 700;
+}
+
+.ig-dash__text {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  margin-top: calc(2 * var(--u));
+  font-size: calc(13 * var(--u));
+  line-height: calc(17 * var(--u));
+  color: var(--ig-text-2);
+  white-space: nowrap;
+}
+
+.ig-dash__text svg {
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+  color: var(--ig-green);
+  flex: none;
+}
+
+/* Reduced motion: the markup already holds the final values. */
+@media (prefers-reduced-motion: reduce) {
+  .ig-shot__card {
+    transform: none !important;
+  }
+}
+
+@media print {
+  .ig-shot__card {
+    box-shadow: 0 0 0 1px #ddd;
+  }
+}

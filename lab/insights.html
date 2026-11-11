@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Insights screens · lab</title>
+<meta name="description" content="Live HTML recreations of Lorena Maruch's Instagram dashboard screenshots, with scroll-triggered count-ups, chart draws and bar growth.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../css/insights.css">
+<style>
+  :root {
+    --vanilla: #f1eada;
+    --ink: #2b2620;
+    --ink-2: #6f665a;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--vanilla);
+    color: var(--ink);
+    font: 16px/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  .lab-head {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 16px 8px;
+  }
+  .lab-head p { margin: 0; }
+  .lab-kicker {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .lab-head h1 {
+    margin: 10px 0 12px;
+    font: 400 clamp(34px, 6vw, 64px)/1.02 ui-serif, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    letter-spacing: -.02em;
+  }
+  .lab-lede { max-width: 56ch; color: var(--ink-2); }
+  .lab-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .lab-tools button {
+    appearance: none;
+    border: 1px solid rgba(43, 38, 32, .18);
+    background: rgba(255, 255, 255, .55);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .lab-tools button:hover { background: #fff; }
+  .lab-tools button[aria-pressed="true"] { background: var(--ink); color: var(--vanilla); border-color: var(--ink); }
+
+  .lab-spacer { height: 18vh; }
+
+  .lab-grid {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 16px 160px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 56px;
+    justify-items: center;
+  }
+  .lab-col { width: 100%; max-width: 430px; display: grid; gap: 56px; align-content: start; }
+  .lab-cap {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--ink-2);
+    letter-spacing: .02em;
+  }
+  .lab-cap b { color: var(--ink); font-weight: 600; }
+
+  @media (min-width: 760px) {
+    .lab-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; align-items: start; }
+    .lab-col--b { margin-top: 140px; }
+    .lab-col--c { grid-column: 1 / -1; max-width: 430px; }
+  }
+  @media (min-width: 1180px) {
+    .lab-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 56px; }
+    .lab-col--b { margin-top: 120px; }
+    .lab-col--c { grid-column: auto; margin-top: 40px; }
+    .lab-spacer { height: 6vh; }
+  }
+</style>
+</head>
+<body>
+
+<header class="lab-head">
+  <p class="lab-kicker">Lab · motion</p>
+  <h1>Instagram, live.</h1>
+  <p class="lab-lede">Each card is the real Instagram dashboard rebuilt in HTML from <code>data/metrics.json</code>. Numbers count up, charts draw in and bars grow as each screen scrolls into view.</p>
+  <div class="lab-tools">
+    <button type="button" id="replay">Replay animations</button>
+    <button type="button" id="device" aria-pressed="false">390pt layout</button>
+  </div>
+</header>
+
+<div class="lab-spacer" aria-hidden="true"></div>
+
+<main class="lab-grid" id="grid">
+  <div class="lab-col lab-col--a">
+    <figure style="margin:0">
+      <figcaption class="lab-cap"><b>A</b> · Profile</figcaption>
+      <div data-ig-screen="profile" data-ig-tilt></div>
+    </figure>
+    <figure style="margin:0">
+      <figcaption class="lab-cap"><b>B</b> · Home · Summary</figcaption>
+      <div data-ig-screen="summary" data-ig-tilt data-ig-flash></div>
+    </figure>
+  </div>
+  <div class="lab-col lab-col--b">
+    <figure style="margin:0">
+      <figcaption class="lab-cap"><b>C</b> · Performance</figcaption>
+      <div data-ig-screen="performance" data-ig-tilt></div>
+    </figure>
+  </div>
+  <div class="lab-col lab-col--c">
+    <figure style="margin:0">
+      <figcaption class="lab-cap"><b>D</b> · Audience</figcaption>
+      <div data-ig-screen="audience" data-ig-tilt></div>
+    </figure>
+  </div>
+</main>
+
+<script type="module">
+  import { renderInsights } from '../js/insights.js';
+  import { replay } from '../js/motion.js';
+
+  const grid = document.getElementById('grid');
+  document.getElementById('replay').addEventListener('click', () => replay(grid));
+
+  // Re-render every screen at the other device width (lab-only convenience).
+  const deviceBtn = document.getElementById('device');
+  deviceBtn.addEventListener('click', async () => {
+    const on = deviceBtn.getAttribute('aria-pressed') !== 'true';
+    deviceBtn.setAttribute('aria-pressed', String(on));
+    grid.querySelectorAll('[data-ig-screen]').forEach((el) => {
+      const fresh = el.cloneNode(false);
+      fresh.removeAttribute('data-ig-rendered');
+      fresh.className = '';
+      if (on) fresh.setAttribute('data-ig-device', '390');
+      else fresh.removeAttribute('data-ig-device');
+      el.replaceWith(fresh);
+    });
+    await renderInsights({ root: grid });
+  });
+</script>
+</body>
+</html>
