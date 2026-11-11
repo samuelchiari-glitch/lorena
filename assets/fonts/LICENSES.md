@@ -31,9 +31,9 @@ Never copy font files out of Canva, Adobe Fonts or the media-kit PDFs into this 
 
 The reference site's commercial serif is not used and must not be copied. Mona Sans is used here from GitHub's official OFL release.
 
-## Signature placeholder
+## Signature: no font
 
-The handwritten "Lorena" signature on the site is a **placeholder drawn as artwork** from **EMS Allure**, a single-stroke (centre-line) script licensed under the **SIL Open Font License 1.1**. The glyph centre-lines come from the `hersheytext@2.0.0` package (`svg_fonts/EMSAllure.svg`); `scripts/make-signature.mjs` composes them into SVG paths. No font file is shipped or loaded. It will be replaced by Lorena's real signature (vector strokes) when she sends it, and this credit then goes away.
+The signature on the site is Lorena Maruch's own, from her artwork (`assets/signature/`, inlined in `site.html`). No font is used to draw it. The EMS Allure placeholder used before it arrived, and its generator script, have been removed.
 
 ---
 

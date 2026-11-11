@@ -17,6 +17,9 @@
  * `rail` lists its rail items in order, and may mix in photo items (type "photo", client feedback 7): a photo thumb
  * shows the still in the feature card (poster-only: no sound or pause button, one Ken Burns pass). A category that is
  * enabled but has no shell in site.html gets one rendered from its data, so re-enabling a chapter is a data change.
+ * Two optional video fields: `start` (s) = the clip plays from there (#t= on its src; its poster is that frame), and
+ * `view` [top, bottom] = only that band of the frame is picture, so the <video> is scaled until the band fills the card
+ * (its poster is already cropped to the band by scripts/make-images.py).
  */
 import { makeIO } from './scroll.js';
 
@@ -40,6 +43,16 @@ const ICON_GLYPH = `<svg ${SVG}><path d="M9 6.2v11.6l9.3-5.8z" fill="currentColo
 
 const items = new Map(); // id -> item (filled by cardHTML, so both renderers share it)
 
+/** The src to load: from `start` when set (a media fragment; `loop` still restarts at 0). */
+const srcOf = (item) => (item.start ? `${item.src}#t=${item.start}` : item.src);
+
+/** `view` [top, bottom] (0..1 of the frame height): scale the <video> from its top centre so that band fills the card. */
+function viewCSS(item) {
+  const v = item && item.view;
+  if (!Array.isArray(v) || !(v[1] > v[0])) return '';
+  return `transform-origin:50% 0;transform:scale(${+(1 / (v[1] - v[0])).toFixed(4)}) translateY(${+(-100 * v[0]).toFixed(2)}%)`;
+}
+
 /**
  * One video card (§6.1). opts: { fan:bool, index:number, feature:bool, deal:number }.
  * No `src` and no `poster` attribute on <video>: both are set at warm-up (§6.3).
@@ -60,7 +73,7 @@ export function cardHTML(item, opts = {}) {
   // fan cards have no <video> while poster-only; the feature card always keeps one (hidden)
   const withVideo = hasVideo || opts.feature;
   const video = withVideo
-    ? `<video class="vcard__video" muted playsinline loop preload="none" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate nofullscreen" aria-label="${esc(item.alt)}"${hasVideo ? '' : ' hidden'}></video>`
+    ? `<video class="vcard__video" muted playsinline loop preload="none" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate nofullscreen" aria-label="${esc(item.alt)}"${viewCSS(item) ? ` style="${viewCSS(item)}"` : ''}${hasVideo ? '' : ' hidden'}></video>`
     : '';
   const hit = opts.fan ? `<button class="fan__hit" type="button" aria-label="Show: ${esc(item.title)}"></button>` : '';
   return `<figure ${attrs}>`
@@ -209,7 +222,7 @@ function warm(s) {
   s.v.muted = true;
   s.v.setAttribute('muted', '');
   s.v.poster = s.item.poster;
-  s.v.src = s.item.src;
+  s.v.src = srcOf(s.item);
   s.v.preload = 'metadata';
 }
 
@@ -492,8 +505,9 @@ export function swapSource(card, item) {
   } else {
     v.hidden = false;
     v.setAttribute('aria-label', item.alt || item.title || '');
+    v.style.cssText = viewCSS(item);
     v.poster = item.poster;
-    v.src = item.src;
+    v.src = srcOf(item);
     s.warmed = true;
     if (!autoplayOK()) s.userPlay = true;
     if (audio) { sound(s, true); if (owner === s) s.pinned = true; } else {

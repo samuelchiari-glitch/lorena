@@ -145,6 +145,8 @@ function initTabs() {
   const mark = (cur) => btns.forEach((b, i) => (i === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
   const sync = () => {
     raf = 0;
+    // .is-end: nothing more to the right (or nothing to scroll), so the wide-screen edge fade slides off (site.css)
+    rail.classList.toggle('is-end', rail.scrollLeft >= rail.scrollWidth - rail.clientWidth - 2);
     if (picked >= 0) return;
     const x = rail.scrollLeft + figs[0].offsetLeft;
     let cur = 0;
@@ -153,7 +155,9 @@ function initTabs() {
     mark(cur);
   };
   ['pointerdown', 'wheel', 'keydown'].forEach((t) => rail.addEventListener(t, () => { picked = -1; }, { passive: true }));
-  rail.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(sync); }, { passive: true });
+  const queue = () => { if (!raf) raf = requestAnimationFrame(sync); };
+  rail.addEventListener('scroll', queue, { passive: true });
+  addEventListener('resize', queue, { passive: true });
   sync();
 }
 

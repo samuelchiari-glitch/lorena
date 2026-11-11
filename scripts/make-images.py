@@ -9,11 +9,15 @@ Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-wood-hands.jpg (client original img-9196)
   assets/img/web/gallery-NN-{480,800}.webp           q76  the Canva-extracted gallery photos still on the page
                                                          (landscape ones cover-cropped to 5:6: GALLERY_CROP)
-  assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (gallery)
+  assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (gallery, CHANEL spotlight)
   assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
   assets/video/thumbs/<id>.webp    240x427 (9:16)    q72  same source
-  photo items (type "photo" in data/videos.json, the Stays rail): `poster` 720x1280 q78 and `thumb`
+    `start` (s): the item plays from there (js/video.js adds #t=start), so its poster is that frame (ffmpeg)
+    `view` [top, bottom] (0..1 of the frame height): only that band is picture (wine-tasting.mp4 is a screen
+    recording with a white band under it); the poster is cover-cropped from the band, and video.js scales
+    the <video> so the same band fills the card
+  photo items (type "photo" in data/videos.json, the mixed rails): `poster` 720x1280 q78 and `thumb`
   240x427 q72, cover-cropped to 9:16 from `master` around the horizontal centre `crop` (0..1)
 
 A "-800" file is never upscaled: if the original is narrower, it keeps the original
@@ -21,7 +25,9 @@ width (the printed manifest gives the real width for srcset descriptors).
 Video ids and sources come from data/videos.json (poster path = the target, source =
 the mp4's sibling .jpg when `src` is set, else assets/video/_ref/<id>.jpg; photo items use `master`).
 """
+import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,9 +39,11 @@ FORCE = '--force' in sys.argv
 # The Canva-extracted gallery photos the page still shows (spec §4.7), in page order.
 # 08, 14 and 29 were retired for the client's originals (docs/inbox.md, 2026-11-11); 17 (it repeated the
 # fan's yellow satin), 02 (a hair-mist product, client feedback 6) and the kitchen single (now in the
-# Stays rail) were replaced by 04, 20 and 07 in polish round 1, and 07 (the same salad plate as the Food
-# rail's restaurants-02) by 31 in round 2 (docs/qa-report.md).
-GALLERY = ['03', '22', '04', '20', '09', '18', '31']
+# Stays rail) were replaced by 04, 20 and 07 in polish round 1, 07 (the same salad plate as the Food
+# rail's restaurants-02) by 31 in round 2, and 09 (the massage: the therapist dominated) by the client's
+# dsc02726 in batch 2 (docs/qa-report.md). The Fashion rail's photo items also use masters from this
+# folder (21, 26, 12, 25: see data/videos.json).
+GALLERY = ['03', '22', '04', '20', '18', '31']
 # Landscape originals, cover-cropped to 5:6 around this horizontal centre so their frame never upscales.
 GALLERY_CROP = {'31': 0.52}
 
@@ -45,6 +53,9 @@ GALLERY_CROP = {'31': 0.52}
 PHOTOS = {
     'portrait-white-floor': 'assets/img/portrait-white-floor.jpg',  # img-9560
     'portrait-wood-shoulder': 'assets/img/portrait-wood-shoulder.jpg',  # img-9201
+    'stays-kitchen-view': 'assets/img/stays/kitchen-view.jpg',  # dsc02726 (gallery, batch 2)
+    'chanel-chance': 'assets/img/fashion/chanel-chance.jpg',  # CHANEL spotlight (Fashion chapter)
+    'chanel-n5-boutique': 'assets/img/fashion/chanel-n5-boutique.jpg',
 }
 
 
@@ -84,6 +95,13 @@ def cover(src, out, size, q, cx=0.5):
     im = load(src)
     save(ImageOps.fit(im, size, Image.LANCZOS, centering=(cx, 0.5)), out, q)
     return size
+
+
+def video_frame(mp4, t):
+    """The decoded frame at t seconds (ffmpeg input seek, frame-accurate)."""
+    png = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{t}', '-i', str(mp4), '-frames:v', '1',
+                          '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True, check=True).stdout
+    return Image.open(io.BytesIO(png)).convert('RGB')
 
 
 def main():
@@ -126,17 +144,27 @@ def main():
                 manifest[f'card-{vid}'] = cover(src, ROOT / v['poster'], (720, 1280), 78, cx)
                 manifest[f'thumb-{vid}'] = cover(src, ROOT / v['thumb'], (240, 427), 72, cx)
                 continue
-            if v.get('src'):
-                src = (ROOT / v['src']).with_suffix('.jpg')
-            else:
-                src = ROOT / f'assets/video/_ref/{vid}.jpg'
+            mp4 = ROOT / v['src'] if v.get('src') else None
+            src = mp4.with_suffix('.jpg') if mp4 else ROOT / f'assets/video/_ref/{vid}.jpg'
             if not src.exists():
                 print(f'warn: no poster source for {vid} ({src})', file=sys.stderr)
                 continue
             poster = ROOT / (v.get('poster') or f'assets/video/posters/{vid}.webp')
             thumb = ROOT / (v.get('thumb') or f'assets/video/thumbs/{vid}.webp')
-            manifest[f'poster-{vid}'] = cover(src, poster, (540, 960), 78)
-            manifest[f'thumb-{vid}'] = cover(src, thumb, (240, 427), 72)
+            start, view = v.get('start'), v.get('view')
+            if not (mp4 and (start or view)):
+                manifest[f'poster-{vid}'] = cover(src, poster, (540, 960), 78)
+                manifest[f'thumb-{vid}'] = cover(src, thumb, (240, 427), 72)
+                continue
+            refs = (mp4, vids_path)  # `start` / `view` live in the JSON: rebuild when either changes
+            if not all(fresh(r, o) for r in refs for o in (poster, thumb)):
+                im = video_frame(mp4, start) if start else load(src)
+                if view:
+                    im = im.crop((0, round(view[0] * im.height), im.width, round(view[1] * im.height)))
+                save(ImageOps.fit(im, (540, 960), Image.LANCZOS), poster, 78)
+                save(ImageOps.fit(im, (240, 427), Image.LANCZOS), thumb, 72)
+            manifest[f'poster-{vid}'] = (540, 960)
+            manifest[f'thumb-{vid}'] = (240, 427)
     else:
         print('warn: data/videos.json missing, video posters skipped', file=sys.stderr)
 

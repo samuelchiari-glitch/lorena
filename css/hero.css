@@ -36,15 +36,16 @@
 
 /* Scroll-only layers: above the photo (1) and the copy (2). */
 .motion .sig--hero, .motion .hero__handle{ display: block; position: absolute; z-index: 3; pointer-events: none; }
-/* Invisible until hero.js has put them in their from-state (dash undrawn, chars lowered), so a fully
-   drawn signature never flashes over the cover while the page boots. */
+/* Invisible until hero.js has put them in their from-state (signature armed: mask on, nothing inked; chars
+   lowered), so a fully drawn signature never flashes over the cover while the page boots. */
 .motion .hero:not(.hero--live) .sig--hero,
 .motion .hero:not(.hero--live) .hero__handle{ visibility: hidden; }
 
-/* Signature: 84% of the stage (max 520 px), centred on the lower half of the card
-   (card: top .2 H, height .58 H, so its lower half is centred at .635 H). It overflows the card. */
-.sig--hero{ left: 50%; top: 63.5%; width: min(84%, 520px); color: var(--vanilla); translate: -50% -50%; }
-.sig__tip{ fill: currentColor; stroke: none; }
+/* Signature (Lorena's LM, Vanilla ink): 92% of the stage (max 560 px), and at most 50svh so on short screens it
+   keeps its proportion to the card (.33 H wide); it overflows the card's sides, as in the reference. Its top is
+   set by hero.js (--sig-top: just under her chin on the card), so the lower card and, on short screens, the
+   card's lower edge carry it; 54% is only a fallback. */
+.sig--hero{ left: 50%; top: var(--sig-top, 54%); width: min(92%, 560px, 50svh); color: var(--vanilla); translate: -50% 0; }
 
 /* Rising handle: Sand eyebrow, centred 24 px above the card; the line box clips the rising chars. */
 .hero__handle{ left: var(--pad-x-l); right: var(--pad-x-r); top: calc(20% - 24px); translate: 0 -100%;

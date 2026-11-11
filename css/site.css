@@ -365,8 +365,9 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 }
 .frame > img{ position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
 
-/* signature SVG (stroke width comes from the SVG, in viewBox units; never vector-effect) */
-.sig{ display: block; height: auto; overflow: visible; fill: none; stroke: currentColor; }
+/* signature SVG: Lorena's filled artwork in currentColor (.ink); js/signature.js writes it through its mask.
+   Nothing here may stroke the ink or the pens (their widths are in viewBox units; never vector-effect). */
+.sig{ display: block; height: auto; }
 
 /* ------------------------------------------------- reveal helpers (states set by js/reveals.js while armed) */
 .rv-hl{ display: inline-block; position: relative; }              /* one highlighted line (inline so the block hugs the text) */
@@ -645,6 +646,15 @@ html:not(.js) .fan__hint{ display: none; }
   border-radius: 50%; color: var(--vanilla); background: rgba(77,52,45,.5);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); pointer-events: none; }
 .rail__play svg{ width: 12px; height: 12px; margin-left: 1px; }
+
+/* CHANEL spotlight (client, batch 2): after the Fashion rail, an editorial pair; the second frame overlaps the
+   first's lower right, cut out by a Vanilla ring. Curtain (staggered .12 s) + inner parallax as in the gallery. */
+.spotlight{ display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 88px; }
+.spotlight__sub{ max-width: 30ch; }
+.spotlight__pair{ width: 100%; max-width: 520px; margin-top: 18px; }
+.spotlight__item--a{ width: 70%; }
+.spotlight__item--b{ width: 58%; margin: -28% 0 0 auto; }
+.spotlight__item--b .frame{ box-shadow: 0 0 0 6px var(--bg), var(--shadow-soft); }
 /* === /section: content === */
 
 /* ======================================================================== */
@@ -668,8 +678,14 @@ html:not(.js) .fan__hint{ display: none; }
   overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
   padding: 4px var(--pad-x-r) 24px var(--rail-start); scroll-padding-inline: var(--rail-start) var(--pad-x-r); }
 .numbers__screens::-webkit-scrollbar{ display: none; }
-@media (min-width: 700px){   /* wide screens peek more of the next screen: let it fade out at the edge, like the chapter rails */
-  .numbers__screens{ -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent); }
+@media (min-width: 700px){   /* wide screens peek more of the next screen: it fades out at the edge, like the chapter rails, while more
+     follows; at the end of the rail (proof.js: .is-end) the 120 px fade slides off, so the last screen shows whole */
+  .numbers__screens{
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent);
+    -webkit-mask-size: calc(100% + 120px) 100%; mask-size: calc(100% + 120px) 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-position: -120px 0; mask-position: -120px 0;
+    transition: -webkit-mask-position .45s var(--ease-out), mask-position .45s var(--ease-out); }
+  .numbers__screens.is-end{ -webkit-mask-position: 0 0; mask-position: 0 0; }
 }
 .numbers__screen{ position: relative; flex: 0 0 min(calc(100% - 28px), 400px); display: flex; flex-direction: column; align-items: center; gap: 16px; scroll-snap-align: start; container-type: inline-size; }
 /* The two tall screens show their top cards and chart (118cqw: the first section ends there), with "Show the full
@@ -677,7 +693,7 @@ html:not(.js) .fan__hint{ display: none; }
 .numbers__screen.is-cropped [data-ig-screen]{ max-height: 118cqw; overflow: hidden;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 20px), transparent); mask-image: linear-gradient(#000 calc(100% - 20px), transparent); }
 .numbers__more{ position: relative; z-index: 1; color: var(--ink); background: var(--bg); }   /* above the masked screen (masks do not stop hits) */
-.numbers__screen.is-cropped .numbers__more{ margin-top: -38px; }
+.numbers__screen.is-cropped .numbers__more{ margin-top: calc(-8px - 6cqw); }   /* straddles the cut, >= 10 px under the chart's date labels (they end 7.3cqw above it) at every width */
 .numbers__screen figcaption{ color: var(--muted); }
 .numbers__tabs ~ .numbers__screens figcaption{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the pills name them */
 .numbers__screen [data-ig-screen]{ --ig-shot-width: 430px; }

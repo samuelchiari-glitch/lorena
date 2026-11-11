@@ -15,10 +15,11 @@
  *                quantized to 0.5 px and written only when it changes, see below), img scale 1.06 → .92
  *                (landscape: the cover ≈ 1.9 card widths) + x/y to frame the eyes, --hero-bg Vanilla →
  *                Tobacco (0.5 H, a warm midpoint) → Mahogany-deep on .hero                      power1.inOut, scrub
- *   0.4 → 1.0 H  shade (bottom-weighted Mahogany-deep gradient: the signature reads on the robe)  power1.in, scrub
+ *   0.4 → 1.0 H  shade (bottom-weighted Mahogany-deep gradient: the signature reads on the robe)  power1.out, scrub
  *   0.12 → 0.45 H copy clip ellipse wipe + yPercent −8, sans chars yPercent −100 inside their own line
  *                (stagger .02; never up into the header), the copy's scrim fades out             power1.inOut, scrub
- *   0.55 → 1.15 H signature draw at constant pen speed, + the Lando snap on a fast exit            scrub .5
+ *   0.55 → 1.15 H signature (Lorena's real one, written through its pen mask by signature.js) at constant
+ *                pen speed, + the Lando snap on a fast exit; placed under her chin (heroSigTop)  ease none, scrub .5
  *   0.7 → 1.0 H  handle chars yPercent 100 → 0 (stagger .02)                                    power3.out, scrub
  * The header (backing, hide/show, theme IO) is ui.js's. Theme: .hero is dark (Vanilla ink on the scrim);
  * .hero__light-zone takes over when the photo's top edge reaches the header controls (--hero-light-top,
@@ -72,6 +73,25 @@ function cardImageEnd(stage, img) {
   return { x: Math.round(x), y: Math.round(y), scale: +scale.toFixed(4) };
 }
 
+/**
+ * Hero signature placement. Its width is CSS (css/hero.css: 92% of the stage, max 560 px, at most 50svh so short
+ * screens keep it in proportion to the card). Its top follows the card's image: the chin line of cover.jpg (.54 of
+ * its height) mapped through the card-end transform, minus SIG_CLEAR, so the letters start under her face in every
+ * context (on short screens the face fills more of the card and the signature straddles the card's lower edge).
+ * The L's loop, the only stroke that high, sits left of the chin; the ink starts ≈ 3% of the box height lower.
+ * Kept SIG_FOOT px above the stage bottom. Read at refresh, never in scroll callbacks.
+ */
+export const COVER_CHIN_Y = 0.54;
+const SIG_CLEAR = 16, SIG_FOOT = 12;
+function heroSigTop(stage, img, sig) {
+  const H = stage.offsetHeight;
+  const h = sig.getBoundingClientRect().height;
+  if (!img) return Math.round(0.54 * H);
+  const { y, scale } = cardImageEnd(stage, img);
+  const chin = H / 2 + (img.offsetTop + COVER_CHIN_Y * img.offsetHeight - H / 2) * scale + y;
+  return Math.round(Math.min(chin - SIG_CLEAR, H - h - SIG_FOOT));
+}
+
 /** Inverse of power1.inOut (the scrub's ease: 2t² below .5, 1 − 2(1 − t)² above), for the light zone. */
 const easeInv = (e) => (e <= 0.5 ? Math.sqrt(e / 2) : 1 - Math.sqrt((1 - e) / 2));
 
@@ -105,7 +125,8 @@ export function finish() {
     const photo = heroEl.querySelector('.hero__photo');
     if (photo) photo.style.removeProperty('--hero-clip');
     delete heroEl.dataset.clearUntil;
-    clearSignature(heroEl.querySelector('.sig--hero'));
+    const sig = heroEl.querySelector('.sig--hero');
+    if (sig) { clearSignature(sig); sig.style.removeProperty('--sig-top'); }
   }
 }
 
@@ -148,6 +169,7 @@ function setupHero() {
     geo = { a, b: cardGeometry(a), W: a.W, Hh: a.H };
     lastClip = '';
     writeClip();
+    if (sig) sig.style.setProperty('--sig-top', `${heroSigTop(stage, img, sig)}px`);
   };
 
   scope(() => {
@@ -162,8 +184,9 @@ function setupHero() {
         x: () => cardImageEnd(stage, img).x, y: () => cardImageEnd(stage, img).y, scale: () => cardImageEnd(stage, img).scale,
       }, 0);
     }
-    // the shade darkens the card's lower half under the signature (eyes stay clear), from 0.4 H
-    if (shade) main.fromTo(shade, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power1.in' }, 0.4);
+    // the shade darkens the card's lower half under the signature (eyes stay clear), from 0.4 H. power1.out: it is
+    // already ≈ .45 when the pen starts (0.55 H), so the L's Vanilla hairlines read on the robe while being written.
+    if (shade) main.fromTo(shade, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power1.out' }, 0.4);
     // warm midpoint: Vanilla → Tobacco → Mahogany-deep. The two halves of power1.inOut are power1.in and
     // power1.out, so the timing matches one inOut tween; only the colour it passes through changes.
     main.fromTo(hero, { '--hero-bg': '#F1EADA' }, { '--hero-bg': '#B59E7D', duration: 0.5, ease: 'power1.in' }, 0)
@@ -228,7 +251,8 @@ function setupHero() {
       }).fromTo(split.chars, { yPercent: 100 }, { yPercent: 0, duration: 1 - 0.02 * (n - 1), stagger: 0.02 });
     }
 
-    // 0.55 → 1.15 H: the signature writes itself (constant pen speed, scrub .5) + the Lando snap
+    // 0.55 → 1.15 H: the signature writes itself (constant pen speed: ease none, scrub .5) + the Lando snap.
+    // signatureTimeline() arms the copy (mask on, nothing inked); progress 1 detaches the mask (exact artwork).
     if (sig) {
       const tl = signatureTimeline(sig);
       const snap = (self) => {

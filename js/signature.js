@@ -1,106 +1,112 @@
 /**
- * signature.js: constant-pen-speed draw timelines for the monoline signature (spec §7.3).
- * OWNER: hero section builder. The hero scrub is set up by hero.js (it owns the hero triggers);
- * the footer only calls playSignature() (site.js arms it at `top 80%`).
+ * signature.js: Lorena's real signature, written stroke by stroke (spec §7, the kit in assets/signature/).
+ * OWNER: hero section builder. The hero scrub is set up by hero.js (it owns the hero triggers); the footer
+ * only calls playSignature() (site.js arms it on approach and plays it at `top 80%`).
  *
- * The SVG paths come from scripts/make-signature.mjs and are pasted inline twice in site.html
- * (.sig--hero, .sig--footer). Stroke width is in viewBox units; never use vector-effect.
- * Static state (no JS / reduced motion): paths fully drawn, no dash properties in CSS.
+ * The artwork is a filled outline (.ink), so it cannot be dashed. It is revealed through a <mask> in which two
+ * hand-traced centre lines (.pen, in writing order: 1 = L, 2 = M) are drawn with the dash trick; black
+ * .pen-guard patches keep a wide pen from uncovering a crossing stroke before it is written (static guards sit
+ * between the pens; the 34 timed ones, data-pen + data-release, lift as their pen passes). Only .pen paths are
+ * ever dashed. assets/signature/README.md has the details; this is its recipe, wired to GSAP and the module contract.
+ *
+ * Markup (site.html, two inline copies: a mask only animates in the page's DOM): each copy has its own mask id
+ * (lm-sig-mask-hero, lm-sig-mask-footer), and its .ink carries NO mask attribute. So without JS, under reduced
+ * motion and after a draw, the signature is the untouched artwork; the mask is attached only while a draw is
+ * armed or running (0 <= progress < 1) and detached at 1. Stroke widths are in viewBox units: never vector-effect.
  *
  * Exports:
- *   signatureTimeline(svg, {penLift=.04, tip=true})
- *                         PAUSED timeline, duration = 1 + penLift * (n-1). Every path's dash is set
- *                         to its length (undrawn) and drawn in writing order at constant pen speed
- *                         (each path's share of the duration = its share of the total length).
- *                         With `tip`, a small round pen tip (a <circle class="sig__tip">) rides the
- *                         active path end while 0 < progress < 1.
- *   inkedFraction(svg)    Σ(len − dashoffset) / Σ len, 0..1 (tests and debugging).
- *   playSignature(svg, {duration=1.8, ease='power1.inOut', paused=false})
- *                         footer one-shot: returns { tl, cleanup }. tl is a 1.8 s timeline (power1.inOut
- *                         over the constant-speed path set); cleanup() clears the dash props and the tip
- *                         (back to the static, fully drawn state).
- *   clearSignature(svg)   remove dash props and the pen tip.
- * Module contract: boot(ctx), ready(ctx), finish().
+ *   createSignature(svg, {pause=.045})   the kit controller: { render(p), penPoint(p), lengths, length, clear() }.
+ *                         render(p) is idempotent: pens dashed to p at constant pen speed (each pen's share = its
+ *                         length; a pen lift of pause × total between them), guards lifted, mask on below 1, off at 1.
+ *                         A pen that has not started is visibility:hidden (no round-cap dot).
+ *   signatureTimeline(svg, {penLift=.045}) PAUSED GSAP timeline, duration 1, ease none: progress 0 -> 1 writes the
+ *                         signature. It arms the copy at once (render(0): nothing inked). Hero: scrubbed.
+ *   playSignature(svg, {duration=2.2, ease='none', paused=false})
+ *                         footer one-shot: returns { tl, cleanup }. Linear = constant pen speed (kit: 2.2 s);
+ *                         cleanup() puts the static artwork back (pens undashed, mask detached).
+ *   clearSignature(svg)   back to the static markup state; later renders of that controller are no-ops.
+ *   inkedFraction(svg)    drawn pen length / total pen length, 0..1 (1 when no mask is attached). Tests, debugging.
+ * Module contract: boot(ctx), ready(ctx), finish() (finishAll: every armed copy back to the static artwork).
  */
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const GAP = 4;         // viewBox units (≈ 0.5 px): see signatureTimeline
-const TIP_PX = 3;      // pen-tip radius in CSS px at the signature's rendered width (6 px dot, Lando's look)
-const tips = new Set();
+const live = new Map(); // svg -> controller (armed copies)
 
-function addTip(svg) {
-  let tip = svg.querySelector('.sig__tip');
-  if (!tip) {
-    tip = document.createElementNS(SVG_NS, 'circle');
-    tip.setAttribute('class', 'sig__tip');
-    tip.setAttribute('aria-hidden', 'true');
-    svg.appendChild(tip);
+export function createSignature(svg, { pause = 0.045 } = {}) {
+  const ink = svg.querySelector('.ink');
+  const mask = svg.querySelector('mask');
+  const pens = [...svg.querySelectorAll('.pen')];
+  if (!ink || !mask || !mask.id || !pens.length) return null;
+  const maskRef = `url(#${mask.id})`;
+  const lens = pens.map((pen) => pen.getTotalLength());
+  const total = lens.reduce((a, b) => a + b, 0) || 1;
+  const gap = pause * total;                    // pen lift, in length units
+  const span = total + gap * (pens.length - 1); // the whole timeline, in length units
+  const guards = [...svg.querySelectorAll('.pen-guard[data-release]')]
+    .map((g) => [g, Number(g.dataset.pen) - 1, Number(g.dataset.release)]);
+  let dead = false;
+
+  const prev = live.get(svg);
+  if (prev) prev.clear();
+
+  function render(progress) {
+    if (dead) return;
+    const p = Math.min(1, Math.max(0, Number(progress) || 0));
+    let t = p * span;
+    const drawn = pens.map((pen, i) => {
+      const f = Math.min(1, Math.max(0, t / lens[i]));
+      t -= lens[i] + gap;
+      // one dash as long as the pen, then a longer gap: no second dash can wrap in
+      pen.style.strokeDasharray = `${lens[i]}px ${lens[i] + 20}px`;
+      pen.style.strokeDashoffset = `${lens[i] * (1 - f)}px`;
+      pen.style.visibility = f > 0 ? 'visible' : 'hidden'; // a zero-length dash would still paint a round cap
+      return f * lens[i];
+    });
+    for (const [g, i, at] of guards) g.style.visibility = drawn[i] < at ? 'visible' : 'hidden';
+    // fully written: drop the mask, so the final frame is the untouched artwork
+    if (p >= 1) ink.removeAttribute('mask');
+    else if (ink.getAttribute('mask') !== maskRef) ink.setAttribute('mask', maskRef);
   }
-  // radius in viewBox units, from the rendered width (the stroke width is in viewBox units too)
-  const vb = svg.viewBox && svg.viewBox.baseVal;
-  const w = svg.getBoundingClientRect().width || 1;
-  const unitsPerPx = vb && vb.width ? vb.width / w : 1;
-  tip.setAttribute('r', (TIP_PX * Math.min(unitsPerPx, 12)).toFixed(1));
-  tip.style.visibility = 'hidden';
-  tips.add(tip);
-  return tip;
+
+  /** Where the pen is, in viewBox units (null at rest and during the pen lift). */
+  function penPoint(progress) {
+    if (!(progress > 0 && progress < 1)) return null;
+    let t = progress * span;
+    for (let i = 0; i < pens.length; i++) {
+      if (t <= lens[i]) return t >= 0 ? pens[i].getPointAtLength(t) : null;
+      t -= lens[i] + gap;
+    }
+    return null;
+  }
+
+  function clear() {
+    dead = true;
+    const unstyle = (el, ...props) => {
+      props.forEach((prop) => el.style.removeProperty(prop));
+      if (!el.getAttribute('style')) el.removeAttribute('style');
+    };
+    pens.forEach((pen) => unstyle(pen, 'stroke-dasharray', 'stroke-dashoffset', 'visibility'));
+    guards.forEach(([g]) => unstyle(g, 'visibility'));
+    ink.removeAttribute('mask');
+    if (live.get(svg) === ctl) live.delete(svg);
+  }
+
+  const ctl = { render, penPoint, clear, lengths: lens, length: total };
+  live.set(svg, ctl);
+  return ctl;
 }
 
-export function signatureTimeline(svg, { penLift = 0.04, tip = true } = {}) {
+export function signatureTimeline(svg, { penLift = 0.045 } = {}) {
   const { gsap } = window;
-  const paths = [...svg.querySelectorAll('path')];
-  const lens = paths.map((p) => p.getTotalLength());
-  const total = lens.reduce((a, b) => a + b, 0) || 1;
-  const dot = tip ? addTip(svg) : null;
+  const sig = createSignature(svg, { pause: penLift });
+  const state = { p: 0 };
   const tl = gsap.timeline({ paused: true });
-  let at = 0;
-  paths.forEach((p, i) => {
-    // set only when armed. The dash ends GAP units before the path start (GSAP rounds px offsets, and
-    // a dash ending exactly at 0 leaves a round-cap dot), and the gap is longer than the path.
-    gsap.set(p, { strokeDasharray: `${lens[i]} ${lens[i] + 4 * GAP}`, strokeDashoffset: lens[i] + GAP });
-    const d = lens[i] / total; // constant pen speed
-    tl.to(p, { strokeDashoffset: 0, duration: d, ease: 'none' }, at);
-    at += d + penLift;
-  });
-  if (dot) {
-    // the pen sits at the end of the last path that has started (it rests there through a pen lift)
-    const starts = [];
-    let t = 0;
-    lens.forEach((len) => { starts.push(t); t += len / total + penLift; });
-    tl.eventCallback('onUpdate', () => {
-      const time = tl.time(), p = tl.progress();
-      if (p <= 0 || p >= 1) { dot.style.visibility = 'hidden'; return; }
-      let i = 0;
-      while (i < starts.length - 1 && time >= starts[i + 1]) i++;
-      const drawn = Math.min(1, Math.max(0, (time - starts[i]) / (lens[i] / total)));
-      const pt = paths[i].getPointAtLength(drawn * lens[i]);
-      dot.setAttribute('cx', pt.x.toFixed(1));
-      dot.setAttribute('cy', pt.y.toFixed(1));
-      dot.style.visibility = '';
-    });
-  }
+  if (!sig) return tl;
+  sig.render(0); // armed: nothing inked until the timeline moves
+  tl.to(state, { p: 1, duration: 1, ease: 'none', onUpdate: () => sig.render(state.p) });
   return tl;
 }
 
-export function inkedFraction(svg) {
-  let inked = 0, all = 0;
-  svg.querySelectorAll('path').forEach((p) => {
-    const len = p.getTotalLength();
-    const off = parseFloat(getComputedStyle(p).strokeDashoffset) || 0;
-    all += len;
-    inked += Math.max(0, len - Math.min(len, off));
-  });
-  return all ? inked / all : 1;
-}
-
-export function clearSignature(svg) {
-  if (!svg) return;
-  const tip = svg.querySelector('.sig__tip');
-  if (tip) { tips.delete(tip); tip.remove(); }
-  if (window.gsap) window.gsap.set(svg.querySelectorAll('path'), { clearProps: 'strokeDasharray,strokeDashoffset' });
-}
-
-export function playSignature(svg, { duration = 1.8, ease = 'power1.inOut', paused = false } = {}) {
+export function playSignature(svg, { duration = 2.2, ease = 'none', paused = false } = {}) {
   const { gsap } = window;
   const inner = signatureTimeline(svg);
   const tl = gsap.timeline({ paused: true });
@@ -109,10 +115,28 @@ export function playSignature(svg, { duration = 1.8, ease = 'power1.inOut', paus
   return { tl, cleanup: () => clearSignature(svg) };
 }
 
+export function clearSignature(svg) {
+  const ctl = svg && live.get(svg);
+  if (ctl) ctl.clear();
+}
+
+export function inkedFraction(svg) {
+  const ink = svg.querySelector('.ink');
+  if (!ink || !ink.hasAttribute('mask')) return 1;
+  let inked = 0, all = 0;
+  svg.querySelectorAll('.pen').forEach((pen) => {
+    const len = pen.getTotalLength();
+    const cs = getComputedStyle(pen);
+    const off = parseFloat(cs.strokeDashoffset) || 0;
+    all += len;
+    if (cs.visibility !== 'hidden') inked += Math.max(0, len - Math.min(len, off));
+  });
+  return all ? inked / all : 1;
+}
+
 export function boot() {}
 export function ready() {}
 export function finish() {
-  // finishAll(): the gsap context reverts the dash props; the tips are plain DOM, drop them here
-  tips.forEach((tip) => tip.remove());
-  tips.clear();
+  // finishAll(): every armed copy back to the static artwork (the gsap context reverts only the tweens)
+  [...live.values()].forEach((ctl) => ctl.clear());
 }

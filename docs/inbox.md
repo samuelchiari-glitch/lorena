@@ -16,7 +16,7 @@ Raw files are in `_source/drive-2/` (gitignored, downloaded from the client's Dr
 | `dsc02763.jpg` (deck with an ofurô tub) | `assets/img/stays/ofuro-deck.jpg` | **Stays chapter** pair, right: "Deck · Hot tub". |
 | `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | **Gallery**, group 3, single (it closes the gallery): "Stays · Kitchen". It replaces `29` (wine, black & white). |
 | `img-9204.jpg` | — | Not used. It is a near-duplicate of `img-9201` (same shirt, wall and over-the-shoulder pose), and About already uses this shoot. |
-| `dsc02726.jpg` (kitchen with a view) | — | Not used. It shows the same kitchen and outfit as `dsc02755`, which is the more graphic frame. One kitchen shot is enough. |
+| `dsc02726.jpg` (kitchen with a view) | `assets/img/stays/kitchen-view.jpg` | **Gallery**, group 2, single: "Stays · Kitchen view" (batch 2). It replaces `09` (massage), where the therapist dominated the frame. `dsc02755` has since moved to the Stays rail, so the gallery had no Stays photo left. |
 | `dsc01104.jpg` (deck, parasol, couple) | — | Not used. The couple is the subject, and the site features Lorena alone. Good golden-hour light: the first pick if the client wants a couples' stays image. |
 | `02.jpg`, `03.jpg` (cooking, wooden loft) | — | Not used. They are couple-centred and low-key, and `03` shows mostly her back. They are 9:16 phone frames. |
 | `likeappro-3279.jpg` (bathtub, couple) | — | Not used. The focus is on the couple, and the "bath with a view" story is already told by video `stays-03`. |
@@ -93,6 +93,17 @@ Each is the original of a media-kit item:
 
 Add them to `data/videos.json` (and the posters/thumbs) after the polish round, replacing the restaurant placeholders. Consider a mixed rail like the Stays one.
 
+**Status: integrated (batch 2, 2026-11-11).** All four restaurant items play their real file, so Food has no placeholder left. Details in `docs/qa-report.md` §9.
+- **Durations and audio:** 23.8 s, 24.5 s, 34.9 s and 31.0 s, all with `audio: true`.
+  - Pronto, the garden breakfast and the wine are music or voice at −14 to −16 LUFS.
+  - The salad track is a music fade-in: it rises from about −44 to −23 LUFS, so the first seconds are quiet. It is not noise.
+- **Posters:** `restaurants-01` starts at 15.5 s (her at the table, not the fridge door) and `restaurants-03` at 3.6 s (the first sip). Each poster is that frame (`start` in the data).
+- **`wine-tasting.mp4` is a screen recording of an Instagram carousel.** The picture is only the top 64% of the frame (rows 0–823 of 1280), with a white band below it and the carousel's "2/2" badge and mute icon at its right edge. `view: [0, 0.644]` crops it:
+  - the poster and thumb are cut from the picture band;
+  - the card scales the `<video>` 1.553× from its top centre, so the band fills the card and the badge and icon fall outside it.
+  - A re-encode that crops to the band (`crop=464:824:128:0`, then scale) would make `view` unnecessary.
+- **Food rail:** `restaurants-04` (feature), `-01`, `-02`, `-03`. It stays video-only. The only real food photos left are already in the gallery (`22`, `31`), or `07`, which repeats the salad video.
+
 ## Fashion videos (received 2026-11-11 20:17; encoded into assets/video/fashion/)
 - `chanel-boutique.mp4` (36 s): CHANEL boutique, N°1 serum, N°5 book, trying products.
   - **CLIENT: this is THE highlight. It goes in the CENTRE card of the 7-card fan (the largest, upright card in the middle).** Feature it in Fashion too.
@@ -103,9 +114,39 @@ Add them to `data/videos.json` (and the posters/thumbs) after the polish round, 
 - `yellow-satin-lake.mp4` (26 s): yellow satin dress on a lakeside deck (≈ fashion-03).
 - Still missing: fashion-05 (hand on a terracotta clutch) and fashion-06 (bun, gold earring). Keep their posters only if the rail needs them; otherwise drop them.
 
+**Status: integrated (batch 2, 2026-11-11).**
+- **Ids:** `fashion-01` burgundy blazer, `-02` teal dress, `-03` yellow satin, `-04` picnic, plus the new `fashion-07` CHANEL boutique.
+- **Removed:** `fashion-05` and `fashion-06` (data, posters and thumbs). Their `_ref` JPGs stay.
+- **CHANEL:**
+  - It is the fan's centre card (index 3, z-index 10) and the Fashion feature.
+  - It starts at 21.2 s (`start`), on her holding N°5 to her cheek. The first frame was a blurred shop interior.
+  - It loops back to 0:00.
+- **Audio:**
+  - `yellow-satin-lake.mp4` is digital silence (−91 dB), so it has `audio: false`.
+  - `picnic.mp4` is music at **−6.9 LUFS**, about 8–10 LU hotter than the rest, so a tap for sound is loud. iOS ignores `volume`, so the only fix is a re-encode with `loudnorm=I=-16`.
+  - The rest are −14 to −16 LUFS.
+- **Posters:**
+  - `fashion-02` starts at 3.0 s (the full-length back view; frame 0 is a hem and feet).
+  - `fashion-04` starts at 10.6 s (the picnic itself).
+- **The Fashion rail is now mixed, like Stays:** 6 videos and 4 photos, alternating, 10 items:
+  - `fashion-07`, gown, `-01`, zebra print, `-02`, tailoring, `-03`, boots, `-04`, `-08`;
+  - the photos are real media-kit photos not used elsewhere: `gallery/21`, `26`, `12`, `25`.
+
 ## Chanel photos + 2 more videos (received 2026-11-11 20:58)
 - `assets/img/fashion/chanel-chance.jpg`: holding Chance Eau Vive against her cheek, black blazer. Strong close portrait.
 - `assets/img/fashion/chanel-n5-boutique.jpg`: leaning on the counter in the CHANEL boutique with N°5, the CC logo behind.
 - **CLIENT: give the two Chanel photos a real spotlight**, not just a slot in the gallery. For example, a "CHANEL" editorial spread in Fashion next to or after the Chanel video (which is the fan's centre card): the two photos as an offset pair with curtain reveal and parallax, plus a short caption. Fall back to the gallery only if a spotlight doesn't work.
 - `assets/video/fashion/alva-towel.mp4` (7 s): ALVA product shot, towel turban. The client files it under Fashion.
 - `assets/video/stays/deck-cushions.mp4` (22 s): couple on a deck with cushions above the forest. Stays rail.
+
+**Status: integrated (batch 2, 2026-11-11).**
+- **CHANEL spotlight.** It sits in the Fashion chapter, right after its rail. It is static HTML, so it is complete without JS.
+  - Head: eyebrow "Spotlight", the lockup "CHANEL / *Chance & N°5*" (h4) and the caption "Two portraits at the boutique."
+  - The pair: Chance at 70% (4:5), and N°5 at 58% (2:3), overlapping its lower right by 28% of the column, cut out by a 6 px Vanilla ring. Each frame has the curtain reveal with the Sand wash (the second staggered by 0.12 s) and the inner parallax.
+  - WebP: `chanel-chance-{480,800}` and `chanel-n5-boutique-{480,800}` (`PHOTOS` in `make-images.py`).
+- **Note on `chanel-chance.jpg`:** the bottle's label reads "CHANCE CHANEL · PARFUM CHEVEUX / HAIR MIST", not Eau Vive. The copy only says "Chance", and no text on the page says "hair mist".
+- **ALVA:** `fashion-08`, "Towel turban, ALVA in hand", 7.3 s, music at −14 LUFS. It is the last item of the Fashion rail.
+- **`deck-cushions.mp4`:** `stays-08`, "Cushions above the forest", 22.8 s.
+  - `audio: false`: the track is a steady hiss at about −42 LUFS, flat (LRA 3 LU), with no music or voice.
+  - It sits 11th in the Stays rail, before the bath photo, so the rail alternates video and photo over 12 items.
+- **Not used:** `_source/drive-6/chanel-1084.jpg` and `chanel-1102.jpg` (the originals of the two web masters).
