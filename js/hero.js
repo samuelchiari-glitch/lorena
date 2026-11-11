@@ -1,7 +1,7 @@
 /**
  * hero.js: hero timeline + full-bleed -> card geometry (spec §4.1, revised by client feedback: no arch;
- * the cover fills the first screen and shrinks into a centred rounded rectangle), the hero signature
- * scrub (§7.3) and the hand-over to the Instagram profile screen in the dark band (§4.2).
+ * the cover fills the first screen and shrinks into a centred rounded rectangle) and the hero signature
+ * scrub (§7.3). The Instagram profile screen below it is upgraded by proof.js, like every IG screen.
  * OWNER: hero section builder.
  *
  * Static modes: nothing here runs. The static hero (100svh full-bleed cover, scrim, Vanilla lockup) is
@@ -24,10 +24,9 @@
  * Exports: restGeometry(stage), cardGeometry({W,H}), boxToInset(geo,{W,H}) (spec helpers, also used
  * by tests), boot(ctx), ready(ctx), finish().
  */
-import { isMotion, scope, getLenis, onApproach } from './scroll.js';
+import { isMotion, scope, getLenis } from './scroll.js';
 import { splitLockup } from './reveals.js';
 import { signatureTimeline, clearSignature } from './signature.js';
-import { renderScreen } from './insights.js';
 
 /** Rest = the whole stage, square corners (the cover is full-bleed at scroll 0). Read from the render. */
 export function restGeometry(stage) {
@@ -74,13 +73,13 @@ export function boxToInset({ box, r }, { W, H }) {
 const SNAP_VELOCITY = 100; // Lenis px/frame: a fling, not a scroll (Lando §6.1)
 let heroEl = null;
 let liveSplits = [];
+let setLightTop = null; // refreshInit listener (positions .hero__light-zone)
 
 export function boot() {}
 
 export function ready(ctx) {
   if (!ctx.motion || !isMotion() || !window.gsap) return;
   setupHero();
-  setupProfile(ctx.data && ctx.data.metrics);
 }
 
 export function finish() {
@@ -213,28 +212,4 @@ function setupHero() {
   window.ScrollTrigger.addEventListener('refreshInit', setLightTop);
 
   hero.classList.add('hero--live');
-}
-let setLightTop = null;
-
-/* ------------------------------------------------------------------ Instagram profile hand-over (§4.2) */
-
-/**
- * The profile screen rests as insights.js's static render (data-ig-static). On approach (¾ viewport
- * ahead, root: document) it is re-rendered with motion (data-shot="flash"), so motion.js arms it below
- * the fold and plays the drop-in + count-ups on entry. The arming guard in onApproach skips it if it is
- * already in view. data-ig-static is dropped right away (it only matters at render time) so that the
- * generic screen upgrade in proof.js leaves this one screen to us: exactly one upgrade path.
- */
-function setupProfile(metrics) {
-  const el = document.querySelector('#instagram [data-ig-screen="profile"]');
-  if (!el || !metrics || !el.hasAttribute('data-ig-static')) return;
-  if (el.getAttribute('data-ig-rendered') !== '') return; // static render not in yet: leave it static
-  el.removeAttribute('data-ig-static');
-  el.setAttribute('data-ig-upgrade', 'approach');
-  onApproach(el, () => {
-    if (!isMotion() || el.getAttribute('data-ig-upgrade') !== 'approach') return;
-    el.setAttribute('data-ig-upgrade', 'done');
-    el.setAttribute('data-ig-flash', '');
-    renderScreen(el, metrics);
-  });
 }

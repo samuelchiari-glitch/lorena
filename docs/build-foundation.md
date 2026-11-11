@@ -67,7 +67,6 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 | `data-deal="0..3"` | dealt card scrub (y 110, scale .94, rotation from the table), `top 100% → top 55%`, `scrub .5`. Already set on each chapter feature card. |
 | `data-rise="24"` (+ `data-rise-start`) | the element's children rise once (stagger .06). Used on the rails (`top 92%`) and the contact rows (`16`, `top 90%`). |
 | `data-bg-scrub="#E6DECB"` | section background: computed colour → this colour, `top 60% → bottom bottom` (gallery) |
-| `data-arch` | the About arch scrub |
 
 - Markup you insert **after** `ready()` needs `reveals.scan(rootEl)` (it is idempotent).
 - Also exported: `splitLockup(h)`, which applies the aria rules and returns `{chars, revert}`; it is meant for the hero h1. Also `buildOval`, `buildHighlight`, `buildCurtain`.

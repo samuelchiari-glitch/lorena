@@ -23,6 +23,8 @@ Lorena's Canva media kit is set in **The Seasons** by Elena Genova / My Creative
 - **Adobe Fonts.** It is in the Adobe Fonts library. Anyone with a Creative Cloud plan can add it to a *Web Project*, and Adobe then hosts and serves it. Self-hosting is not included.
 - **My Creative Land.** Buy a self-hosted webfont licence at mycreativeland.com. Only then can the font files be placed in this folder, together with their licence.
 
+**Decision (client, 2026-11-11): Adobe Fonts.** The Seasons Light, Regular, Light Italic and Regular Italic are in the Adobe Fonts Web Project kit `juy5uwr` ("Lorena Maruch site"; allowed domains: lorenamaruch.com, www.lorenamaruch.com, the GitHub Pages domain and localhost). Adobe hosts and serves the files under the Adobe Fonts terms. The kit's stylesheet is linked only in the GitHub Pages wrapper (`scripts/wrap-site.sh`), never in `site.html`: the claude.ai Artifact preview blocks `use.typekit.net`, so there the CSS stack falls back to the OFL stand-ins in this folder (`--font-serif: "the-seasons", "LM Serif", …`).
+
 Never copy font files out of Canva, Adobe Fonts or the media-kit PDFs into this repo.
 
 ## Not used: reference-site fonts

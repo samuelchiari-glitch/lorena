@@ -241,6 +241,14 @@
   .swatches { display: flex; gap: 6px; margin-top: 18px; }
   .swatches span { flex: 1; height: 28px; border-radius: 8px; }
 
+  /* open question 14: sans weight x serif style (the site changes one token: --sans-lockup-wght) */
+  .q14 { display: grid; gap: 40px; }
+  @media (min-width: 520px) { .q14 { grid-template-columns: 1fr 1fr; gap: 40px 16px; } .q14 .t-lockup { font-size: 2.125rem; } }
+  .q14-item { display: grid; justify-items: center; gap: 12px; padding: 24px 8px 20px; border-radius: 18px; background: color-mix(in srgb, var(--sand) 28%, var(--vanilla)); }
+  .q14-item .t-eyebrow { color: var(--ink-soft); }
+  .q14 .w650 .t-sans { font-weight: 650; }
+  .q14 .roman .t-serif { font-style: normal; font-feature-settings: normal; letter-spacing: 0; margin-top: .02em; }
+
   .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule); }
   .foot .t-caption + .t-caption { margin-top: 8px; }
 </style>
@@ -302,6 +310,33 @@
         <p class="t-caption">lorenamaruch@gmail.com</p>
       </div>
     </div>
+  </section>
+
+  <!-- OPEN QUESTION 14 (build spec §10): sans weight x serif style -->
+  <section aria-label="Heading weight comparison">
+    <div class="sec-label">
+      <p class="t-eyebrow">Open question 14</p>
+      <p class="t-caption">sans weight × serif style</p>
+    </div>
+    <div class="q14">
+      <div class="q14-item">
+        <p class="t-eyebrow">A · 480 + italic (shipped)</p>
+        <h2 class="t-lockup"><span class="t-sans">My content</span> <span class="t-serif">in motion</span></h2>
+      </div>
+      <div class="q14-item roman">
+        <p class="t-eyebrow">B · 480 + roman</p>
+        <h2 class="t-lockup"><span class="t-sans">My content</span> <span class="t-serif">in motion</span></h2>
+      </div>
+      <div class="q14-item w650">
+        <p class="t-eyebrow">C · 650 + italic</p>
+        <h2 class="t-lockup"><span class="t-sans">My content</span> <span class="t-serif">in motion</span></h2>
+      </div>
+      <div class="q14-item w650 roman">
+        <p class="t-eyebrow">D · 650 + roman</p>
+        <h2 class="t-lockup"><span class="t-sans">My content</span> <span class="t-serif">in motion</span></h2>
+      </div>
+    </div>
+    <p class="t-caption" style="margin-top:20px">The reference pairs a bold sans with a bold serif; A is the lighter, feminine adaptation on the site today. On the site the choice is one token, <code>--sans-lockup-wght</code> (480 or 650), plus <code>.t-serif{font-style:normal}</code> for the roman.</p>
   </section>
 
   <!-- NUMBERS -->

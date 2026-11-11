@@ -8,6 +8,7 @@ Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-about.jpg
   assets/img/web/gallery-NN-{480,800}.webp           q76  the 9 gallery photos used on the page
+  assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
   assets/video/thumbs/<id>.webp    240x427 (9:16)    q72  same source
 
@@ -83,6 +84,11 @@ def main():
         src = ROOT / f'assets/img/gallery/{n}.jpg'
         for w in (480, 800):
             manifest[f'gallery-{n}-{w}'] = resize_w(src, web / f'gallery-{n}-{w}.webp', w, 76)
+
+    # contact card (spec §4.8, optional small card): the rust knit portrait
+    contact_src = ROOT / 'assets/img/contact/06.jpg'
+    for w in (320, 480):
+        manifest[f'contact-06-{w}'] = resize_w(contact_src, web / f'contact-06-{w}.webp', w, 76)
 
     vids_path = ROOT / 'data/videos.json'
     if vids_path.exists():

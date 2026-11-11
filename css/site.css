@@ -38,7 +38,7 @@
 
   /* type (Type §6) */
   --font-sans:  "LM Sans", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "LM Serif", "Iowan Old Style", Georgia, serif;
+  --font-serif: "the-seasons", "LM Serif", "Iowan Old Style", Georgia, serif;   /* The Seasons: Adobe Fonts, GitHub Pages only (scripts/wrap-site.sh); elsewhere the LM stand-ins */
   --fs-display: clamp(3.75rem, 19vw, 7.5rem);       /* 74px  hero lockup */
   --fs-h2:      clamp(2.375rem, 11.6vw, 5rem);      /* 45px  section lockup */
   --fs-h3:      clamp(1.625rem, 7.4vw, 2.5rem);     /* 29px  chapter lockup */
@@ -294,7 +294,8 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 .skip{
   position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: var(--pad-x-l);
   z-index: calc(var(--z-toast) + 1);
-  padding: 14px 18px; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; min-height: 44px;   /* tap target (§8.2) */
+  padding: 0 18px; border-radius: var(--radius-pill);
   background: var(--mahogany); color: var(--vanilla);
   font: 520 12px/1 var(--font-sans); letter-spacing: .18em; text-transform: uppercase; text-decoration: none;
   transform: translateY(-200%);
@@ -643,6 +644,7 @@ html:not(.js) .numbers__screens{ display: none; }
 .brands__item{ display: flex; align-items: center; }
 .brands__item img{ height: calc(44px * var(--scale, 1)); width: auto; max-width: none; }
 .brands__foot{ display: flex; justify-content: center; margin-top: 32px; }
+.motion .brands__rows:empty{ height: 248px; }    /* reserve the 3 × 72 + 2 × 16 marquee box until brands.js renders it (CLS) */
 /* === /section: brands === */
 
 /* ======================================================================== */
@@ -671,7 +673,10 @@ html:not(.js) .numbers__screens{ display: none; }
   margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
 }
 .contact__inner{ display: flex; flex-direction: column; align-items: center; text-align: center; }
-.contact .sig--footer{ width: 70%; max-width: 420px; color: var(--vanilla); margin-bottom: 48px; }
+/* optional small card (§4.8): a signed print; the signature's first stroke crosses its lower edge */
+.contact__card{ width: 136px; margin: 0 0 -20px; transform: rotate(-3deg); }
+.contact__card .frame{ box-shadow: 0 22px 40px -20px rgba(0,0,0,.6); }
+.contact .sig--footer{ position: relative; z-index: 1; width: 70%; max-width: 420px; color: var(--vanilla); margin-bottom: 48px; }
 .contact .contact__eyebrow, .contact__label{ color: var(--muted-on-dark); }
 .contact .t-lockup{ margin-top: 20px; }
 .contact .t-lockup .t-serif{ color: var(--accent-on-dark); }     /* large text only (>= 24 px): 4.42:1 */
@@ -694,7 +699,6 @@ a.contact__value span{ font-size: .8em; }
   color: var(--muted-on-dark); text-align: left;
 }
 .contact__top{ display: inline-flex; align-items: center; min-height: 44px; color: var(--muted-on-dark); text-decoration: none; }
-.contact__type{ flex-basis: 100%; }
 /* === /section: contact === */
 
 /* ------------------------------------------------------------------ wide screens (desktop polish later; must not break) */

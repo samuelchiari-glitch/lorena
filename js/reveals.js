@@ -19,8 +19,6 @@
  *   data-rise[="24"]              container whose children rise y N -> 0 once (stagger .06, .6s power3.out).
  *     data-rise-start="top 92%"   ScrollTrigger start (default top 90%).
  *   data-bg-scrub="#E6DECB"       section background: computed colour -> this colour, top 60% -> bottom bottom.
- *   data-arch                     About arch: clip ellipse(55% …) -> ellipse(100% …) while the parent
- *                                 section's top travels bottom -> top 40%.
  *
  * Exports: boot(ctx), ready(ctx), scan(root), splitLockup(heading), buildOval(heading),
  *          buildHighlight(el), buildCurtain(frame).
@@ -74,12 +72,6 @@ export function scan(rootEl = document) {
       gsap.fromTo(sec, { backgroundColor: getComputedStyle(sec).backgroundColor }, {
         backgroundColor: sec.dataset.bgScrub, ease: 'none',
         scrollTrigger: { trigger: sec, start: 'top 60%', end: 'bottom bottom', scrub: true },
-      });
-    });
-    all('[data-arch]').forEach((arch) => {
-      gsap.fromTo(arch, { clipPath: 'ellipse(55% 100% at 50% 100%)' }, {
-        clipPath: 'ellipse(100% 100% at 50% 100%)', ease: 'none',
-        scrollTrigger: { trigger: arch.parentElement, start: 'top bottom', end: 'top 40%', scrub: true },
       });
     });
   });
