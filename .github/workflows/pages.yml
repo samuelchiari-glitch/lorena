@@ -23,13 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Publish only the public site files (raw sources and docs stay out)
+      - name: Wrap site                       # site.html -> index.html (Pages skeleton + fragment)
+        run: bash scripts/wrap-site.sh
+
+      # Publish only the public site files (raw sources and docs stay out; site.html is never published)
       - name: Assemble site
         run: |
           mkdir -p _site
           for p in index.html 404.html CNAME robots.txt sitemap.xml favicon.ico favicon.svg css js assets data lab; do
             if [ -e "$p" ]; then cp -R "$p" _site/; fi
           done
+          test ! -e _site/site.html
+          head -c 15 _site/index.html | grep -qi '^<!doctype html>'
           ls -la _site
 
       - uses: actions/configure-pages@v5
