@@ -68,6 +68,7 @@ function initTabs() {
   tabs.className = 'numbers__tabs';
   tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', 'Instagram screens');
+  let picked = -1; // a tapped tab (see sync below)
   const btns = figs.map((fig, i) => {
     const cap = fig.querySelector('figcaption');
     if (!fig.id) fig.id = `ig-screen-${i + 1}`;
@@ -78,6 +79,8 @@ function initTabs() {
     b.setAttribute('aria-controls', fig.id);
     b.addEventListener('click', () => {
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      picked = i; // on wide screens the scroll may stop short of the snap line (the rail ends): the tap decides
+      mark(i);
       rail.scrollTo({ left: fig.offsetLeft - figs[0].offsetLeft, behavior: reduce ? 'auto' : 'smooth' });
     });
     tabs.appendChild(b);
@@ -104,14 +107,21 @@ function initTabs() {
     });
     fig.appendChild(more);
   });
+  // The current screen: the one at the snap line, or the last one once the rail is scrolled to its end (on wide
+  // screens the last screens cannot reach the line). After a tab tap, that tab stays current until the visitor
+  // moves the rail themselves.
   let raf = 0;
+  const mark = (cur) => btns.forEach((b, i) => (i === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
   const sync = () => {
     raf = 0;
+    if (picked >= 0) return;
     const x = rail.scrollLeft + figs[0].offsetLeft;
     let cur = 0;
     figs.forEach((f, i) => { if (Math.abs(f.offsetLeft - x) < Math.abs(figs[cur].offsetLeft - x)) cur = i; });
-    btns.forEach((b, i) => (i === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+    if (rail.scrollLeft > 0 && rail.scrollLeft >= rail.scrollWidth - rail.clientWidth - 2) cur = figs.length - 1;
+    mark(cur);
   };
+  ['pointerdown', 'wheel', 'keydown'].forEach((t) => rail.addEventListener(t, () => { picked = -1; }, { passive: true }));
   rail.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(sync); }, { passive: true });
   sync();
 }

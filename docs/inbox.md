@@ -102,3 +102,10 @@ Add them to `data/videos.json` (and the posters/thumbs) after the polish round, 
 - `picnic.mp4` (19 s): picnic, white tank top, sandals, scarf (≈ fashion-04).
 - `yellow-satin-lake.mp4` (26 s): yellow satin dress on a lakeside deck (≈ fashion-03).
 - Still missing: fashion-05 (hand on a terracotta clutch) and fashion-06 (bun, gold earring). Keep their posters only if the rail needs them; otherwise drop them.
+
+## Chanel photos + 2 more videos (received 2026-11-11 20:58)
+- `assets/img/fashion/chanel-chance.jpg`: holding Chance Eau Vive against her cheek, black blazer. Strong close portrait.
+- `assets/img/fashion/chanel-n5-boutique.jpg`: leaning on the counter in the CHANEL boutique with N°5, the CC logo behind.
+- **CLIENT: give the two Chanel photos a real spotlight**, not just a slot in the gallery. For example, a "CHANEL" editorial spread in Fashion next to or after the Chanel video (which is the fan's centre card): the two photos as an offset pair with curtain reveal and parallax, plus a short caption. Fall back to the gallery only if a spotlight doesn't work.
+- `assets/video/fashion/alva-towel.mp4` (7 s): ALVA product shot, towel turban. The client files it under Fashion.
+- `assets/video/stays/deck-cushions.mp4` (22 s): couple on a deck with cushions above the forest. Stays rail.

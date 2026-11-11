@@ -319,7 +319,24 @@ The §9 suite from `build/qa` was copied and re-run against `index.html` and the
 - Ken Burns (item 45) is checked at the Food feature.
 - With JS disabled, the module and JSON preloads cannot be used. Playwright reports them as `csp` and "preloaded but not used".
 
-FINAL_RESULTS
+**Result.** The final full run (`run-all.sh`) has 187 PASS and 0 FAIL, on both pages, after the last change:
+- **Items 1–3:** 158 referenced paths are relative and resolve.
+  - Hosts on the Artifact page: self, cdnjs, jsdelivr.
+  - Pages adds `use.typekit.net` and `p.typekit.net`.
+- **Item 5:** no console errors through a full scroll-through. The only aborted requests are Chromium's usual `.mp4` range cancels.
+- **Item 7:** no horizontal scroll at 320/360/375/390/414/430, in motion and reduced modes, or at 1440.
+- **Items 11–12:** complete at rest.
+  - No JS: the frosted header, no element under opacity 1, all images loaded.
+  - Reduced motion: no Lenis, nothing armed, and the header is clear at scroll 0.
+- **Items 13–14 and 42:**
+  - Nothing is armed before scrolling.
+  - After a wheel scroll-through and back, `data-armed` = 0 and `mo-armed` = 0 in view.
+  - In the cross-origin iframe there are 59 arm records, none while visible.
+- **Hero items 19–22:** 20/20 motion and 4/4 reduced checks pass in all 5 contexts. The motion-vs-static stage diff at rest is ≤ 0.021%.
+- **Items 23–33d, 43, 44, 45:** all pass, including the photo swap.
+- **Item 39:** 110 text elements in motion and 105 in reduced mode meet their contrast. The cover figures are in §7.2 (design 6).
+- **Item 40:** CLS is 0.0000 in motion and in reduced mode.
+- **Item 41 (first view, 3× DPR, excluding the CDN):** 374 KB on Pages and 347 KB on the Artifact. It was 498 / 471 KB. The saving is the removed Stays photo pair, which Chromium's native lazy-load margin used to fetch at load.
 
 ### 7.6 Publish list changes (Artifact)
 
