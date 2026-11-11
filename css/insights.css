@@ -305,6 +305,11 @@
   border-bottom-right-radius: 0;
 }
 
+/* The screen ends mid-section, like a screenshot cropped at the bottom edge. */
+.ig-section.ig-section--cut:last-child {
+  padding-bottom: calc(18 * var(--u));
+}
+
 .ig-head {
   display: flex;
   align-items: center;

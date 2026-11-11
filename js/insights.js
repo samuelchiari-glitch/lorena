@@ -46,8 +46,7 @@ export function loadMetrics(src = DEFAULT_SRC) {
 
 /** Render every [data-ig-screen] under `root` (idempotent). */
 export async function renderInsights({ root = document, src, data } = {}) {
-  const scope = root.nodeType === 9 ? root : root;
-  const els = [...scope.querySelectorAll('[data-ig-screen]')];
+  const els = [...root.querySelectorAll('[data-ig-screen]')];
   if (root.nodeType === 1 && root.matches('[data-ig-screen]')) els.unshift(root);
   const todo = els.filter((el) => !el.hasAttribute('data-ig-rendered'));
   if (!todo.length) return [];
@@ -71,13 +70,13 @@ export function renderScreen(el, d) {
   const kind = el.getAttribute('data-ig-screen');
   const W = el.getAttribute('data-ig-device') === '390' ? 390 : 430;
   const ctx = { d, W, id: ++uid, motion: !el.hasAttribute('data-ig-static') };
-  const builders = { profile, summary, performance, audience };
+  const builders = { profile: screenProfile, summary: screenSummary, performance: screenPerformance, audience: screenAudience };
   const build = builders[kind];
   if (!build) throw new Error(`Unknown data-ig-screen="${kind}"`);
 
   const shotAttr = ctx.motion ? ` data-shot${el.hasAttribute('data-ig-flash') ? '="flash"' : ''}` : '';
   const tiltAttr = ctx.motion && el.hasAttribute('data-ig-tilt') ? ' data-tilt="glare"' : '';
-  const label = el.getAttribute('data-ig-label') || LABELS[kind];
+  const label = el.getAttribute('data-ig-label') || LABELS[kind](d);
 
   el.classList.add('ig-shot');
   el.innerHTML = `<div class="ig-shot__card"${shotAttr}${tiltAttr}><div class="ig-screen" role="group" aria-label="${esc(label)}">${build(ctx)}</div></div>`;
@@ -93,10 +92,10 @@ export function renderScreen(el, d) {
 }
 
 const LABELS = {
-  profile: 'Instagram profile header of @lorena_maruch',
-  summary: 'Instagram dashboard, Home tab: 30-day summary',
-  performance: 'Instagram dashboard, Performance tab: views over the last 30 days',
-  audience: 'Instagram dashboard, Audience tab: followers, gender and age',
+  profile: (d) => `Instagram profile of @${d.profile.username}`,
+  summary: (d) => `Instagram dashboard, Home tab: summary for the last ${d.period.label}`,
+  performance: (d) => `Instagram dashboard, Performance tab: views for the last ${d.period.label}`,
+  audience: (d) => `Instagram dashboard, Audience tab: followers, gender and age for the last ${d.period.label}`,
 };
 
 /* ------------------------------------------------------------------ */
@@ -131,11 +130,7 @@ const ICON = {
   plus: (c, w = 2) => svg('0 0 24 24', `<path d="M12 4.2v15.6M4.2 12h15.6" stroke-width="${w}"/>`, c),
   menu: (c) => svg('0 0 24 24', '<path d="M3.6 5.8h16.8M3.6 12h16.8M3.6 18.2h16.8" stroke-width="2"/>', c),
   threads: (c, w = 2) =>
-    svg(
-      '0 0 24 24',
-      `<path d="M16.6 11.1c-.4-2.7-2.1-3.9-4.4-3.9-2.6 0-4 1.7-4 3.6 0 2 1.6 3.3 3.6 3.3 2.6 0 4.1-2 4.1-4.8 0 0 0 5.9 3.4 5.9 1.3 0 2.2-1.4 2.2-3.7 0-5.2-3.6-8.6-8.8-8.6S2.5 6.8 2.5 12.2c0 5.4 3.9 9.3 9.3 9.3 2.2 0 4.1-.6 5.6-1.6" stroke-width="${w}"/>`,
-      c
-    ),
+    svg('0 0 24 24', `<circle cx="12" cy="12" r="3.9" stroke-width="${w}"/><path d="M15.9 8.1v5a2.85 2.85 0 0 0 5.7 0V12a9.6 9.6 0 1 0-3.8 7.65" stroke-width="${w}"/>`, c),
   heart: (c) =>
     svg('0 0 24 24', '<path d="M12 20.2s-7.6-4.5-7.6-10.2A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.6 10c0 5.7-7.6 10.2-7.6 10.2Z" stroke-width="2"/>', c),
   trend: (c) => svg('0 0 24 24', '<path d="M6.5 17.5 17.5 6.5M9 6.5h8.5V15" stroke-width="2.4"/>', c),
@@ -303,7 +298,7 @@ function barRows(ctx, rows, { afterLegend = false } = {}) {
 /* Screens                                                             */
 /* ------------------------------------------------------------------ */
 
-function profile(ctx) {
+function screenProfile(ctx) {
   const { d } = ctx;
   const p = d.profile;
   const m = ctx.motion;
@@ -337,7 +332,7 @@ function profile(ctx) {
 </div>`;
 }
 
-function summary(ctx) {
+function screenSummary(ctx) {
   const { d } = ctx;
   const s = d.screens.summary;
   const m = ctx.motion;
@@ -354,10 +349,10 @@ function rail(ctx, screen, delays) {
   const cards = screen.cards
     .map((k, i) => card(d, k, ctx, { selected: k === screen.selected, small: small.has(k), delay: delays[i] ?? i * 120 }))
     .join('');
-  return `<div class="ig-rail" tabindex="-1"><div class="ig-rail__track">${cards}</div></div>`;
+  return `<div class="ig-rail"><div class="ig-rail__track">${cards}</div></div>`;
 }
 
-function performance(ctx) {
+function screenPerformance(ctx) {
   const { d } = ctx;
   const s = d.screens.performance;
   const m = ctx.motion;
@@ -377,18 +372,18 @@ ${s.contentTypes ? `<section class="ig-section">${h2(ct.title)}${legend(ct.legen
 ${chips}</div>`;
 }
 
-function audience(ctx) {
+function screenAudience(ctx) {
   const { d } = ctx;
   const s = d.screens.audience;
   const m = ctx.motion;
   const g = d.audience.gender;
   const a = d.audience.age;
   return `${statusBar(d, s.statusBar)}${navBar(d)}${tabs(d, s.tab)}
-<div class="ig-page ig-page--end"><section class="ig-section"${m ? ' data-motion-scope' : ''}>${head(s.title || d.ui.allContentTitle, d.period.label)}
+<div class="ig-page"><section class="ig-section"${m ? ' data-motion-scope' : ''}>${head(s.title || d.ui.allContentTitle, d.period.label)}
 ${rail(ctx, s, [0, 120, 240])}
 ${lineChart(ctx, d.charts[s.chart])}</section>
 ${s.gender ? `<section class="ig-section ig-section--gender">${h2(g.title)}${barRows(ctx, g.rows)}</section>` : ''}
-${s.age ? `<section class="ig-section ig-section--age">${h2(a.title)}${legend(a.legend)}${barRows(ctx, a.rows, { afterLegend: true })}</section>` : ''}
+${s.age ? `<section class="ig-section ig-section--age ig-section--cut">${h2(a.title)}${legend(a.legend)}${barRows(ctx, a.rows, { afterLegend: true })}</section>` : ''}
 </div>`;
 }
 
@@ -403,6 +398,9 @@ function setupRail(el, ctx, kind) {
   if (!railEl || !screen.scrollTo) return;
   let userScrolled = false;
   let gliding = false;
+  const setScroll = (v) => {
+    if (Math.abs(railEl.scrollLeft - v) >= 1) railEl.scrollLeft = v;
+  };
 
   const target = () => {
     const u = railEl.clientWidth / ctx.W;
@@ -416,38 +414,56 @@ function setupRail(el, ctx, kind) {
 
   const place = () => {
     if (userScrolled || gliding) return;
-    railEl.scrollLeft = target();
+    setScroll(target());
   };
 
   const armGlide = ctx.motion && !prefersReducedMotion();
   requestAnimationFrame(() => {
     const t = target();
-    railEl.scrollLeft = t;
+    setScroll(t);
     if (armGlide && t > 0) track.style.translate = `${t}px 0`;
   });
 
   if (armGlide) {
+    // When the section plays, the rail starts on the first card and "swipes"
+    // to the screenshot's scroll position, like a thumb flick.
     const section = railEl.closest('[data-motion-scope]');
+    let anim = null;
     onEnter(section, ({ delay = 0 }) => {
-      const t = railEl.scrollLeft;
-      if (!t) {
-        track.style.translate = '';
-        return;
-      }
+      if (userScrolled) return;
+      const t = target();
+      setScroll(t);
+      if (anim) anim.cancel();
+      track.style.translate = '';
+      if (!t) return;
       gliding = true;
-      const anim = track.animate([{ translate: `${t}px 0` }, { translate: '0 0' }], {
+      anim = track.animate([{ translate: `${t}px 0` }, { translate: '0 0' }], {
         duration: 1250,
         delay: delay + 700,
         easing: 'cubic-bezier(.5,0,.15,1)',
         fill: 'backwards',
       });
-      track.style.translate = '';
       anim.onfinish = anim.oncancel = () => (gliding = false);
     });
   }
 
-  railEl.addEventListener('pointerdown', () => (userScrolled = true), { passive: true });
-  railEl.addEventListener('wheel', () => (userScrolled = true), { passive: true });
+  // Once the visitor swipes the rail themselves, leave it where they put it.
+  // (Scroll events alone can't tell: the browser also fires them when it clamps
+  // the position on resize, so only scrolls right after a user gesture count.)
+  let intentAt = -Infinity;
+  const intent = () => (intentAt = performance.now());
+  ['pointerdown', 'touchstart', 'keydown'].forEach((t) => railEl.addEventListener(t, intent, { passive: true }));
+  railEl.addEventListener('wheel', (e) => Math.abs(e.deltaX) > Math.abs(e.deltaY) && intent(), { passive: true });
+  let healing = 0;
+  railEl.addEventListener(
+    'scroll',
+    () => {
+      if (performance.now() - intentAt < 1500) userScrolled = true;
+      // Not the visitor: the browser moved it (e.g. clamped during a resize). Put it back.
+      else if (!healing) healing = requestAnimationFrame(() => ((healing = 0), place()));
+    },
+    { passive: true }
+  );
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(place).observe(railEl);
 }
 

@@ -18,7 +18,7 @@
  *   data-stagger="ms" (on a parent: children animate one after another, in DOM order)
  *   data-motion-scope (on a parent: its descendants start together when IT enters the
  *                      viewport, instead of each one waiting for itself). A scope receives
- *                      a `motion:enter` CustomEvent (detail.delay = ms) when it plays.
+ *                      a `motion:enter` CustomEvent (detail.delay = ms) each time it plays.
  *   data-motion-repeat (on a trigger: play again every time it re-enters)
  *
  * Animations run once per element by default, use only transform / opacity /
@@ -126,11 +126,11 @@ export function initMotion(root = document, options = {}) {
     if (items.has(el)) return;
     const item = { el, kinds: kindsOf(el), played: false, anims: [] };
     items.set(el, item);
-    if (item.kinds.includes('count')) prepareCount(item);
     if (reduced) {
       item.played = true;
       return;
     }
+    if (item.kinds.includes('count')) prepareCount(item);
     const trigger = triggerOf(el);
     item.trigger = trigger;
     if (!triggers.has(trigger)) triggers.set(trigger, new Set());
@@ -487,9 +487,15 @@ function setupTilt(el) {
 /* Public helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Run `cb(detail)` when `el` (a data-motion-scope or data-shot) plays. */
+/**
+ * Run `cb(detail)` every time `el` (a data-motion-scope or data-shot) plays,
+ * including after replay(). detail.delay = ms the content is held back for its
+ * screenshot card to land. Returns an unsubscribe function.
+ */
 export function onEnter(el, cb) {
-  el.addEventListener('motion:enter', (e) => cb(e.detail || {}), { once: !el.hasAttribute('data-motion-repeat') });
+  const h = (e) => cb(e.detail || {});
+  el.addEventListener('motion:enter', h);
+  return () => el.removeEventListener('motion:enter', h);
 }
 
 /** Reset everything under `root` and play it again as it (re-)enters the viewport. */
