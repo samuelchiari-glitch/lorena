@@ -502,9 +502,9 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
    >= 4.7, "LORENA" >= 4.5, "Maruch" >= 3.0 (large text). */
 .hero__scrim{ position:absolute; inset:0; pointer-events:none;
   background:
-    radial-gradient(ellipse 52% 76px at 50% calc(var(--lockup-bottom) - 40px), rgba(77,52,45,.5), rgba(77,52,45,0)),
+    radial-gradient(ellipse 54% 88px at 50% calc(var(--lockup-bottom) - 30px), rgba(77,52,45,.54), rgba(77,52,45,0)),
     linear-gradient(to bottom, rgba(77,52,45,.36) 0px, rgba(77,52,45,.34) calc(var(--hero-copy-top) + 40px),
-                    rgba(77,52,45,.2) calc(var(--lockup-bottom) - 40px), rgba(77,52,45,0) calc(var(--lockup-bottom) + 36px)); }
+                    rgba(77,52,45,.2) calc(var(--lockup-bottom) - 40px), rgba(77,52,45,0) calc(var(--lockup-bottom) + 40px)); }
 /* Motion only (hero.js fades it in from 0.4 H): darkens the card's lower half, where the Vanilla signature
    crosses the cream robe; the eye line (≈ 41% of the stage) keeps a light .12 veil. */
 .hero__shade{ position:absolute; inset:0; opacity:0; pointer-events:none;
