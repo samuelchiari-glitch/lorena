@@ -5,7 +5,7 @@
     python3 -I scripts/make-images.py --force    # rebuild even if the output is newer
 
 Outputs (all WebP, sRGB, metadata stripped):
-  assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/portrait-cover.jpg
+  assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-about.jpg
   assets/img/web/gallery-NN-{480,800}.webp           q76  the 9 gallery photos used on the page
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
@@ -71,7 +71,7 @@ def main():
     web = ROOT / 'assets/img/web'
     manifest = {}
 
-    cover_src = ROOT / 'assets/img/portrait-cover.jpg'
+    cover_src = ROOT / 'assets/img/cover.jpg'
     for w in (828, 1242, 1527):
         manifest[f'hero-{w}'] = resize_w(cover_src, web / f'hero-{w}.webp', w, 78)
 
