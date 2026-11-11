@@ -12,6 +12,12 @@ Rules for the builder: re-implement effects in our own code. Never copy the refe
 
 This is **revision 2** (2026-11-11). §11 lists what changed from revision 1 and why.
 
+> **CLIENT FEEDBACK, 2026-11-11 (overrides everything below):**
+> 1. **No arch.** Remove the hero arch and the `.about__arch`. The hero works like the Lando reference. At scroll 0 the cover photo is full-bleed, filling the whole first screen. On scroll it shrinks into a centred rounded-rectangle card (corner radius ≈ 28–36 px), the background turns dark, and the signature draws.
+> 2. **Hero image** = the client's cover photo `_source/drive-2/foto-de-capa.jpg`, delivered as `assets/img/cover.jpg`. `scripts/make-images.py` builds the `hero-*.webp` files from it.
+> 3. **Fonts:** the real Lorena serif "The Seasons" ships via Adobe Fonts kit `juy5uwr` on GitHub Pages only. The link is injected by `scripts/wrap-site.sh`, never put in `site.html`, because the Artifact CSP blocks use.typekit.net. Serif stacks start with `"the-seasons"`, then the LM stand-ins.
+> 4. More client files (photos, 2 more stays videos) are listed in `docs/inbox.md`. They are integrated after this build.
+
 ---
 
 ## 1. Design direction

@@ -1,20 +1,20 @@
 /**
- * fan.js: the 7-card fan (spec §4.4a; Lando §3). OWNER: content section builder.
+ * fan.js: the 7-card fan (spec §4.4a; Lando §3 adapted). OWNER: content section builder.
  *
- * FOUNDATION STUB. What already works (every JS mode, so the arc is complete at rest):
- *   - boot render of the 7 cards from data/videos.json (fan[], fanFocus) with cardHTML() from video.js;
- *   - slot placement through the CSS custom properties --x --y --rot --s --z (site.css);
- *   - an INSTANT focus change (prev/next buttons, ← →, tap a side card) updating caption, counter,
- *     "More …" link, labels and the sound hint.
- * TODO(content): GSAP entrance (armed on approach), elastic focus tweens, wrap-around park, swipe,
- *   desktop table + hover spread, video.setEligible/toggleSound wiring (fan.js owns every fan click).
+ * boot (every JS mode): render the 7 cards from data/videos.json (fan[], fanFocus) and place them in their slots
+ *   through --x --y --rot --s --z (site.css), so the arc is complete without GSAP; focus carousel (swipe, tap,
+ *   prev/next, ← →), caption/counter/labels, video eligibility, the niche icon cycle.
+ * ready (motion only): the elastic entrance (armed on approach, plays at top 85%), elastic focus tweens with the
+ *   wrap-around park, desktop hover spread. GSAP's inline transform then overrides the CSS slot transform;
+ *   finish() drops it again. Static modes change focus instantly.
+ * Click ownership: fan.js owns every click on a fan card; it calls video.toggleSound / video.setEligible only.
  *
- * Exports: boot(ctx), ready(ctx), finish(), SLOTS, slotOf(i, focus, n), setFocus(i, {instant}),
- *          getFocus(), cards().
+ * Exports: boot(ctx), ready(ctx), finish(), SLOTS, slotOf(i, focus, n), setFocus(i, opts), getFocus(), cards().
  */
-import { cardHTML, esc } from './video.js';
+import { cardHTML, esc, setEligible, toggleSound } from './video.js';
+import { isMotion, makeIO, markPlayed, onApproach, release, scope, track } from './scroll.js';
 
-/** Mobile slot table (§4.4a), values in u. Desktop (>= 992) x values: TODO(content). */
+/** Slot table (§4.4a), values in u. x is the mobile column; desktop (>= 992) uses DESK_X. */
 export const SLOTS = [
   { s: 0.7756, rot: -21, x: -15, y: 7.3, z: 1 },
   { s: 0.8498, rot: -14, x: -11, y: 4, z: 2 },
@@ -24,19 +24,37 @@ export const SLOTS = [
   { s: 0.8498, rot: 14, x: 11, y: 4, z: 2 },
   { s: 0.7756, rot: 21, x: 15, y: 7.3, z: 1 },
 ];
+const DESK_X = [-30, -22, -11, 0, 11, 22, 30];
+const EASE = 'elastic.out(1, 0.75)';
 
 export const slotOf = (i, focus, n = 7) => (((i - focus + 3) % n) + n) % n;
 
+const qDesk = matchMedia('(min-width: 992px)');
+const qHover = matchMedia('(hover: hover) and (pointer: fine)');
+const qReduce = matchMedia('(prefers-reduced-motion: reduce)');
+
 let fanEl = null;
+let probe = null;
 let items = [];
 let cats = [];
 let focus = 3;
+let gsapOn = false; // GSAP owns the card transforms (motion mode)
+let entrance = null; // the entrance timeline while it has not finished
+let hovered = null;
+let leaveT = 0;
+let swipedAt = 0;
 
 export const getFocus = () => focus;
 export const cards = () => (fanEl ? [...fanEl.querySelectorAll('.fan__card')] : []);
 
+const slotVals = (slot) => ({ ...SLOTS[slot], x: qDesk.matches ? DESK_X[slot] : SLOTS[slot].x });
+const unit = () => (probe ? probe.getBoundingClientRect().width : 0) || 12.78;
+const target = (slot, u = unit()) => { const S = slotVals(slot); return { x: S.x * u, y: S.y * u, rotation: S.rot, scale: S.s, opacity: 1 }; };
+const animated = () => gsapOn && isMotion() && !!window.gsap && !qReduce.matches;
+const slotOfCard = (card) => +card.dataset.slot;
+
 function placeStatic(card, slot) {
-  const S = SLOTS[slot];
+  const S = slotVals(slot);
   card.style.setProperty('--x', S.x);
   card.style.setProperty('--y', S.y);
   card.style.setProperty('--rot', `${S.rot}deg`);
@@ -45,58 +63,231 @@ function placeStatic(card, slot) {
   card.dataset.slot = slot;
 }
 
-function labelFor(item, focused) {
+function labelFor(item, focused, sound) {
   if (!focused) return { label: `Show: ${item.title}`, pressed: null };
   if (!item.src) return { label: `${item.title}, video coming soon`, pressed: null };
   if (item.audio === false) return { label: `${item.title}, no sound`, pressed: null };
-  return { label: `Sound for ${item.title}`, pressed: 'false' };
+  return { label: `Sound for ${item.title}`, pressed: String(!!sound) };
 }
 
-export function setFocus(i, { instant = true } = {}) {
-  void instant;
+function label(card) {
+  const it = items[cards().indexOf(card)];
+  const hit = card.querySelector('.fan__hit');
+  if (!it || !hit) return;
+  const { label: l, pressed } = labelFor(it, slotOfCard(card) === 3, card.classList.contains('has-sound'));
+  hit.setAttribute('aria-label', l);
+  if (pressed == null) hit.removeAttribute('aria-pressed'); else hit.setAttribute('aria-pressed', pressed);
+}
+
+/**
+ * Move the focus to card i. opts.inherit: the call runs inside a user gesture (swipe, tap, button, key), so if
+ * the fan owns sound the new focused card takes it over (§6.4). opts.instant: no tween.
+ */
+export function setFocus(i, { inherit = false, instant = false } = {}) {
   const list = cards();
   if (!list.length) return;
   const n = list.length;
-  focus = ((i % n) + n) % n;
+  const next = ((i % n) + n) % n;
+  const changed = next !== focus;
+  const owned = inherit && changed && !!list[focus] && list[focus].classList.contains('has-sound');
+  const prev = new Map(list.map((c) => [c, slotOfCard(c)]));
+  focus = next;
   list.forEach((card, idx) => {
     const slot = slotOf(idx, focus, n);
     placeStatic(card, slot);
-    const it = items[idx];
-    const hit = card.querySelector('.fan__hit');
-    const { label, pressed } = labelFor(it, slot === 3);
-    if (hit) {
-      hit.setAttribute('aria-label', label);
-      if (pressed == null) hit.removeAttribute('aria-pressed');
-      else hit.setAttribute('aria-pressed', pressed);
-    }
     card.classList.toggle('is-focus', slot === 3);
+    label(card);
   });
+  // video: the old focus first (it releases sound and pauses), then the new one (§6.2)
+  list.forEach((card) => { const sl = slotOfCard(card); if (sl !== 3) setEligible(card, false, { warm: sl === 2 || sl === 4 }); });
+  const now = list[focus];
+  setEligible(now, true);
+  const it = items[focus];
+  if (owned && it && it.src && it.audio !== false) toggleSound(now); // Reels-like: sound follows the focus
+  if (changed && !instant && animated()) animateFocus(prev);
+  else if (animated()) list.forEach((c) => window.gsap.set(c, target(slotOfCard(c))));
   updateCaption();
+}
+
+function animateFocus(prev) {
+  const { gsap } = window;
+  if (entrance) entrance.progress(1);
+  const u = unit();
+  cards().forEach((card) => {
+    const to = slotOfCard(card);
+    const d = Math.abs(to - prev.get(card));
+    gsap.killTweensOf(card);
+    if (d > 3) { // wraps around (slot 0 <-> 6): fade out, park beyond the far end, spring in
+      const side = to > 3 ? 1 : -1;
+      gsap.timeline()
+        .to(card, { opacity: 0, duration: 0.15, ease: 'power1.out' })
+        .set(card, { x: side * (qDesk.matches ? 36 : 19) * u, y: 11 * u, rotation: side * 28, scale: 0.7 })
+        .to(card, { ...target(to, u), duration: 0.5, ease: EASE });
+    } else gsap.to(card, { ...target(to, u), duration: 0.5, ease: EASE, overwrite: 'auto', delay: 0.02 * d });
+  });
+  if (hovered) setTimeout(() => { if (hovered) spread(slotOfCard(hovered)); }, 160);
 }
 
 function updateCaption() {
   const it = items[focus];
   if (!it) return;
   const cat = cats.find((c) => c.key === it.category) || {};
-  const label = (String(cat.eyebrow || '').split('·')[1] || it.category || '').trim();
+  const name = (String(cat.eyebrow || '').split('·')[1] || it.category || '').trim();
   const sec = document.getElementById('content');
   const q = (s) => sec && sec.querySelector(s);
-  const catEl = q('.fan__cat');
-  const titleEl = q('.fan__title');
+  const set = (s, v) => { const el = q(s); if (el && el.textContent !== v) el.textContent = v; };
+  set('.fan__cat', name);
+  set('.fan__title', it.title);
   const more = q('.fan__more');
-  if (catEl) catEl.textContent = label;
-  if (titleEl) titleEl.textContent = it.title;
   if (more && cat.anchor) {
     more.setAttribute('href', `#${cat.anchor}`);
-    more.innerHTML = `More ${esc(label.toLowerCase())} <span aria-hidden="true">↓</span>`;
+    more.innerHTML = `More ${esc(name.toLowerCase())} <span aria-hidden="true">↓</span>`;
   }
-  const iEl = q('.fan__count-i');
-  const nEl = q('.fan__count-n');
-  if (iEl) iEl.textContent = String(focus + 1).padStart(2, '0');
-  if (nEl) nEl.textContent = String(items.length).padStart(2, '0');
+  set('.fan__count-i', String(focus + 1).padStart(2, '0'));
+  set('.fan__count-n', String(items.length).padStart(2, '0'));
   const hint = q('.fan__soundhint');
   if (hint) hint.hidden = !(it.src && it.audio !== false);
 }
+
+/* ------------------------------------------------------------------ input */
+
+function bindInput() {
+  const controls = document.querySelector('#content .fan__controls');
+  if (controls) {
+    controls.hidden = false;
+    controls.querySelector('.fan__prev').addEventListener('click', () => setFocus(focus - 1, { inherit: true }));
+    controls.querySelector('.fan__next').addEventListener('click', () => setFocus(focus + 1, { inherit: true }));
+  }
+  fanEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    setFocus(focus + (e.key === 'ArrowRight' ? 1 : -1), { inherit: true });
+  });
+  // swipe (pointer events; touch-action: pan-y keeps vertical scrolling native): swipe left = next
+  let sx = 0;
+  let sy = 0;
+  let pid = null;
+  fanEl.addEventListener('pointerdown', (e) => { if (e.isPrimary && e.button === 0) { pid = e.pointerId; sx = e.clientX; sy = e.clientY; } });
+  fanEl.addEventListener('pointercancel', () => { pid = null; });
+  fanEl.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== pid) return;
+    pid = null;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > 1.2 * Math.abs(dy)) {
+      swipedAt = performance.now();
+      setFocus(focus + (dx < 0 ? 1 : -1), { inherit: true });
+    }
+  });
+  // one owner per tap: side card -> focus it; focused card -> sound (when it has a video with sound)
+  fanEl.addEventListener('click', (e) => {
+    if (performance.now() - swipedAt < 400) return;
+    const card = e.target.closest('.fan__card');
+    if (!card || e.target.closest('.vcard__sound, .vcard__pause')) return;
+    const idx = cards().indexOf(card);
+    if (idx !== focus) { setFocus(idx, { inherit: true }); return; }
+    const it = items[idx];
+    if (it && it.src && it.audio !== false) toggleSound(card);
+  });
+  fanEl.addEventListener('vcard:sound', (e) => { const c = e.target.closest('.fan__card'); if (c) label(c); });
+}
+
+/* ------------------------------------------------------------------ niche icon: one 4.8 s cycle per entry (§4.4a) */
+
+function initIconCycle() {
+  const icons = document.querySelector('#content .fan__icons');
+  if (!icons || typeof IntersectionObserver === 'undefined') return;
+  makeIO((entries) => entries.forEach((e) => icons.classList.toggle('is-cycling', e.isIntersecting)), { threshold: 0 }).observe(icons);
+}
+
+/* ------------------------------------------------------------------ desktop hover spread (Lando §3.4) */
+
+function spread(n) {
+  if (!animated() || entrance || !qDesk.matches) return;
+  const { gsap } = window;
+  const u = unit();
+  cards().forEach((card) => {
+    const i = slotOfCard(card);
+    const B = slotVals(i);
+    const d = Math.abs(i - n);
+    const p = 1 - Math.abs((i - 3) / 3);
+    const c = 1 + 0.2 * Math.max(0, 3 - d);
+    let t;
+    if (i === n) t = { x: B.x, y: B.y - 2.5, scale: B.s * 1.08, rotation: B.rot };
+    else if (i < n) t = { x: B.x - 8 * p * c, y: B.y, scale: B.s, rotation: B.rot - 3 / (d + 1) };
+    else { const e = i === 6; t = { x: B.x + (e ? 0 : 8 * p * c), y: B.y + (e ? -1 : 0), scale: B.s, rotation: B.rot + 3 / (d + 1) }; }
+    gsap.to(card, { x: t.x * u, y: t.y * u, scale: t.scale, rotation: t.rotation, opacity: 1, duration: 0.5, ease: EASE, overwrite: 'auto', delay: d * 0.02 });
+  });
+}
+
+function rest() {
+  if (!animated() || entrance) return;
+  const u = unit();
+  cards().forEach((card) => {
+    const i = slotOfCard(card);
+    window.gsap.to(card, { ...target(i, u), duration: 0.5, ease: EASE, overwrite: 'auto', delay: Math.abs(i - 3) * 0.02 });
+  });
+}
+
+function bindHover() {
+  cards().forEach((card) => {
+    card.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse' || !qHover.matches) return;
+      clearTimeout(leaveT);
+      hovered = card;
+      spread(slotOfCard(card));
+    });
+    card.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'mouse' || hovered !== card) return;
+      hovered = null;
+      clearTimeout(leaveT);
+      leaveT = setTimeout(() => { if (!hovered) rest(); }, 50); // 50 ms grace between neighbours
+    });
+  });
+}
+
+/* ------------------------------------------------------------------ entrance (Lando §3.3; armed on approach) */
+
+function armEntrance() {
+  if (!isMotion()) return;
+  scope(() => {
+    const { gsap, ScrollTrigger } = window;
+    const list = cards().sort((a, b) => slotOfCard(a) - slotOfCard(b));
+    const u = unit();
+    gsap.set(list, { x: 0, y: 10 * u, rotation: 0, scale: 1, opacity: 1 }); // stacked lower, visible
+    gsapOn = true;
+    const tl = gsap.timeline({ paused: true, onComplete: () => release(fanEl) });
+    tl.to(list, { y: 0, duration: 0.8, ease: 'power2.out', stagger: { amount: 0.5, from: 'end' } });
+    tl.to(list, {
+      x: (k, el) => target(slotOfCard(el), u).x,
+      y: (k, el) => target(slotOfCard(el), u).y,
+      rotation: (k, el) => target(slotOfCard(el), u).rotation,
+      scale: (k, el) => target(slotOfCard(el), u).scale,
+      duration: 1.2, ease: EASE, stagger: { amount: 0.2, from: 'center' },
+    }, '-=0.4');
+    entrance = tl;
+    track(fanEl, tl, () => { entrance = null; });
+    ScrollTrigger.create({ trigger: fanEl, start: 'top 85%', once: true, onEnter: () => { markPlayed(fanEl); tl.play(); } });
+  });
+}
+
+/** Fan already in view (or above) at arming time: GSAP takes over at the resting arc, no entrance. */
+function takeOver() {
+  if (!isMotion() || gsapOn) return;
+  gsapOn = true;
+  const u = unit();
+  cards().forEach((c) => window.gsap.set(c, target(slotOfCard(c), u)));
+}
+
+function relayout() {
+  cards().forEach((c) => placeStatic(c, slotOfCard(c)));
+  if (animated() && !entrance) {
+    const u = unit();
+    cards().forEach((c) => { window.gsap.killTweensOf(c); window.gsap.set(c, target(slotOfCard(c), u)); });
+  }
+}
+
+/* ------------------------------------------------------------------ module contract */
 
 export function boot(ctx) {
   const data = ctx.data && ctx.data.videos;
@@ -106,27 +297,34 @@ export function boot(ctx) {
   cats = data.categories || [];
   items = (data.fan || []).map((id) => byId.get(id)).filter(Boolean);
   if (!items.length) return;
-  fanEl.insertAdjacentHTML('beforeend', items.map((it, i) => cardHTML(it, { fan: true, index: i })).join(''));
-  setFocus(Number.isInteger(data.fanFocus) ? data.fanFocus : 3);
-
-  // minimal interaction (instant); the builder replaces it with the GSAP carousel
-  const controls = document.querySelector('#content .fan__controls');
-  if (controls) {
-    controls.hidden = false;
-    controls.querySelector('.fan__prev').addEventListener('click', () => setFocus(focus - 1));
-    controls.querySelector('.fan__next').addEventListener('click', () => setFocus(focus + 1));
-  }
-  fanEl.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { e.preventDefault(); setFocus(focus - 1); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); setFocus(focus + 1); }
-  });
-  fanEl.addEventListener('click', (e) => {
-    const card = e.target.closest('.fan__card');
-    if (!card || e.target.closest('.vcard__sound, .vcard__pause')) return;
-    const idx = cards().indexOf(card);
-    if (idx !== focus) setFocus(idx);
-  });
+  fanEl.insertAdjacentHTML('beforeend', '<i class="fan__probe" aria-hidden="true"></i>'
+    + items.map((it, i) => cardHTML(it, { fan: true, index: i })).join(''));
+  probe = fanEl.querySelector('.fan__probe');
+  const hint = document.querySelector('#content .fan__soundhint');
+  if (hint && qHover.matches) hint.textContent = ' · click for sound';
+  focus = Number.isInteger(data.fanFocus) ? data.fanFocus : 3;
+  setFocus(focus, { instant: true });
+  bindInput();
+  initIconCycle();
+  const onDesk = () => relayout();
+  if (qDesk.addEventListener) qDesk.addEventListener('change', onDesk); else if (qDesk.addListener) qDesk.addListener(onDesk);
+  let rt = 0;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(relayout, 150); });
 }
 
-export function ready() {}
-export function finish() {}
+export function ready(ctx) {
+  if (!fanEl || !cards().length || !ctx.motion || !isMotion()) return;
+  bindHover();
+  onApproach(fanEl, armEntrance, { onSkip: takeOver });
+}
+
+export function finish() {
+  gsapOn = false;
+  entrance = null;
+  hovered = null;
+  const list = cards();
+  if (window.gsap && list.length) {
+    window.gsap.killTweensOf(list);
+    window.gsap.set(list, { clearProps: 'transform,opacity' });
+  }
+}

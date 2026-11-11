@@ -1,1 +1,40 @@
-/* hero.css: hero section builder's motion rules (scroll shrink, signature, handle, dark zone; spec §4.1, §7). Loaded after site.css; static hero layout stays in site.css (=== section: hero ===). */
+/* hero.css: hero section builder's motion rules (spec §4.1, §7). Loaded after site.css; the static
+   hero layout stays in site.css (=== section: hero ===). Everything here is scoped under .motion,
+   except the load settle (a CSS animation, so it starts on first paint, before any JS runs). */
+
+/* Load settle (§4.1): the wrapper, not the img, breathes 1.06 -> 1 from the arch top, so the arch top
+   stays put under the lockup. The individual `scale` property composes with nothing else on this
+   element (the scrub only tweens its clip-path). Off under reduced motion; visible throughout. */
+@media (prefers-reduced-motion: no-preference){
+  .hero__photo{ animation: hero-settle 1.8s var(--ease-out) backwards; }
+}
+@keyframes hero-settle{ from{ scale: 1.06; } to{ scale: 1; } }
+
+/* Scroll track: 220svh with a sticky 100svh stage. CSS sticky, never a ScrollTrigger pin. */
+.motion .hero{ height: 220svh; }
+.motion .hero__stage{ position: sticky; top: 0; }
+.motion .hero__photo img{ will-change: transform; }
+/* hero.js tweens the 12-value inset() string as --hero-clip (Chrome would re-serialize a clip-path
+   tween's ends compactly and break the interpolation); the fallback is the static arch of site.css. */
+.motion .hero--live .hero__photo{ clip-path: var(--hero-clip, inset(var(--arch-top) var(--arch-x) 0px var(--arch-x)
+  round var(--arch-rx) var(--arch-rx) 0px 0px / var(--arch-ry) var(--arch-ry) 0px 0px)); }
+
+/* Nav theme switch (§4.0): its top crosses the header line at scroll = 0.5 H. */
+.motion .hero__dark-zone{ display: block; position: absolute; left: 0; width: 1px; bottom: 0;
+  top: calc(50svh + 32px + env(safe-area-inset-top, 0px)); pointer-events: none; }
+
+/* Scroll-only layers: above the photo (1) and the copy (2). */
+.motion .sig--hero, .motion .hero__handle{ display: block; position: absolute; z-index: 3; pointer-events: none; }
+/* Invisible until hero.js has put them in their from-state (dash undrawn, chars lowered), so a fully
+   drawn signature never flashes over the cover while the page boots. */
+.motion .hero:not(.hero--live) .sig--hero,
+.motion .hero:not(.hero--live) .hero__handle{ visibility: hidden; }
+
+/* Signature: 84% of the stage (max 520 px), centred on the lower half of the card
+   (card: top .2 H, height .58 H, so its lower half is centred at .635 H). It overflows the card. */
+.sig--hero{ left: 50%; top: 63.5%; width: min(84%, 520px); color: var(--vanilla); translate: -50% -50%; }
+.sig__tip{ fill: currentColor; stroke: none; }
+
+/* Rising handle: Sand eyebrow, centred 24 px above the card; the line box clips the rising chars. */
+.hero__handle{ left: var(--pad-x-l); right: var(--pad-x-r); top: calc(20% - 24px); translate: 0 -100%;
+  margin: 0; text-align: center; color: var(--sand); overflow: clip; padding-block: .15em; }

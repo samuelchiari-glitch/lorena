@@ -1,1 +1,88 @@
-/* content.css: content section builder's rules (fan, video cards, chapters, rails; spec §4.4, §6). Loaded after site.css; static layout stays in site.css (=== section: content ===). */
+/* content.css: content section builder's rules (fan, video cards, chapters; spec §4.4, §6).
+   Loaded after site.css; the static layout stays in site.css (=== section: content ===). */
+
+/* ---------- niche icon: one 4.8 s cross-fade cycle per entry (1.2 s each, .3 s fades), rests on the first icon */
+.fan__icons.is-cycling .fan__icon{ animation: fan-icon 1.5s ease-in-out 1 both; }
+.fan__icons.is-cycling .fan__icon:first-child{ animation: fan-icon-first 4.8s ease-in-out 1 both; }
+.fan__icons.is-cycling .fan__icon:nth-child(2){ animation-delay: .9s; }
+.fan__icons.is-cycling .fan__icon:nth-child(3){ animation-delay: 2.1s; }
+.fan__icons.is-cycling .fan__icon:nth-child(4){ animation-delay: 3.3s; }
+@keyframes fan-icon-first{ 0%, 18.75%{ opacity: 1; } 25%, 93.75%{ opacity: 0; } 100%{ opacity: 1; } }
+@keyframes fan-icon{ 0%{ opacity: 0; } 20%, 80%{ opacity: 1; } 100%{ opacity: 0; } }
+
+/* ---------- fan: swipe surface */
+.fan{ -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.fan img{ -webkit-user-drag: none; }
+.fan .fan__card:not(.is-focus) :is(.vcard__sound, .vcard__pause, .vcard__hint, .vcard__glyph){ visibility: hidden; opacity: 0; }
+
+/* ---------- video card controls (§6.1): media 0 < glyph/.fan__hit 1 < sound/pause/hint 2 */
+.vcard__sound, .vcard__pause{
+  position: absolute; z-index: 2; bottom: 10px; width: 40px; height: 40px;
+  display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  color: var(--vanilla); background: rgba(241,234,218,.22);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px rgba(241,234,218,.38);
+  transition: opacity .25s var(--ease-out), visibility 0s linear, background-color .25s var(--ease-out), color .25s var(--ease-out), transform .25s var(--ease-out-3);
+}
+.vcard__sound{ right: 10px; }
+.vcard__pause{ left: 10px; }
+.vcard__sound::after, .vcard__pause::after{ content: ""; position: absolute; inset: -4px; border-radius: 50%; }   /* 48 px hit area */
+.vcard__sound:focus-visible, .vcard__pause:focus-visible{ outline: 2px solid var(--vanilla); outline-offset: 3px; }
+.vcard__icon{ width: 20px; height: 20px; overflow: visible; }
+.vcard__icon--on, .vcard__icon--play,
+.vcard__sound[aria-pressed="true"] .vcard__icon--off, .vcard__pause[aria-pressed="true"] .vcard__icon--pause{ display: none; }
+.vcard__sound[aria-pressed="true"] .vcard__icon--on, .vcard__pause[aria-pressed="true"] .vcard__icon--play{ display: block; }
+.vcard__sound[aria-pressed="true"]{ background: var(--vanilla); color: var(--mahogany); }
+.vcard__eq rect{ transform-box: fill-box; transform-origin: center; }
+.vcard.has-sound.is-playing .vcard__eq rect{ animation: vcard-eq .9s ease-in-out infinite alternate; }
+.vcard__eq rect:nth-child(2){ animation-delay: .15s; }
+.vcard__eq rect:nth-child(3){ animation-delay: .3s; }
+@keyframes vcard-eq{ from{ transform: scaleY(.35); } to{ transform: scaleY(1); } }
+
+/* pause: visible whenever the card plays (or was paused by the viewer, to resume) */
+.vcard__pause{ opacity: 0; visibility: hidden; transition-delay: 0s, .25s, 0s, 0s, 0s; }
+.vcard:is(.is-playing, .is-user-paused) .vcard__pause{ opacity: 1; visibility: visible; transition-delay: 0s; }
+
+/* hint pill: top-left, once on the first playing card, and while sound is locked (.needs-gesture) */
+.vcard__hint{
+  position: absolute; z-index: 2; top: 12px; left: 12px; padding: 7px 10px 6px; border-radius: var(--radius-pill);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 560; letter-spacing: .14em; text-transform: uppercase; line-height: 1;
+  color: var(--vanilla); background: rgba(77,52,45,.55);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  opacity: 0; pointer-events: none; transition: opacity .4s var(--ease-out);
+}
+.vcard[data-audio="true"]:is(.show-hint, .needs-gesture) .vcard__hint{ opacity: 1; }
+.vcard.needs-gesture .vcard__hint{ transition-duration: .2s; }
+
+/* play glyph: no autoplay (reduced motion, data saver) or a refused play() (.is-blocked) */
+.vcard__glyph{
+  position: absolute; z-index: 1; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+  display: none; place-items: center; border-radius: 50%; pointer-events: none;
+  color: var(--vanilla); background: rgba(241,234,218,.22);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px rgba(241,234,218,.38);
+}
+.vcard__glyph svg{ width: 24px; height: 24px; }
+.vcard[data-has-video="true"]:is(.is-blocked, .no-autoplay):not(.is-playing) .vcard__glyph{ display: grid; }
+
+/* poster-only still: one Ken Burns pass per viewport entry (4.5 s, under the 5 s limit) */
+.vcard[data-has-video="false"].kb-run .vcard__poster{ animation: vcard-kb 4.5s ease-in-out 1 forwards; }
+@keyframes vcard-kb{ from{ transform: none; } to{ transform: translate(-1%, -1%) scale(1.06); } }
+
+.vcard--feature[data-has-video="true"]{ cursor: pointer; }
+
+/* desktop (Conectaa §5.2): hover reveals the sound button */
+@media (hover:hover) and (pointer:fine){
+  .vcard__sound{ opacity: 0; pointer-events: none; }
+  .vcard:is(:hover, .is-hover) .vcard__sound, .vcard__sound:focus-visible, .vcard__sound[aria-pressed="true"]{ opacity: 1; pointer-events: auto; }
+  .vcard__sound:hover, .vcard__pause:hover{ transform: scale(1.06); }
+  .rail__thumb img{ transition: transform var(--dur-default) var(--ease-default); }
+  .rail__thumb:hover img{ transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .fan__icons .fan__icon{ animation: none !important; }
+  .vcard__poster{ animation: none !important; }
+  .vcard__eq rect{ animation: none !important; }
+  .vcard__hint{ display: none; }
+}
