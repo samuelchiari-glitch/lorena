@@ -1,0 +1,1944 @@
+{
+ "_meta": {
+  "source_design": {
+   "id": "DAG5X2TPfyU",
+   "title": "- Midia Kit - Lorena Maruch.",
+   "pages": 10,
+   "page_size_units": [
+    794,
+    1123
+   ],
+   "canva_view_url": "https://www.canva.com/d/GIjYO83t0M2zkVe",
+   "last_updated_unix": 1794404027
+  },
+  "extracted": "2026-11-11",
+  "method": "Read-only. The design was never edited, copied or resized. Data comes from read-design element data, get-assets, and PNG/JPG page exports cropped with element bounds (page units x export scale).",
+  "asset_access": "get-assets returns permission_denied for every image and video Lorena uploaded (videos, photos, logos, IG screenshots). Only Canva-library stock assets resolve (frame, backgrounds, contact icons). No original files or durations are available via the API.",
+  "raw_dumps": "_source/canva-structure/ (page-NN-<slug>.json = element data, get-assets.json, design-metadata.json)",
+  "page_exports": "_source/canva-pages/page-NN-<slug>.png (2382x3369, 3x) + _source/canva-pages/hires/ (6x/4x/10x/8x exports used for photo crops)",
+  "related_files": {
+   "text": "data/content.json",
+   "brands": "data/brands.json (logo specialist)",
+   "metrics": "data/metrics.json (insights specialist)"
+  }
+ },
+ "pages": [
+  {
+   "n": 1,
+   "slug": "cover",
+   "pt": "Capa",
+   "en": "Cover",
+   "export": "_source/canva-pages/page-01-cover.png",
+   "hires": "_source/canva-pages/hires/page-01-cover@6x.png"
+  },
+  {
+   "n": 2,
+   "slug": "about",
+   "pt": "sobre Lorena",
+   "en": "About",
+   "export": "_source/canva-pages/page-02-about.png",
+   "hires": "_source/canva-pages/hires/page-02-about@4x.jpg"
+  },
+  {
+   "n": 3,
+   "slug": "partners",
+   "pt": "parcerias",
+   "en": "Partners",
+   "export": "_source/canva-pages/page-03-partners.png"
+  },
+  {
+   "n": 4,
+   "slug": "stays",
+   "pt": "Meus Conteúdos: Hospedagens",
+   "en": "Content: Stays",
+   "export": "_source/canva-pages/page-04-stays.png"
+  },
+  {
+   "n": 5,
+   "slug": "restaurants",
+   "pt": "Meus Conteúdos: Restaurantes",
+   "en": "Content: Restaurants",
+   "export": "_source/canva-pages/page-05-restaurants.png"
+  },
+  {
+   "n": 6,
+   "slug": "fashion",
+   "pt": "Meus Conteúdos: Moda",
+   "en": "Content: Fashion",
+   "export": "_source/canva-pages/page-06-fashion.png"
+  },
+  {
+   "n": 7,
+   "slug": "skincare",
+   "pt": "Meus Conteúdos: Skin/Hair Care",
+   "en": "Content: Skin & Hair Care",
+   "export": "_source/canva-pages/page-07-skincare.png"
+  },
+  {
+   "n": 8,
+   "slug": "metrics",
+   "pt": "Métricas",
+   "en": "Metrics",
+   "export": "_source/canva-pages/page-08-metrics.png"
+  },
+  {
+   "n": 9,
+   "slug": "photo-grid",
+   "pt": "(grade de fotos)",
+   "en": "Photo grid",
+   "export": "_source/canva-pages/page-09-photo-grid.png",
+   "hires": "_source/canva-pages/hires/page-09-photo-grid@10x.jpg"
+  },
+  {
+   "n": 10,
+   "slug": "contact",
+   "pt": "c0ntato",
+   "en": "Contact",
+   "export": "_source/canva-pages/page-10-contact.png",
+   "hires": "_source/canva-pages/hires/page-10-contact@8x.jpg"
+  }
+ ],
+ "avatar": {
+  "file": "assets/img/avatar.jpg",
+  "file_transparent": "assets/img/avatar.png",
+  "size": [
+   294,
+   294
+  ],
+  "bytes": 24395,
+  "source": "Instagram profile picture inside the IG profile-header screenshot (page 1, element LB0K3xhp9MX5KlQw, asset MAHadeJyBN0), cropped from the 6x page export.",
+  "notes": "Circle cropped slightly up and left of centre so that the IG \"+\" badge (bottom-right) is excluded. Outside the circle: #efefec (jpg) / transparent (png). Native resolution is only about 220px, already upscaled about 1.4x by the 6x export, so display it at 150px CSS or smaller. Ask for the original profile photo for anything larger.",
+  "quality": "low (screenshot-derived)"
+ },
+ "portraits": [
+  {
+   "file": "assets/img/portrait-cover.jpg",
+   "page": 1,
+   "element_id": "LBP0sHMB24Mh99c2",
+   "canva_asset_id": "MAG5XBrRVMs",
+   "note": "Cropped above the burned-in LORENA MARUCH title overlay",
+   "bounds_page_units": [
+    183.01,
+    169.49,
+    412.68,
+    432.51
+   ],
+   "size": [
+    1527,
+    1600
+   ],
+   "bytes": 284942,
+   "description": "Close-up beauty portrait looking over a bare shoulder, tousled blonde hair, grey backdrop (cover photo shown inside a tablet mock-up).",
+   "source_export": "_source/canva-pages/hires/page-01-cover@6x.png"
+  },
+  {
+   "file": "assets/img/portrait-about.jpg",
+   "page": 2,
+   "element_id": "LBXg9fLNjzGtYGCg",
+   "canva_asset_id": "MAGxNTLnGPc",
+   "bounds_page_units": [
+    95.42,
+    459.62,
+    439.45,
+    592.22
+   ],
+   "size": [
+    1187,
+    1600
+   ],
+   "bytes": 164012,
+   "description": "Sitting on a wooden ledge in a black outfit hugging one knee, white wall (About-page photo shown inside a tablet mock-up).",
+   "source_export": "_source/canva-pages/hires/page-02-about@4x.jpg"
+  }
+ ],
+ "videos": {
+  "stays": [
+   {
+    "n": 1,
+    "id": "stays-01",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-01.jpg",
+    "ref_thumbnail_size": [
+     618,
+     833
+    ],
+    "page": 4,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_video_id": "VAHKzCTviU4",
+    "element_id": "LBJcwWQxkSmmXKfX",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     92.76,
+     169.32,
+     231.46,
+     301.38
+    ],
+    "visible_screen_page_units": [
+     105.72,
+     181.28,
+     206.04,
+     277.67
+    ],
+    "video_imagebox_in_tile": [
+     9.56,
+     -38.05,
+     212.33,
+     377.48
+    ],
+    "description": "Geodesic glamping dome interior: freestanding tub by a panoramic window, breakfast being set on a table."
+   },
+   {
+    "n": 2,
+    "id": "stays-02",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-02.jpg",
+    "ref_thumbnail_size": [
+     618,
+     833
+    ],
+    "page": 4,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_video_id": "VAG5X4H_q5I",
+    "element_id": "LBsXx6plpxdVgt42",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     354.45,
+     169.32,
+     231.46,
+     301.38
+    ],
+    "visible_screen_page_units": [
+     367.41,
+     181.28,
+     206.04,
+     277.67
+    ],
+    "video_imagebox_in_tile": [
+     9.56,
+     -38.05,
+     212.33,
+     377.48
+    ],
+    "description": "Elderly one-woman-band musician playing keyboard and improvised percussion (washboard, cymbal, red pot), a local attraction."
+   },
+   {
+    "n": 3,
+    "id": "stays-03",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-03.jpg",
+    "ref_thumbnail_size": [
+     586,
+     791
+    ],
+    "page": 4,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_video_id": "VAHL_XXHbBc",
+    "element_id": "LB61qKRnwPbZfJNb",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     98.73,
+     490.16,
+     219.51,
+     285.83
+    ],
+    "visible_screen_page_units": [
+     111.02,
+     501.49,
+     195.41,
+     263.34
+    ],
+    "video_imagebox_in_tile": [
+     9.07,
+     -36.09,
+     201.37,
+     358.0
+    ],
+    "description": "Lorena relaxing in a freestanding bathtub inside a geodesic dome with green mountain views."
+   },
+   {
+    "n": 4,
+    "id": "stays-04",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-04.jpg",
+    "ref_thumbnail_size": [
+     586,
+     791
+    ],
+    "page": 4,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_video_id": "VAG5YmAPCS4",
+    "element_id": "LBsTQsM3kB1xR1vg",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     361.26,
+     490.16,
+     219.51,
+     285.83
+    ],
+    "visible_screen_page_units": [
+     373.55,
+     501.49,
+     195.41,
+     263.34
+    ],
+    "video_imagebox_in_tile": [
+     9.07,
+     -36.09,
+     201.37,
+     358.0
+    ],
+    "description": "Woman on a wooden deck overlooking a misty mountain valley at sunset, basket of firewood on the table."
+   },
+   {
+    "n": 5,
+    "id": "stays-05",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-05.jpg",
+    "ref_thumbnail_size": [
+     582,
+     784
+    ],
+    "page": 4,
+    "grid_row": 3,
+    "grid_col": 1,
+    "canva_video_id": "VAHL_UHiIhk",
+    "element_id": "LByG527p6PPS1BYR",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     100.39,
+     795.4,
+     217.85,
+     283.66
+    ],
+    "visible_screen_page_units": [
+     112.59,
+     806.65,
+     193.93,
+     261.34
+    ],
+    "video_imagebox_in_tile": [
+     9.0,
+     -35.81,
+     199.85,
+     355.28
+    ],
+    "description": "A-frame cabin interior: tall curtained glass front, warm wood, orange sofa, a person at the window."
+   },
+   {
+    "n": 6,
+    "id": "stays-06",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/stays-06.jpg",
+    "ref_thumbnail_size": [
+     582,
+     784
+    ],
+    "page": 4,
+    "grid_row": 3,
+    "grid_col": 2,
+    "canva_video_id": "VAHL_cqUXVQ",
+    "element_id": "LBYCSJDCjwQ2lWnh",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     361.26,
+     794.81,
+     217.85,
+     283.66
+    ],
+    "visible_screen_page_units": [
+     373.45,
+     806.06,
+     193.93,
+     261.34
+    ],
+    "video_imagebox_in_tile": [
+     9.0,
+     -35.81,
+     199.85,
+     355.28
+    ],
+    "description": "Exterior of a black A-frame glass cabin with barrel sauna and stairs; yellow title overlay \"1 DIA EM\" (\"1 day in\")."
+   }
+  ],
+  "restaurants": [
+   {
+    "n": 1,
+    "id": "restaurants-01",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/restaurants-01.jpg",
+    "ref_thumbnail_size": [
+     720,
+     971
+    ],
+    "page": 5,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_video_id": "VAG5X3J2w9k",
+    "element_id": "LB0Y7XkW3YqHY0BZ",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     79.37,
+     253.71,
+     304.09,
+     395.96
+    ],
+    "visible_screen_page_units": [
+     96.4,
+     269.42,
+     270.7,
+     364.81
+    ],
+    "video_imagebox_in_tile": [
+     12.56,
+     -49.99,
+     278.96,
+     495.94
+    ],
+    "description": "Hand taking a PRONTO Light \"Nhoque recheado de mussarela\" ready meal from a fridge stocked with the brand's products."
+   },
+   {
+    "n": 2,
+    "id": "restaurants-02",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/restaurants-02.jpg",
+    "ref_thumbnail_size": [
+     720,
+     971
+    ],
+    "page": 5,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_video_id": "VAG5X9u5NR4",
+    "element_id": "LB2hq96MgQN6G13J",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     396.85,
+     253.71,
+     304.09,
+     395.96
+    ],
+    "visible_screen_page_units": [
+     413.88,
+     269.42,
+     270.7,
+     364.81
+    ],
+    "video_imagebox_in_tile": [
+     12.56,
+     -49.99,
+     278.96,
+     495.94
+    ],
+    "description": "Top-down shot of a colourful salad plate: tomatoes, mango, egg, cashews, edible flowers and couscous."
+   },
+   {
+    "n": 3,
+    "id": "restaurants-03",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/restaurants-03.jpg",
+    "ref_thumbnail_size": [
+     720,
+     970
+    ],
+    "page": 5,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_video_id": "VAG5YATQrYM",
+    "element_id": "LBYkv1JDx7W5rycc",
+    "source_aspect_w_over_h": 0.8745,
+    "tile_bounds_page_units": [
+     79.37,
+     666.84,
+     304.09,
+     395.96
+    ],
+    "visible_screen_page_units": [
+     96.4,
+     682.55,
+     270.7,
+     364.81
+    ],
+    "video_imagebox_in_tile": [
+     -11.18,
+     11.33,
+     326.45,
+     373.3
+    ],
+    "description": "Lorena (curly hair, white halter top) tasting a glass of white wine at a restaurant table."
+   },
+   {
+    "n": 4,
+    "id": "restaurants-04",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/restaurants-04.jpg",
+    "ref_thumbnail_size": [
+     720,
+     970
+    ],
+    "page": 5,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_video_id": "VAG5pGNfdBI",
+    "element_id": "LBsgB4KTgtyDry7Q",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     396.85,
+     666.84,
+     304.09,
+     395.96
+    ],
+    "visible_screen_page_units": [
+     413.88,
+     682.55,
+     270.7,
+     364.81
+    ],
+    "video_imagebox_in_tile": [
+     12.56,
+     -49.99,
+     278.96,
+     495.94
+    ],
+    "description": "Lorena eating breakfast outdoors among plants: fruit/chia cup, fresh juice, patterned bowls."
+   }
+  ],
+  "fashion": [
+   {
+    "n": 1,
+    "id": "fashion-01",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-01.jpg",
+    "ref_thumbnail_size": [
+     626,
+     843
+    ],
+    "page": 6,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_video_id": "VAG5XZvbaf8",
+    "element_id": "LBpF6YC1YwJjx3X7",
+    "source_aspect_w_over_h": 0.5634,
+    "tile_bounds_page_units": [
+     79.37,
+     142.97,
+     234.11,
+     304.82
+    ],
+    "visible_screen_page_units": [
+     92.48,
+     155.06,
+     208.4,
+     280.84
+    ],
+    "video_imagebox_in_tile": [
+     9.67,
+     -38.19,
+     214.76,
+     381.2
+    ],
+    "description": "Close-up portrait, hand to lips, chocolate-brown jacket, soft warm light."
+   },
+   {
+    "n": 2,
+    "id": "fashion-02",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-02.jpg",
+    "ref_thumbnail_size": [
+     625,
+     843
+    ],
+    "page": 6,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_video_id": "VAHMAP6VUxw",
+    "element_id": "LB3B1ZxS4l4fgqXp",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     332.75,
+     142.97,
+     234.11,
+     304.82
+    ],
+    "visible_screen_page_units": [
+     345.86,
+     155.06,
+     208.4,
+     280.84
+    ],
+    "video_imagebox_in_tile": [
+     9.67,
+     -38.48,
+     214.76,
+     381.79
+    ],
+    "description": "Barefoot steps on a wooden deck in a flowing teal silk skirt."
+   },
+   {
+    "n": 3,
+    "id": "fashion-03",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-03.jpg",
+    "ref_thumbnail_size": [
+     625,
+     842
+    ],
+    "page": 6,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_video_id": "VAG5X2W_Sx8",
+    "element_id": "LBJMKG9XnbcxjnSw",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     85.14,
+     460.56,
+     234.11,
+     304.82
+    ],
+    "visible_screen_page_units": [
+     98.25,
+     472.65,
+     208.4,
+     280.84
+    ],
+    "video_imagebox_in_tile": [
+     9.67,
+     -38.48,
+     214.76,
+     381.79
+    ],
+    "description": "Back view in a long open-back yellow satin dress on a lakeside deck."
+   },
+   {
+    "n": 4,
+    "id": "fashion-04",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-04.jpg",
+    "ref_thumbnail_size": [
+     625,
+     842
+    ],
+    "page": 6,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_video_id": "VAHL_XuEewg",
+    "element_id": "LBnsG2HC5s4B6DC1",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     332.75,
+     460.56,
+     234.11,
+     304.82
+    ],
+    "visible_screen_page_units": [
+     345.86,
+     472.65,
+     208.4,
+     280.84
+    ],
+    "video_imagebox_in_tile": [
+     9.67,
+     -38.48,
+     214.76,
+     381.79
+    ],
+    "description": "Split-screen styling clip: brown buckle sandals / white maxi dress outdoors under a cloudy sky (black band at the bottom of the frame)."
+   },
+   {
+    "n": 5,
+    "id": "fashion-05",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-05.jpg",
+    "ref_thumbnail_size": [
+     616,
+     829
+    ],
+    "page": 6,
+    "grid_row": 3,
+    "grid_col": 1,
+    "canva_video_id": "VAG5YuG2L2Q",
+    "element_id": "LB115cfQT50ZZnXj",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     85.14,
+     778.39,
+     230.46,
+     300.08
+    ],
+    "visible_screen_page_units": [
+     98.04,
+     790.29,
+     205.15,
+     276.47
+    ],
+    "video_imagebox_in_tile": [
+     9.52,
+     -37.89,
+     211.42,
+     375.85
+    ],
+    "description": "Close-up of a hand with white manicure on a terracotta leather clutch."
+   },
+   {
+    "n": 6,
+    "id": "fashion-06",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/fashion-06.jpg",
+    "ref_thumbnail_size": [
+     620,
+     836
+    ],
+    "page": 6,
+    "grid_row": 3,
+    "grid_col": 2,
+    "canva_video_id": "VAG5Yn31ry8",
+    "element_id": "LBlmyn38C0zPHhJ2",
+    "source_aspect_w_over_h": 0.6524,
+    "tile_bounds_page_units": [
+     332.93,
+     776.13,
+     232.19,
+     302.34
+    ],
+    "visible_screen_page_units": [
+     345.93,
+     788.12,
+     206.7,
+     278.55
+    ],
+    "video_imagebox_in_tile": [
+     9.59,
+     -12.07,
+     213.01,
+     326.48
+    ],
+    "description": "Lorena with a messy bun putting on a gold earring, black blazer."
+   }
+  ],
+  "skincare": [
+   {
+    "n": 1,
+    "id": "skincare-01",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-01.jpg",
+    "ref_thumbnail_size": [
+     569,
+     767
+    ],
+    "page": 7,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_video_id": "VAG5YK_RhDk",
+    "element_id": "LBpRDzGWGWgP7PjT",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     109.98,
+     240.53,
+     213.24,
+     277.66
+    ],
+    "visible_screen_page_units": [
+     121.92,
+     251.54,
+     189.83,
+     255.82
+    ],
+    "video_imagebox_in_tile": [
+     8.81,
+     -35.05,
+     195.62,
+     347.77
+    ],
+    "description": "Top-down: hand holding a cup of dark drink (tea/coffee) on a green ceramic saucer, wooden table. Shows a ritual moment; no product is visible."
+   },
+   {
+    "n": 2,
+    "id": "skincare-02",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-02.jpg",
+    "ref_thumbnail_size": [
+     570,
+     767
+    ],
+    "page": 7,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_video_id": "VAG5YerM_e8",
+    "element_id": "LBB57TjvLlsnH7k0",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     351.12,
+     240.53,
+     213.24,
+     277.66
+    ],
+    "visible_screen_page_units": [
+     363.06,
+     251.54,
+     189.83,
+     255.82
+    ],
+    "video_imagebox_in_tile": [
+     8.81,
+     -35.05,
+     195.62,
+     347.77
+    ],
+    "description": "Hand with white manicure picking up makeup brushes beside a beauty sponge."
+   },
+   {
+    "n": 3,
+    "id": "skincare-03",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-03.jpg",
+    "ref_thumbnail_size": [
+     551,
+     742
+    ],
+    "page": 7,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_video_id": "VAG5opkHVzM",
+    "element_id": "LBcZFq7Y7CQVRbfy",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     113.54,
+     537.18,
+     206.13,
+     268.39
+    ],
+    "visible_screen_page_units": [
+     125.08,
+     547.83,
+     183.49,
+     247.28
+    ],
+    "video_imagebox_in_tile": [
+     8.52,
+     -33.89,
+     189.09,
+     336.16
+    ],
+    "description": "Lorena in a dark robe in the bathroom holding a white CHANEL skincare tube to her face."
+   },
+   {
+    "n": 4,
+    "id": "skincare-04",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-04.jpg",
+    "ref_thumbnail_size": [
+     550,
+     742
+    ],
+    "page": 7,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_video_id": "VAG5X6f2xaU",
+    "element_id": "LBxMRVK63zDXGQBJ",
+    "source_aspect_w_over_h": 0.566,
+    "tile_bounds_page_units": [
+     344.75,
+     537.18,
+     206.13,
+     268.39
+    ],
+    "visible_screen_page_units": [
+     356.29,
+     547.83,
+     183.49,
+     247.28
+    ],
+    "video_imagebox_in_tile": [
+     8.52,
+     -32.83,
+     189.09,
+     334.06
+    ],
+    "description": "Split frame at a beauty counter: Lorena looking down / close-up applying product in a mirror."
+   },
+   {
+    "n": 5,
+    "id": "skincare-05",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-05.jpg",
+    "ref_thumbnail_size": [
+     518,
+     698
+    ],
+    "page": 7,
+    "grid_row": 3,
+    "grid_col": 1,
+    "canva_video_id": "VAG5YtMbdnQ",
+    "element_id": "LB8MH9Qy8S07Hn64",
+    "source_aspect_w_over_h": 0.5625,
+    "tile_bounds_page_units": [
+     117.1,
+     825.83,
+     194.03,
+     252.64
+    ],
+    "visible_screen_page_units": [
+     127.96,
+     835.85,
+     172.72,
+     232.76
+    ],
+    "video_imagebox_in_tile": [
+     8.02,
+     -31.9,
+     177.99,
+     316.43
+    ],
+    "description": "Lorena in a navy robe at the bathroom mirror, hair-care bottles on the counter."
+   },
+   {
+    "n": 6,
+    "id": "skincare-06",
+    "file": null,
+    "poster": null,
+    "duration_s": null,
+    "audio": null,
+    "status": "awaiting original file from client",
+    "ref_thumbnail": "assets/video/_ref/skincare-06.jpg",
+    "ref_thumbnail_size": [
+     516,
+     696
+    ],
+    "page": 7,
+    "grid_row": 3,
+    "grid_col": 2,
+    "canva_video_id": "VAG5o7WlEZw",
+    "element_id": "LBw4CY2rmLGNPLtf",
+    "source_aspect_w_over_h": 0.6544,
+    "tile_bounds_page_units": [
+     351.12,
+     825.83,
+     193.4,
+     251.83
+    ],
+    "visible_screen_page_units": [
+     361.94,
+     835.82,
+     172.16,
+     232.01
+    ],
+    "video_imagebox_in_tile": [
+     7.99,
+     -9.65,
+     177.42,
+     271.13
+    ],
+    "description": "Hand lifting an espresso cup from its saucer by a window (frame appears letterboxed). No product is visible."
+   }
+  ]
+ },
+ "photos": {
+  "gallery": [
+   {
+    "n": 1,
+    "file": "assets/img/gallery/01.jpg",
+    "size": [
+     1391,
+     1290
+    ],
+    "bytes": 151085,
+    "page": 9,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_asset_id": "MAGCImLrWqY",
+    "element_id": "LBtkQ13r5YlfD7VL",
+    "bounds_page_units": [
+     65.82,
+     65.7,
+     139.84,
+     129.78
+    ],
+    "description": "Seated on a sofa with Sephora shopping bags."
+   },
+   {
+    "n": 2,
+    "file": "assets/img/gallery/02.jpg",
+    "size": [
+     1056,
+     1320
+    ],
+    "bytes": 235076,
+    "page": 9,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_asset_id": "MAG5o-qus-E",
+    "element_id": "LBhq9RlhJSJ6Zgg4",
+    "bounds_page_units": [
+     222.66,
+     65.7,
+     106.43,
+     132.82
+    ],
+    "description": "Close-up holding a Chanel Chance hair-mist bottle to her face."
+   },
+   {
+    "n": 3,
+    "file": "assets/img/gallery/03.jpg",
+    "size": [
+     1159,
+     1283
+    ],
+    "bytes": 103921,
+    "page": 9,
+    "grid_row": 1,
+    "grid_col": 3,
+    "canva_asset_id": "MAGxNfRMAI0",
+    "element_id": "LBZvSV2YHWfMvVz7",
+    "bounds_page_units": [
+     352.36,
+     71.92,
+     116.79,
+     129.09
+    ],
+    "description": "Hands with rings and bracelets against a green tiled wall."
+   },
+   {
+    "n": 4,
+    "file": "assets/img/gallery/04.jpg",
+    "size": [
+     819,
+     1346
+    ],
+    "bytes": 74139,
+    "page": 9,
+    "grid_row": 1,
+    "grid_col": 4,
+    "canva_asset_id": "MAGxNexpz6o",
+    "element_id": "LB8MFP0yyCJTMVR9",
+    "bounds_page_units": [
+     493.15,
+     63.68,
+     82.69,
+     135.43
+    ],
+    "description": "Full-length in a white blazer and wide white trousers by sheer curtains."
+   },
+   {
+    "n": 5,
+    "file": "assets/img/gallery/05.jpg",
+    "size": [
+     1153,
+     1346
+    ],
+    "bytes": 97233,
+    "page": 9,
+    "grid_row": 1,
+    "grid_col": 5,
+    "canva_asset_id": "MAG5o4LRG8A",
+    "element_id": "LBLDlLKH3mPnG0ds",
+    "bounds_page_units": [
+     599.84,
+     63.67,
+     116.02,
+     135.43
+    ],
+    "description": "Smiling close-up holding a red/pink beauty-product jar."
+   },
+   {
+    "n": 6,
+    "file": "assets/img/gallery/06.jpg",
+    "size": [
+     841,
+     1302
+    ],
+    "bytes": 67291,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_asset_id": "MAFgE-OLl5A",
+    "element_id": "LB1qlmZ4p494CGFH",
+    "bounds_page_units": [
+     83.64,
+     224.01,
+     84.82,
+     131.04
+    ],
+    "description": "Black cap and oversized white shirt, holding a drink."
+   },
+   {
+    "n": 7,
+    "file": "assets/img/gallery/07.jpg",
+    "size": [
+     1013,
+     1302
+    ],
+    "bytes": 152101,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_asset_id": "MAGxNRBTFnA",
+    "element_id": "LBPW1TK500Btm1ch",
+    "bounds_page_units": [
+     185.81,
+     224.01,
+     102.08,
+     131.04
+    ],
+    "description": "At a table with a colourful salad plate, eyes closed, dark top."
+   },
+   {
+    "n": 8,
+    "file": "assets/img/gallery/08.jpg",
+    "size": [
+     876,
+     1260
+    ],
+    "bytes": 197450,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 3,
+    "canva_asset_id": "MAFtlLOVBIw",
+    "element_id": "LBbp4NDdsJw4s5hX",
+    "bounds_page_units": [
+     306.11,
+     224.01,
+     88.41,
+     126.78
+    ],
+    "description": "Walking toward a white geodesic glamping dome with an outdoor tub."
+   },
+   {
+    "n": 9,
+    "file": "assets/img/gallery/09.jpg",
+    "size": [
+     964,
+     1275
+    ],
+    "bytes": 143253,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 4,
+    "canva_asset_id": "MAFtlFo9wsQ",
+    "element_id": "LBrckDg9xx6bKdCr",
+    "bounds_page_units": [
+     407.85,
+     225.63,
+     97.22,
+     128.31
+    ],
+    "description": "Receiving a massage outdoors with a mountain view."
+   },
+   {
+    "n": 10,
+    "file": "assets/img/gallery/10.jpg",
+    "size": [
+     870,
+     1294
+    ],
+    "bytes": 98322,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 5,
+    "canva_asset_id": "MAGCIrtMJdw",
+    "element_id": "LBQRmncYxlhwQNZv",
+    "bounds_page_units": [
+     524.07,
+     222.28,
+     87.79,
+     130.24
+    ],
+    "description": "At a salon hair-wash basin, looking up at the camera."
+   },
+   {
+    "n": 11,
+    "file": "assets/img/gallery/11.jpg",
+    "size": [
+     1172,
+     1316
+    ],
+    "bytes": 252233,
+    "page": 9,
+    "grid_row": 2,
+    "grid_col": 6,
+    "canva_asset_id": "MAG5o6XMfZ4",
+    "element_id": "LBJn9kmS8HQ1JXdR",
+    "bounds_page_units": [
+     629.85,
+     224.01,
+     118.07,
+     132.41
+    ],
+    "description": "Sitting on stone steps in an oversized brown jacket, red sneakers, coffee cup."
+   },
+   {
+    "n": 12,
+    "file": "assets/img/gallery/12.jpg",
+    "size": [
+     1095,
+     1267
+    ],
+    "bytes": 86588,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 1,
+    "canva_asset_id": "MAF1djzdIUg",
+    "element_id": "LBh1pcL2Q9jcY6DF",
+    "bounds_page_units": [
+     84.36,
+     373.42,
+     110.38,
+     127.48
+    ],
+    "description": "Back view in a black outfit with a brown crossbody bag against a concrete wall."
+   },
+   {
+    "n": 13,
+    "file": "assets/img/gallery/13.jpg",
+    "size": [
+     1073,
+     1266
+    ],
+    "bytes": 118366,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 2,
+    "canva_asset_id": "MAGxNcnqWDc",
+    "element_id": "LBX7ZP7rh70N9CGJ",
+    "bounds_page_units": [
+     218.83,
+     375.75,
+     108.06,
+     127.48
+    ],
+    "description": "Mirror selfie in a denim jacket and jeans."
+   },
+   {
+    "n": 14,
+    "file": "assets/img/gallery/14.jpg",
+    "size": [
+     1012,
+     1266
+    ],
+    "bytes": 116909,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 3,
+    "canva_asset_id": "MAF1dr0WnDY",
+    "element_id": "LBGN1Qn4YTpGtPMK",
+    "bounds_page_units": [
+     346.84,
+     375.75,
+     101.96,
+     127.48
+    ],
+    "description": "Holding up a pendant necklace, black blazer, hair in a bun."
+   },
+   {
+    "n": 15,
+    "file": "assets/img/gallery/15.jpg",
+    "size": [
+     961,
+     1285
+    ],
+    "bytes": 115920,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 4,
+    "canva_asset_id": "MAF1dgB12gU",
+    "element_id": "LBYV8zRDK5XfdH20",
+    "bounds_page_units": [
+     463.64,
+     373.94,
+     96.89,
+     129.3
+    ],
+    "description": "Full-length in a strapless top and cargo trousers against a concrete wall."
+   },
+   {
+    "n": 16,
+    "file": "assets/img/gallery/16.jpg",
+    "size": [
+     909,
+     1267
+    ],
+    "bytes": 65484,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 5,
+    "canva_asset_id": "MAFgE4lS0Sg",
+    "element_id": "LBHNL1wqjQvWyHMl",
+    "bounds_page_units": [
+     575.53,
+     373.42,
+     91.7,
+     127.48
+    ],
+    "description": "Close-up of a brow/lash treatment, gloved hands."
+   },
+   {
+    "n": 17,
+    "file": "assets/img/gallery/17.jpg",
+    "size": [
+     643,
+     1267
+    ],
+    "bytes": 152688,
+    "page": 9,
+    "grid_row": 3,
+    "grid_col": 6,
+    "canva_asset_id": "MAGxNaAKTQE",
+    "element_id": "LBYlgL5xXLt2QZJ9",
+    "bounds_page_units": [
+     682.23,
+     373.42,
+     65.1,
+     127.48
+    ],
+    "description": "Back view in a yellow satin dress on a lakeside deck."
+   },
+   {
+    "n": 18,
+    "file": "assets/img/gallery/18.jpg",
+    "size": [
+     1152,
+     1520
+    ],
+    "bytes": 294910,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 1,
+    "canva_asset_id": "MAG5oz7BhXk",
+    "element_id": "LBQzblLFYwj81J3z",
+    "bounds_page_units": [
+     83.64,
+     512.93,
+     115.97,
+     152.77
+    ],
+    "description": "Sitting on a garden wall in a green patterned dress."
+   },
+   {
+    "n": 19,
+    "file": "assets/img/gallery/19.jpg",
+    "size": [
+     994,
+     1497
+    ],
+    "bytes": 234469,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 2,
+    "canva_asset_id": "MAG5o9r7_rU",
+    "element_id": "LBqM4yDP51hPFhDL",
+    "bounds_page_units": [
+     205.66,
+     514.07,
+     100.26,
+     150.48
+    ],
+    "description": "Mirror selfie in a black blazer over a white shirt in a store."
+   },
+   {
+    "n": 20,
+    "file": "assets/img/gallery/20.jpg",
+    "size": [
+     963,
+     1398
+    ],
+    "bytes": 155334,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 3,
+    "canva_asset_id": "MAGxNUPvvqE",
+    "element_id": "LBcfjrV21pnW7vRQ",
+    "bounds_page_units": [
+     319.16,
+     520.38,
+     97.1,
+     140.58
+    ],
+    "description": "Sitting on the deck of a sailboat at sea."
+   },
+   {
+    "n": 21,
+    "file": "assets/img/gallery/21.jpg",
+    "size": [
+     933,
+     1398
+    ],
+    "bytes": 58632,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 4,
+    "canva_asset_id": "MAFgE0Jxgeg",
+    "element_id": "LBM082Tqqm0WDmc3",
+    "bounds_page_units": [
+     432.25,
+     520.38,
+     94.1,
+     140.58
+    ],
+    "description": "Full-length in a black cut-out maxi dress."
+   },
+   {
+    "n": 22,
+    "file": "assets/img/gallery/22.jpg",
+    "size": [
+     1059,
+     1414
+    ],
+    "bytes": 153479,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 5,
+    "canva_asset_id": "MAGxNXfp5lA",
+    "element_id": "LBpnKxkg5JjXRx6h",
+    "bounds_page_units": [
+     535.04,
+     518.23,
+     106.7,
+     142.16
+    ],
+    "description": "Eating from a bowl in a white top against a terracotta wall with ferns."
+   },
+   {
+    "n": 23,
+    "file": "assets/img/gallery/23.jpg",
+    "size": [
+     829,
+     1394
+    ],
+    "bytes": 92927,
+    "page": 9,
+    "grid_row": 4,
+    "grid_col": 6,
+    "canva_asset_id": "MAFgEwO40Dk",
+    "element_id": "LB1fHFh4Pkg4YPG2",
+    "bounds_page_units": [
+     657.74,
+     523.89,
+     83.62,
+     140.25
+    ],
+    "description": "Black one-piece swimsuit on a boat, sea behind."
+   },
+   {
+    "n": 24,
+    "file": "assets/img/gallery/24.jpg",
+    "size": [
+     954,
+     1305
+    ],
+    "bytes": 95701,
+    "page": 9,
+    "grid_row": 5,
+    "grid_col": 1,
+    "canva_asset_id": "MAF1djFtUaM",
+    "element_id": "LBRzmWSRLCPDQFg9",
+    "bounds_page_units": [
+     89.69,
+     689.95,
+     96.18,
+     131.35
+    ],
+    "description": "Bikini with an open white shirt, sunglasses and a straw bag."
+   },
+   {
+    "n": 25,
+    "file": "assets/img/gallery/25.jpg",
+    "size": [
+     1277,
+     1380
+    ],
+    "bytes": 99672,
+    "page": 9,
+    "grid_row": 5,
+    "grid_col": 2,
+    "canva_asset_id": "MAFgEw6Sxkk",
+    "element_id": "LB5ynMBBkz2tw3wJ",
+    "bounds_page_units": [
+     200.61,
+     686.24,
+     128.48,
+     138.77
+    ],
+    "description": "Legs in black lace-up boots raised against a grey wall."
+   },
+   {
+    "n": 26,
+    "file": "assets/img/gallery/26.jpg",
+    "size": [
+     1319,
+     1305
+    ],
+    "bytes": 224419,
+    "page": 9,
+    "grid_row": 5,
+    "grid_col": 3,
+    "canva_asset_id": "MAF1dq6GpIQ",
+    "element_id": "LBryHZzmsHCJmkS7",
+    "bounds_page_units": [
+     346.84,
+     690.96,
+     132.7,
+     131.35
+    ],
+    "description": "Patterned two-piece set against a grey wall, gravel courtyard."
+   },
+   {
+    "n": 27,
+    "file": "assets/img/gallery/27.jpg",
+    "size": [
+     1181,
+     1268
+    ],
+    "bytes": 87412,
+    "page": 9,
+    "grid_row": 5,
+    "grid_col": 4,
+    "canva_asset_id": "MAFgE4tTgac",
+    "element_id": "LBwYMgwz2dw78T1t",
+    "bounds_page_units": [
+     494.54,
+     690.96,
+     118.87,
+     127.67
+    ],
+    "description": "Hand holding two jars labelled \"Parafina\"."
+   },
+   {
+    "n": 28,
+    "file": "assets/img/gallery/28.jpg",
+    "size": [
+     975,
+     1362
+    ],
+    "bytes": 75956,
+    "page": 9,
+    "grid_row": 5,
+    "grid_col": 5,
+    "canva_asset_id": "MAFgEwSFouI",
+    "element_id": "LBcn8cbXz0Dt4ywL",
+    "bounds_page_units": [
+     633.1,
+     687.14,
+     98.27,
+     136.97
+    ],
+    "description": "Hand with a bracelet and ring resting on a metal ledge."
+   },
+   {
+    "n": 29,
+    "file": "assets/img/gallery/29.jpg",
+    "size": [
+     1119,
+     1267
+    ],
+    "bytes": 167477,
+    "page": 9,
+    "grid_row": 6,
+    "grid_col": 1,
+    "canva_asset_id": "MAGxNUHH3iI",
+    "element_id": "LBd1mQtclcf7lQwg",
+    "bounds_page_units": [
+     87.65,
+     839.3,
+     112.66,
+     127.48
+    ],
+    "description": "Black-and-white: white halter top, drinking at a restaurant table with food."
+   },
+   {
+    "n": 30,
+    "file": "assets/img/gallery/30.jpg",
+    "size": [
+     1063,
+     1311
+    ],
+    "bytes": 83691,
+    "page": 9,
+    "grid_row": 6,
+    "grid_col": 2,
+    "canva_asset_id": "MAGxNRGjC5c",
+    "element_id": "LB3cxkKYprXSwxtl",
+    "bounds_page_units": [
+     205.66,
+     834.89,
+     107.15,
+     131.89
+    ],
+    "description": "Full-length in a black halter top and wide-leg jeans in a bright studio space."
+   },
+   {
+    "n": 31,
+    "file": "assets/img/gallery/31.jpg",
+    "size": [
+     1576,
+     1320
+    ],
+    "bytes": 284517,
+    "page": 9,
+    "grid_row": 6,
+    "grid_col": 3,
+    "canva_asset_id": "MAGCIoNh1KY",
+    "element_id": "LBShhyntTxCMYqBD",
+    "bounds_page_units": [
+     325.81,
+     833.97,
+     158.43,
+     132.81
+    ],
+    "description": "Hand holding a bowl with avocado, mango, roasted vegetables and grains."
+   },
+   {
+    "n": 32,
+    "file": "assets/img/gallery/32.jpg",
+    "size": [
+     1000,
+     1320
+    ],
+    "bytes": 136833,
+    "page": 9,
+    "grid_row": 6,
+    "grid_col": 4,
+    "canva_asset_id": "MAF1dk_X7Xs",
+    "element_id": "LBKHxbGcF5clVhY9",
+    "bounds_page_units": [
+     497.62,
+     833.97,
+     100.81,
+     132.81
+    ],
+    "description": "Holding a makeup brush up to the camera, pinstripe blazer."
+   },
+   {
+    "n": 33,
+    "file": "assets/img/gallery/33.jpg",
+    "size": [
+     1248,
+     1240
+    ],
+    "bytes": 131510,
+    "page": 9,
+    "grid_row": 6,
+    "grid_col": 5,
+    "canva_asset_id": "MAFgE4llZYI",
+    "element_id": "LB0gzRcNTcFNBsfN",
+    "bounds_page_units": [
+     614.44,
+     842.02,
+     125.54,
+     124.76
+    ],
+    "description": "Blue bikini, sitting on a bed in a rustic room with wall niches."
+   }
+  ],
+  "contact": [
+   {
+    "n": 1,
+    "file": "assets/img/contact/01.jpg",
+    "size": [
+     1444,
+     1600
+    ],
+    "bytes": 355579,
+    "page": 10,
+    "grid_row": 1,
+    "grid_col": 1,
+    "canva_asset_id": "MAG0d2JWNZU",
+    "element_id": "LBM7BxnNCDqqbCDH-a",
+    "bounds_page_units": [
+     123.31,
+     153.09,
+     186.31,
+     206.29
+    ],
+    "description": "Studio portrait in a brown shirt, reclining on a white sofa."
+   },
+   {
+    "n": 2,
+    "file": "assets/img/contact/02.jpg",
+    "size": [
+     1443,
+     1600
+    ],
+    "bytes": 194558,
+    "page": 10,
+    "grid_row": 1,
+    "grid_col": 2,
+    "canva_asset_id": "MAG5XPd7E-s",
+    "element_id": "LBM7BxnNCDqqbCDH-b",
+    "bounds_page_units": [
+     319.38,
+     153.09,
+     186.12,
+     206.29
+    ],
+    "description": "Sitting in a white shirt and trousers in a bright room with sheer curtains."
+   },
+   {
+    "n": 3,
+    "file": "assets/img/contact/03.jpg",
+    "size": [
+     1438,
+     1600
+    ],
+    "bytes": 255046,
+    "page": 10,
+    "grid_row": 1,
+    "grid_col": 3,
+    "canva_asset_id": "MAG5XPf3IJg",
+    "element_id": "LBM7BxnNCDqqbCDH-c",
+    "bounds_page_units": [
+     515.38,
+     153.09,
+     185.5,
+     206.29
+    ],
+    "description": "Lying on the floor in a black outfit, leaning on a cushion."
+   },
+   {
+    "n": 4,
+    "file": "assets/img/contact/04.jpg",
+    "size": [
+     1443,
+     1600
+    ],
+    "bytes": 285786,
+    "page": 10,
+    "grid_row": 2,
+    "grid_col": 1,
+    "canva_asset_id": "MAG5XPs0MrI",
+    "element_id": "LBM7BxnNCDqqbCDH-d",
+    "bounds_page_units": [
+     123.31,
+     369.0,
+     186.31,
+     206.5
+    ],
+    "description": "Close portrait with wavy hair, black shirt, leaning on a wooden bench."
+   },
+   {
+    "n": 5,
+    "file": "assets/img/contact/05.jpg",
+    "size": [
+     1442,
+     1600
+    ],
+    "bytes": 241691,
+    "page": 10,
+    "grid_row": 2,
+    "grid_col": 2,
+    "canva_asset_id": "MAG5XDSP1vM",
+    "element_id": "LBM7BxnNCDqqbCDH-e",
+    "bounds_page_units": [
+     319.38,
+     369.0,
+     186.12,
+     206.5
+    ],
+    "description": "Arms raised holding her hair, white strapless top, grey backdrop."
+   },
+   {
+    "n": 6,
+    "file": "assets/img/contact/06.jpg",
+    "size": [
+     1437,
+     1600
+    ],
+    "bytes": 318441,
+    "page": 10,
+    "grid_row": 2,
+    "grid_col": 3,
+    "canva_asset_id": "MAG5XECfpfo",
+    "element_id": "LBM7BxnNCDqqbCDH-f",
+    "bounds_page_units": [
+     515.38,
+     369.0,
+     185.5,
+     206.5
+    ],
+    "description": "Close portrait resting her head on her arm, rust-brown knit, white sofa."
+   },
+   {
+    "n": 7,
+    "file": "assets/img/contact/07.jpg",
+    "size": [
+     1443,
+     1600
+    ],
+    "bytes": 287764,
+    "page": 10,
+    "grid_row": 3,
+    "grid_col": 1,
+    "canva_asset_id": "MAG0eMK0hpk",
+    "element_id": "LBM7BxnNCDqqbCDH-g",
+    "bounds_page_units": [
+     123.31,
+     585.13,
+     186.31,
+     206.51
+    ],
+    "description": "Portrait in a crochet headscarf against tropical leaves."
+   },
+   {
+    "n": 8,
+    "file": "assets/img/contact/08.jpg",
+    "size": [
+     1442,
+     1600
+    ],
+    "bytes": 160338,
+    "page": 10,
+    "grid_row": 3,
+    "grid_col": 2,
+    "canva_asset_id": "MAGx3_xtpes",
+    "element_id": "LBM7BxnNCDqqbCDH-h",
+    "bounds_page_units": [
+     319.38,
+     585.13,
+     186.12,
+     206.51
+    ],
+    "description": "Full-length in a black tank and black joggers by sheer curtains."
+   },
+   {
+    "n": 9,
+    "file": "assets/img/contact/09.jpg",
+    "size": [
+     1437,
+     1600
+    ],
+    "bytes": 326360,
+    "page": 10,
+    "grid_row": 3,
+    "grid_col": 3,
+    "canva_asset_id": "MAGx4Mzy4xc",
+    "element_id": "LBM7BxnNCDqqbCDH-i",
+    "bounds_page_units": [
+     515.38,
+     585.13,
+     185.5,
+     206.51
+    ],
+    "description": "Close portrait, long straight blonde hair, warmly lit wooden interior."
+   }
+  ]
+ },
+ "logos": {
+  "see": "data/brands.json",
+  "owner": "logo specialist",
+  "source_export": "_source/canva-pages/page-03-partners.png",
+  "raw_structure": "_source/canva-structure/page-03-partners.json",
+  "logo_image_elements_on_page": 46
+ },
+ "metrics_page": {
+  "see": "data/metrics.json",
+  "owner": "insights specialist",
+  "source_export": "_source/canva-pages/page-08-metrics.png",
+  "screenshot_asset_ids": [
+   "MAHMAJHODo0 (header strip, recoloured)",
+   "MAHadXy7z8s",
+   "MAHadSOzx2U",
+   "MAHadWNo5E0"
+  ]
+ },
+ "contact_icons": {
+  "note": "Canva stock icons (Instagram, TikTok, WhatsApp, Email) on page 10. Use the site's own icon set instead.",
+  "asset_ids": {
+   "instagram": "MAGzNvFjH-I",
+   "tiktok": "MAGzNomc7ME",
+   "whatsapp": "MAGzNq9UM-M",
+   "email": "MAF4NgO4iZk"
+  }
+ },
+ "video_notes": {
+  "count": 22,
+  "decision": "Video files will come from the client (lead decision 2026-11-11). Nothing was rendered from Canva and there are no files under assets/video/ except the _ref/ identification thumbnails.",
+  "ref_thumbnails": "Each ref is the poster frame Canva rendered in the page PNG export, cropped inside the tablet bezel. It is for identification only and is NOT the full video frame (see crop note).",
+  "crop_note": "Most source videos are 9:16 (aspect 0.5625). The media kit shows them in a ~3:4 tablet screen scaled to width, so only about the middle 75% of each video's height is visible. Exceptions: restaurants-03 (source aspect ~0.87, cropped horizontally), fashion-06 and skincare-06 (~0.65).",
+  "not_available": "Durations, audio, resolution and original filenames are unavailable because get-assets returns permission_denied for all 22 video IDs."
+ }
+}

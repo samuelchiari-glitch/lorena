@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "source": "Canva design DAG5X2TPfyU \"- Midia Kit - Lorena Maruch.\" (10 pages, 794x1123). Read-only extraction.",
+    "extracted": "2026-11-11",
+    "notes": [
+      "Text marked source=canva_text is the text-layer content from the Canva element data, copied verbatim (including typos and double spaces).",
+      "Text marked source=screenshot is transcribed from the Instagram profile-header screenshot (an image, page 1). Its capture date is unknown.",
+      "Several cover texts are drawn in capitals in the design (a text-transform the Canva API does not expose). The text-layer casing is kept here, and 'rendered' gives what you see on the page.",
+      "English translations are faithful renderings for the website. They are not in the source."
+    ]
+  },
+  "person": {
+    "name": "Lorena Maruch",
+    "handle": "@lorena_maruch"
+  },
+  "cover": {
+    "page": 1,
+    "handle": { "pt": "@LORENA_MARUCH", "en": "@LORENA_MARUCH", "source": "canva_text" },
+    "kit_title": { "pt": "MIDIA KIT", "en": "MEDIA KIT", "source": "canva_text" },
+    "name_title": { "pt": "lORENA\nmARUCH", "rendered": "LORENA MARUCH", "en": "LORENA MARUCH", "source": "canva_text" },
+    "tagline": {
+      "pt": "Criadora de conteúdo, modelo, atriz e diretora de arte.",
+      "rendered": "CRIADORA DE CONTEÚDO, MODELO, ATRIZ E DIRETORA DE ARTE.",
+      "en": "Content creator, model, actress and art director.",
+      "source": "canva_text"
+    },
+    "instagram_header_screenshot": {
+      "source": "screenshot",
+      "capture_date": "unknown",
+      "username": "lorena_maruch",
+      "verified_badge": true,
+      "display_name": "Lorena Maruch",
+      "stats": {
+        "posts": { "pt": "2.828 posts", "en": "2,828 posts", "value": 2828 },
+        "followers": { "pt": "39,2 mil seguidores", "en": "39.2K followers", "value_approx": 39200 },
+        "following": { "pt": "3.262 seguindo", "en": "3,262 following", "value": 3262 }
+      },
+      "category": { "pt": "Artista", "en": "Artist" },
+      "bio_lines": [
+        { "pt": "diretora de arte @maruch.arte", "en": "art director @maruch.arte" },
+        { "pt": "vegetariana formada em teatro e cinema que ama viajar 🌱", "en": "vegetarian, trained in theatre and film, who loves to travel 🌱" }
+      ],
+      "threads_handle": "lorena_maruch"
+    }
+  },
+  "about": {
+    "page": 2,
+    "title": { "pt": "sobre Lorena", "en": "About Lorena", "source": "canva_text", "note": "Two text boxes: 'sobre' (regular) + 'Lorena' (italic)" },
+    "bio": {
+      "pt": "Formada em cinema e audiovisual, trabalha com publicidades no seu instagram há 8 anos, carrega seu olhar em todos seus projetos, construindo conceitos e elementos artísticos. Já assinou direção criativa em projetos para marcas nacionais e internacionais de grande porte nos setores de moda, beleza,  alimentação e mundo fitness.",
+      "en": "A graduate in film and audiovisual production, she has been creating sponsored content on her Instagram for 8 years, bringing her own eye to every project by building concepts and artistic elements. She has led creative direction on projects for major national and international brands in fashion, beauty, food and fitness.",
+      "source": "canva_text"
+    }
+  },
+  "partners": {
+    "page": 3,
+    "title": { "pt": "parcerias", "en": "Partnerships", "source": "canva_text" },
+    "brands": "See data/brands.json (owned by the logo specialist)."
+  },
+  "content_sections": {
+    "heading": { "pt": "Meus Conteúdos", "en": "My Content", "source": "canva_text", "note": "Text layer has a trailing space: 'Meus Conteúdos '" },
+    "categories": [
+      { "key": "stays", "page": 4, "pt": "Hospedagens", "en": "Stays", "en_long": "Hotels & stays" },
+      { "key": "restaurants", "page": 5, "pt": "Restaurantes", "en": "Restaurants", "en_long": "Restaurants & food", "note": "Text layer has a trailing space" },
+      { "key": "fashion", "page": 6, "pt": "Moda", "en": "Fashion" },
+      { "key": "skincare", "page": 7, "pt": "Skin/Hair Care", "en": "Skin & Hair Care", "note": "Already in English in the source" }
+    ]
+  },
+  "metrics": {
+    "page": 8,
+    "title": { "pt": "Métricas", "en": "Metrics", "source": "canva_text" },
+    "data": "See data/metrics.json (owned by the insights specialist). Page 8 holds only Instagram-insights screenshots."
+  },
+  "gallery": {
+    "page": 9,
+    "title": null,
+    "note": "Photo grid only, no text."
+  },
+  "contact": {
+    "page": 10,
+    "title": { "pt": "c0ntato", "rendered": "C0NTATO", "en": "Contact", "source": "canva_text", "note": "The source spells it with a zero ('c0ntato'), apparently as a stylistic choice" },
+    "instagram": { "handle": "@lorena_maruch", "url": "https://www.instagram.com/lorena_maruch/", "source": "canva_text (handle); URL derived" },
+    "tiktok": { "handle": "@lorena_maruch", "url": "https://www.tiktok.com/@lorena_maruch", "source": "canva_text (handle); URL derived" },
+    "whatsapp": {
+      "pt": "(31) 9 9302-3248",
+      "international": "+55 31 99302-3248",
+      "wa_me": "https://wa.me/5531993023248",
+      "source": "canva_text (number); international format and wa.me link derived (country code +55 assumed: Brazilian area code 31 = Belo Horizonte/MG)"
+    },
+    "email": { "value": "lorenamaruch@gmail.com", "source": "canva_text" }
+  },
+  "design_tokens_observed": {
+    "note": "Observed in the Canva element data, for reference only. The design-system specialist owns the actual tokens.",
+    "colors": {
+      "#efefec": "off-white page/panel background",
+      "#121212": "near-black text, lines, borders",
+      "#ffffff": "white (cover title, pill shapes)",
+      "#08304a": "dark navy (ring/backing behind some partner logos)",
+      "#a2a2a2": "grey (ring behind some partner logos)"
+    },
+    "fonts": {
+      "YAFdJnPX3ZE": "Display serif (high-contrast; used for 'LORENA MARUCH', 'sobre Lorena', 'Meus Conteúdos', category names in italic). Font name is not exposed by the API.",
+      "YAFdJjbTu24": "Geometric sans (handle, 'MIDIA KIT', tagline, bio, contact lines). Font name is not exposed by the API.",
+      "YADK3w_fTc4": "Sans used only for the 'Métricas' label on page 8."
+    },
+    "imagery": {
+      "page_background": "Canva stock 'Black and White Photo of the Ocean' (MAD6Gko8JmE) behind pages 3-10",
+      "device_frame": "Canva stock 'Gadget Mockup Frames Tablet' (MAE49sxTLnc) around the cover/about portraits and every video tile"
+    }
+  }
+}
