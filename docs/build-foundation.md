@@ -70,7 +70,7 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 | `data-arch` | the About arch scrub |
 
 - Markup you insert **after** `ready()` needs `reveals.scan(rootEl)` (it is idempotent).
-- Also exported: `splitLockup(h)`, which applies the aria rules and returns `{chars, revert}`; the hero h1 uses it. Also `buildOval`, `buildHighlight`, `buildCurtain`.
+- Also exported: `splitLockup(h)`, which applies the aria rules and returns `{chars, revert}`; it is meant for the hero h1. Also `buildOval`, `buildHighlight`, `buildCurtain`.
 - Clip-path rule: every clip-path tween is a `fromTo` with identical string structure. `inset()` strings with radii use `boxToInset()` (12 px values) from `hero.js`.
 
 ## 5. `js/ui.js` and the chrome
@@ -150,5 +150,5 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 - **Menu.** While it is open, the header bar sits above it (`.is-menu-open`, z 61); its button is the close control.
   - The menu footer reuses the hero eyebrow line and an Instagram link.
 - **About eyebrow.** The eyebrow reads "About" above the "ABOUT / *Lorena*" lockup, as the spec says. It is visibly redundant; consider a different eyebrow if the client agrees.
-- **First view (Chromium).** It fetches the 8 nearest posters, because of Chromium's own lazy-load margin (≈ 300 KB). In total it is ≈ 940 KB uncompressed, or about 660 KB at gzip-equivalent sizes for text. The content builder should watch the 700 KB budget.
+- **First view (Chromium).** It fetches the 8 nearest posters, because of Chromium's own lazy-load margin (≈ 300 KB). In total it is ≈ 940 KB uncompressed, or ≈ 670 KB transferred with text gzipped (images 427 KB, fonts 121 KB, libraries ≈ 55 KB, own HTML/CSS/JS/JSON 70 KB). The content builder should watch the 700 KB budget.
 - **Not done here:** the `lab/type.html` comparison panel (open question 14). It belongs to no section, so whoever finishes first should take it.
