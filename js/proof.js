@@ -13,15 +13,16 @@
  *               it below the fold; the profile screen gets data-ig-flash), and the stats count up.
  * insights.js auto-renders every screen statically on import (the resting state).
  *
- * Count-ups (stats, brand count) start at ~65% of their value (countFrom), so a number waiting just below
- * its play line never reads 0; the three stats share one data-motion-scope (site.html) and start together.
+ * Count-ups (the stats, the brand count and every Instagram screen) start at ~65% of their value (countFrom), so
+ * a number waiting just below its play line never reads 0; the three stats share one data-motion-scope (site.html)
+ * and start together.
  *
  * Exports: boot(ctx), ready(ctx), finish(), bindMetrics(metrics), getPath(obj, path), formatPeriod(period),
  *          countFrom(el, k).
  */
 import { renderScreen } from './insights.js';
 import { initMotion } from './motion.js';
-import { isMotion, onApproach, refresh } from './scroll.js';
+import { getLenis, isMotion, onApproach, refresh } from './scroll.js';
 
 export function getPath(obj, path) {
   return String(path).replace(/\[(\d+)\]/g, '.$1').split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
@@ -58,6 +59,28 @@ export function countFrom(el, k = 0.65) {
   const raw = m[0].replace(/[+,]/g, '');
   const v = parseFloat(raw);
   if (Number.isFinite(v)) el.setAttribute('data-count-from', (v * k).toFixed((raw.split('.')[1] || '').length));
+}
+
+/**
+ * renderScreen() (insights.js, reused unchanged) writes a screen's markup and arms its count-ups in one call, so
+ * their start value has to be set in between: while it runs, the placeholder's innerHTML setter is shadowed by one
+ * that writes the markup and then gives every [data-count] its data-count-from (motion.js reads it when it arms).
+ */
+function renderCountingFrom(el, metrics) {
+  const native = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(el, 'innerHTML', {
+    configurable: true,
+    get() { return native.get.call(this); },
+    set(html) {
+      native.set.call(this, html);
+      this.querySelectorAll('[data-count]').forEach((n) => countFrom(n));
+    },
+  });
+  try {
+    renderScreen(el, metrics);
+  } finally {
+    delete el.innerHTML; // back to the prototype's accessor
+  }
 }
 
 function initTabs() {
@@ -100,9 +123,17 @@ function initTabs() {
     more.setAttribute('aria-expanded', 'false');
     more.setAttribute('aria-controls', shot.id);
     more.addEventListener('click', () => {
+      const before = more.getBoundingClientRect().top;
       const open = fig.classList.toggle('is-cropped') === false;
       more.setAttribute('aria-expanded', String(open));
       more.textContent = open ? 'Show less' : 'Show the full screen';
+      // collapsing a screen read to its end would pull the button up under the header: keep it where it was
+      const shift = open ? 0 : more.getBoundingClientRect().top - before;
+      if (Math.abs(shift) > 1) {
+        const lenis = getLenis();
+        if (lenis) lenis.scrollTo(scrollY + shift, { immediate: true, force: true });
+        else window.scrollTo(0, scrollY + shift);
+      }
       refresh(); // the page below moved: re-measure the scroll triggers
     });
     fig.appendChild(more);
@@ -139,7 +170,7 @@ export function ready(ctx) {
       if (!isMotion() || el.getAttribute('data-ig-rendered') !== '') return;
       el.removeAttribute('data-ig-static');
       if (el.closest('#instagram')) el.setAttribute('data-ig-flash', '');
-      renderScreen(el, metrics);
+      renderCountingFrom(el, metrics);
     });
   });
   const stats = document.querySelector('#numbers .stats');

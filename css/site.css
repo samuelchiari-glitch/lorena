@@ -38,7 +38,10 @@
 
   /* type (Type §6) */
   --font-sans:  "LM Sans", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "the-seasons", "LM Serif", "Iowan Old Style", Georgia, serif;   /* The Seasons: Adobe Fonts, GitHub Pages only (scripts/wrap-site.sh); elsewhere the LM stand-ins */
+  --font-serif: "LM Serif", "Iowan Old Style", Georgia, serif;   /* "the-seasons" leads once loaded (.has-seasons) */
+  /* lockups + statement: block faces (below), then a system condensed face; The Seasons (Pages) blocks too */
+  --font-sans-lockup:  "LM Sans Lockup", "Avenir Next Condensed", "sans-serif-condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-serif-lockup: "the-seasons", "LM Serif", "Iowan Old Style", Georgia, serif;
   --fs-display: clamp(3.75rem, 19vw, 7.5rem);       /* 74px  hero lockup */
   --fs-h2:      clamp(2.375rem, 11.6vw, 5rem);      /* 45px  section lockup */
   --fs-h3:      clamp(1.625rem, 7.4vw, 2.5rem);     /* 29px  chapter lockup */
@@ -125,9 +128,22 @@
   src: url("../assets/fonts/eb-garamond-italic-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: italic;
-  font-display: swap;
+  font-display: block;                 /* lockup serif lines: see "LM Sans Lockup"; the running italics sit below the fold */
   size-adjust: 112%;                   /* optically matches The Seasons Italic / the roman */
 }
+/* LM Sans again with font-display:block, for the lockups and the statement: blank while loading (≤ 3 s), never a
+   wide fallback that snaps narrow (hero "LORENA" 289 → 195 px). Header, eyebrows and body keep the swap face. */
+@font-face {
+  font-family: "LM Sans Lockup";
+  src: url("../assets/fonts/lm-sans-var-latin.woff2") format("woff2");
+  font-weight: 200 900;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: block;
+}
+/* The Seasons (Adobe kit, Pages only, font-display:auto) leads the running serif once site.js has loaded it; no JS: at once */
+html.has-seasons{ --font-serif: "the-seasons", "LM Serif", "Iowan Old Style", Georgia, serif; }
+@media (scripting: none){ :root{ --font-serif: "the-seasons", "LM Serif", "Iowan Old Style", Georgia, serif; } }
 
 /* ------------------------------------------------------------------ base */
 *, *::before, *::after{ box-sizing: border-box; }
@@ -193,9 +209,7 @@ html.lenis::-webkit-scrollbar, html.lenis body::-webkit-scrollbar{ display: none
 
 .t-sans {                   /* the "bold" line, feminised: medium weight, narrow, airy */
   display: block;
-  /* until LM Sans arrives, a system condensed face (iOS/macOS, Android, Windows) keeps the narrow lines close
-     to their final width, instead of the wide Helvetica Neue / Arial snapping in */
-  font-family: "LM Sans", "Avenir Next Condensed", "sans-serif-condensed", "Arial Narrow", var(--font-sans);
+  font-family: var(--font-sans-lockup);
   font-weight: var(--sans-lockup-wght);
   font-stretch: 82%;
   text-transform: uppercase;
@@ -204,7 +218,7 @@ html.lenis::-webkit-scrollbar, html.lenis body::-webkit-scrollbar{ display: none
 }
 .t-serif {                  /* the accent line: swash italic, sentence case */
   display: block;
-  font-family: var(--font-serif);
+  font-family: var(--font-serif-lockup);
   font-style: italic;
   font-weight: 400;
   font-feature-settings: "swsh" 1, "liga" 1;
@@ -283,7 +297,7 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 .t-intro .t-accent { font-size: 1em; }
 .t-statement {              /* §2.2: .t-sans at --fs-statement, caps, .t-accent words inside (no swash) */
   margin: 0;
-  font-family: "LM Sans", "Avenir Next Condensed", "sans-serif-condensed", "Arial Narrow", var(--font-sans);
+  font-family: var(--font-sans-lockup);
   font-size: var(--fs-statement);
   font-weight: calc(var(--sans-lockup-wght) - 40);
   font-stretch: 80%;
@@ -542,7 +556,7 @@ html:not(.js) [data-ig-screen]{ display: none; }
 .about__photo{ width: 78%; margin: 10px 0 0 auto; aspect-ratio: 4/5; }   /* clear of the italic: the warm wood wall would swallow it */
 .about__bio{ max-width: 32ch; margin-top: 40px; }
 .about__roles{ margin-top: 16px; color: var(--ink); }
-.about__statement{ margin-top: 64px; }
+.about__statement{ margin-top: 64px; text-wrap: balance; }   /* no lone last word ("STYLE.") at 320–430 */
 /* === /section: about === */
 
 /* ======================================================================== */
@@ -662,7 +676,7 @@ html:not(.js) .fan__hint{ display: none; }
    screen" (proof.js) straddling the cut, so a cropped screen is barely taller than Home: no empty band under it. */
 .numbers__screen.is-cropped [data-ig-screen]{ max-height: 118cqw; overflow: hidden;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 20px), transparent); mask-image: linear-gradient(#000 calc(100% - 20px), transparent); }
-.numbers__more{ color: var(--ink); background: var(--bg); }
+.numbers__more{ position: relative; z-index: 1; color: var(--ink); background: var(--bg); }   /* above the masked screen (masks do not stop hits) */
 .numbers__screen.is-cropped .numbers__more{ margin-top: -38px; }
 .numbers__screen figcaption{ color: var(--muted); }
 .numbers__tabs ~ .numbers__screens figcaption{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the pills name them */
@@ -700,6 +714,8 @@ html:not(.js) .numbers__screens{ display: none; }
 .gallery__pair{ display: flex; justify-content: space-between; align-items: flex-start; }
 .gallery__item figcaption{ margin-bottom: 10px; color: var(--ink); text-wrap: balance; }
 .gallery__item--single figcaption{ width: calc(100% / .74 * .87); }   /* spans from the frame's left edge to the column's */
+.gallery__item--left figcaption{ width: calc(100% / .56); }            /* may span the pair: the right photo starts 80 px lower */
+@media (max-width: 374px){ .gallery__item figcaption{ letter-spacing: .08em; } }   /* one line in the 40% column (115 px at 320) */
 .gallery__item--left{ width: 56%; }
 .gallery__item--right{ width: 40%; margin-top: 80px; }
 .gallery__item--single{ width: 74%; margin: var(--space-2xl) auto 0; }

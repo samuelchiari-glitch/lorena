@@ -4,8 +4,9 @@
 # There is deliberately no </head><body> before the fragment: the parser keeps the
 # fragment's <title>, <meta>, <link>s and comment in <head> and opens <body> at <div class="site">.
 # Pages only: the Adobe Fonts kit juy5uwr ("the-seasons", the client's serif) is linked here and never
-# in site.html, because the Artifact CSP blocks use.typekit.net (spec, client feedback 3). The CSS
-# serif stack starts with "the-seasons", so the Artifact falls back to the LM stand-ins.
+# in site.html, because the Artifact CSP blocks use.typekit.net (spec, client feedback 3). The lockup serif
+# stack starts with "the-seasons"; the running-text stack once site.js has loaded its faces (.has-seasons).
+# The Artifact keeps the LM stand-ins.
 # The share/platform meta (og:*, twitter:card, canonical, theme-color, icons) are Pages-only too.
 set -euo pipefail
 
@@ -44,8 +45,13 @@ fi
   printf '%s\n' '<meta property="og:image:alt" content="Lorena Maruch, content creator and art director: a portrait beside her name.">'
   printf '%s\n' '<meta name="twitter:card" content="summary_large_image">'
   printf '%s\n' '<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>'
+  # Preconnects in the mode each request uses: the font files on use.typekit.net are CORS fetches (crossorigin);
+  # p.css on p.typekit.net, which the kit CSS @imports, is a no-cors stylesheet (no crossorigin), and the kit CSS
+  # itself is requested right below. The kit serves font-display:auto (an Adobe Fonts project setting): site.js only
+  # puts "the-seasons" in the running-text serif stack once its faces have loaded, so that text never waits for them
+  # (the lockups wait on their faces by design, at most 3 s: css/site.css).
   printf '%s\n' '<link rel="preconnect" href="https://use.typekit.net" crossorigin>'
-  printf '%s\n' '<link rel="preconnect" href="https://p.typekit.net" crossorigin>'
+  printf '%s\n' '<link rel="preconnect" href="https://p.typekit.net">'
   printf '%s\n' '<link rel="stylesheet" href="https://use.typekit.net/juy5uwr.css">'
   cat site.html
   printf '%s\n' '</body></html>'

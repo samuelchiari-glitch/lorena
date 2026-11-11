@@ -8,6 +8,7 @@ Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-wood-hands.jpg (client original img-9196)
   assets/img/web/gallery-NN-{480,800}.webp           q76  the Canva-extracted gallery photos still on the page
+                                                         (landscape ones cover-cropped to 5:6: GALLERY_CROP)
   assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (gallery)
   assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
@@ -32,8 +33,11 @@ FORCE = '--force' in sys.argv
 # The Canva-extracted gallery photos the page still shows (spec §4.7), in page order.
 # 08, 14 and 29 were retired for the client's originals (docs/inbox.md, 2026-11-11); 17 (it repeated the
 # fan's yellow satin), 02 (a hair-mist product, client feedback 6) and the kitchen single (now in the
-# Stays rail) were replaced by 04, 20 and 07 in polish round 1 (docs/qa-report.md).
-GALLERY = ['03', '22', '04', '20', '09', '18', '07']
+# Stays rail) were replaced by 04, 20 and 07 in polish round 1, and 07 (the same salad plate as the Food
+# rail's restaurants-02) by 31 in round 2 (docs/qa-report.md).
+GALLERY = ['03', '22', '04', '20', '09', '18', '31']
+# Landscape originals, cover-cropped to 5:6 around this horizontal centre so their frame never upscales.
+GALLERY_CROP = {'31': 0.52}
 
 # Web masters made from the client's high-res originals (_source/drive-2, EXIF-oriented, sRGB,
 # long side <= 2400 px, q86): output name -> master. Used by the gallery. (The Stays photos in
@@ -97,7 +101,11 @@ def main():
     for n in GALLERY:
         src = ROOT / f'assets/img/gallery/{n}.jpg'
         for w in (480, 800):
-            manifest[f'gallery-{n}-{w}'] = resize_w(src, web / f'gallery-{n}-{w}.webp', w, 76)
+            out = web / f'gallery-{n}-{w}.webp'
+            if n in GALLERY_CROP:
+                manifest[f'gallery-{n}-{w}'] = cover(src, out, (w, round(w * 6 / 5)), 76, GALLERY_CROP[n])
+            else:
+                manifest[f'gallery-{n}-{w}'] = resize_w(src, out, w, 76)
 
     for name, master in PHOTOS.items():
         for w in (480, 800):

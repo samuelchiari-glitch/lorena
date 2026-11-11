@@ -35,7 +35,7 @@ export function finish()    // finishAll(): jump to the final state, drop your i
 // ctx = { motion, reduced, data:{ videos, brands, metrics }, fontsReady, modules }
 ```
 
-- **Boot order:** mode → `initScroll()` (motion) → `ui.boot()` → data and modules load in parallel → every `boot()` → fonts → `ScrollTrigger.refresh()` → `reveals.ready()` → `ui.ready()` → every `ready()` → footer signature armed → `refresh()`.
+- **Boot order:** mode → `initScroll()` (motion) → `ui.boot()` → data and modules load in parallel (`hero.boot()` runs the moment `hero.js` loads: it needs no data, so the cover's scrub is live before the JSON arrives) → every other `boot()` → fonts (and, on Pages, The Seasons) → `ScrollTrigger.refresh()` → `reveals.ready()` → `ui.ready()` → every `ready()` → footer signature armed → `refresh()`.
 - **Mode can drop to static mid-session** (`finishAll()` runs on `beforeprint`, when reduced motion turns on, and when boot throws). Always re-check `isMotion()` inside callbacks. Listen for `document`'s `site:static` event if you keep state, such as autoplay.
 
 ## 3. `js/scroll.js` helpers (import them; do not re-implement)
@@ -89,6 +89,7 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
   - Page level: `--z-card-max 10` (top fan card), `--z-header 50` (also the scroll bar), `--z-menu 60`, `--z-toast 70`. The open-menu header is `61` and the skip link is `71`.
   - Inside a card: media 0 < `.fan__hit` 1 < `.vcard__sound`/`.vcard__pause` 2 < the curtain wash 5.
   - Do not create new page-level layers.
+- **Fonts.** Lockup lines and the statement use `--font-sans-lockup` / `--font-serif-lockup`, which block while their face loads (at most 3 s), so a headline never paints in a wide fallback and then snaps: `"LM Sans Lockup"` is the preloaded LM Sans file declared again with `font-display: block`, and the EB Garamond italic face is `block` itself (the running italics sit below the fold). Header, eyebrows and body keep the `swap` LM Sans. The Seasons (Pages only) leads the lockup serif stack, and the running-text stack once `site.js` has loaded its faces (`html.has-seasons`).
 - **Static first.** The CSS default is the final layout. Pre-animation states live only under `.motion …` or are set by JS just before use, and only on armed elements.
   - Never put `overflow:hidden` on an ancestor of `.hero`; `html, body` use `overflow-x: clip`.
   - Full-bleed bands clip themselves (`.content` and `.brands` have `overflow-x: clip`).

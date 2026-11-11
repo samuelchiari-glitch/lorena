@@ -8,7 +8,8 @@
  *
  * Section modules are loaded with dynamic import() and every call is wrapped, so one failing
  * module (even a syntax error) never breaks the page. Each may export (all optional):
- *   boot(ctx)    right after load, every JS mode: static render from data, listeners. Never hides.
+ *   boot(ctx)    right after load, every JS mode: static render from data, listeners. Never hides. The hero
+ *                (EARLY_MODULES) boots the moment its module loads, before the data: ctx.data is empty then.
  *   ready(ctx)   after every boot() resolved and fonts are ready (or 1.5 s): motion setup when ctx.motion.
  *   finish()     called by finishAll() (beforeprint, reduced motion turning on, boot failure).
  * ctx = { motion, reduced, data: { videos, brands, metrics }, fontsReady, modules }
@@ -18,6 +19,7 @@ import * as ui from './ui.js';
 import * as reveals from './reveals.js';
 
 const SECTION_MODULES = ['hero', 'signature', 'fan', 'video', 'brands', 'proof'];
+const EARLY_MODULES = ['hero']; // need no data: booted the moment they load, so the cover's scrub is live first
 const root = document.documentElement;
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -72,9 +74,22 @@ function waitHeroImage() {
   img.addEventListener('error', done, { once: true });
 }
 
+/**
+ * The Seasons (the client's serif; the Adobe Fonts kit is linked on GitHub Pages only) leads the running serif text
+ * once both faces the page uses have loaded (.has-seasons, css/site.css): the kit's font-display:auto would otherwise
+ * hide that text while they load. (Lockups block on their faces by design.) On the Artifact no face matches.
+ */
+function loadSeasons() {
+  if (!document.fonts || typeof document.fonts.load !== 'function') return Promise.resolve();
+  return Promise.all(['italic 400 1em "the-seasons"', '400 1em "the-seasons"'].map((f) => document.fonts.load(f)))
+    .then((faces) => { if (faces.every((list) => list.length)) root.classList.add('has-seasons'); })
+    .catch(() => {});
+}
+
 async function boot() {
   root.classList.add('js');
   waitHeroImage();
+  const seasons = loadSeasons();
 
   // 1. mode
   if (!reduceMQ.matches && libsReady()) {
@@ -93,11 +108,19 @@ async function boot() {
   // 2. chrome first (header, menu, router, copy): works in every JS mode
   await safe('ui.boot', () => ui.boot());
 
-  // 3. data + section modules in parallel
-  const fontsReady = Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(1500)]);
+  // 3. data + section modules in parallel. The early modules (the hero) boot as soon as they load, without
+  //    waiting for the JSON or the other modules; ctx.data and ctx.modules are filled in before the others boot.
+  const fontsReady = Promise.race([Promise.all([document.fonts ? document.fonts.ready : null, seasons]), sleep(1500)]);
+  const ctx = { motion: isMotion(), reduced: reduceMQ.matches, data: {}, fontsReady, modules: {} };
+  const bootModule = async (name, m) => {
+    if (typeof m.boot === 'function') await safe(`${name}.boot`, () => m.boot(ctx));
+  };
   const insightsP = import('./insights.js').catch((err) => { console.error('[site] insights.js failed', err); return null; });
   const modsP = Promise.all(SECTION_MODULES.map((n) => import(`./${n}.js`)
-    .then((m) => [n, m])
+    .then(async (m) => {
+      if (EARLY_MODULES.includes(n)) await bootModule(n, m);
+      return [n, m];
+    })
     .catch((err) => { console.error(`[site] ${n}.js failed to load`, err); return [n, null]; })));
   const [videos, brands, metrics, mods] = await Promise.all([
     loadJSON('../data/videos.json'),
@@ -108,11 +131,11 @@ async function boot() {
   validateVideos(videos);
 
   const modules = Object.fromEntries(mods.filter(([, m]) => m));
-  const ctx = { motion: isMotion(), reduced: reduceMQ.matches, data: { videos, brands, metrics }, fontsReady, modules };
+  Object.assign(ctx, { motion: isMotion(), data: { videos, brands, metrics }, modules });
 
   // 4. boot phase (static renders), then let ScrollTrigger measure the rendered page
   for (const [name, m] of Object.entries(modules)) {
-    if (typeof m.boot === 'function') await safe(`${name}.boot`, () => m.boot(ctx));
+    if (!EARLY_MODULES.includes(name)) await bootModule(name, m);
   }
   for (const [name, m] of Object.entries(modules)) {
     if (typeof m.finish === 'function') onFinish(() => { try { m.finish(); } catch (err) { console.error(`[site] ${name}.finish failed`, err); } });
