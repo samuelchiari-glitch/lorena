@@ -1,0 +1,226 @@
+{
+  "version": 1,
+  "updated": "2026-11-11",
+  "locale": "en-US",
+  "source": "Client's fresh iPhone screenshots (Instagram iOS app, PT-BR UI), transcribed by the lead; labels translated to Instagram's own English UI wording. Colours, radii and chart shapes cross-checked against _source/canva-pages/page-08-metrics.png (same reporting period). Display strings below are exactly what the screen shows; js/insights.js renders them as-is and js/motion.js counts them up.",
+  "howToUpdate": "Edit display strings in `kpis`, `profile`, `audience` and `contentTypes`; edit chart series in `charts`. Every screen reads from here, so a number changed once updates everywhere it appears. Anything with `verify: true` still needs the client's confirmation.",
+
+  "period": {
+    "label": "30 days",
+    "from": "2026-10-10",
+    "to": "2026-11-08",
+    "comparedTo": "Oct 9",
+    "deltaSuffix": "vs. Oct 9"
+  },
+
+  "ui": {
+    "dashboardTitle": "Your dashboard",
+    "tabs": ["Home", "Performance", "Content", "Audience"],
+    "summaryTitle": "Summary",
+    "allContentTitle": "All content",
+    "rangeLabel": "30 days"
+  },
+
+  "statusBar": {
+    "home": { "time": "18:16" },
+    "performance": { "time": "18:17" },
+    "audience": { "time": "18:17" },
+    "network": "5G",
+    "signalBars": 4,
+    "batteryPercent": 34,
+    "charging": true,
+    "source": "Status bar on every screenshot: time, signal bars, 5G, battery 34% green with charging bolt. Number of filled signal bars not transcribed: shown full.",
+    "verifySignalBars": true
+  },
+
+  "profile": {
+    "username": "lorena_maruch",
+    "verified": true,
+    "name": "Lorena Maruch",
+    "avatar": "assets/img/avatar.jpg",
+    "stats": [
+      { "value": "2,828", "label": "posts" },
+      { "value": "39.2K", "label": "followers" },
+      { "value": "3,262", "label": "following" }
+    ],
+    "category": "Artist",
+    "bio": [
+      { "text": "art director ", "mention": "@maruch.arte" },
+      { "text": "vegetarian, theater & film graduate who loves to travel 🌱" }
+    ],
+    "threadsBadge": "9+",
+    "threadsBadgeVerify": true,
+    "threadsBadgeNote": "Badge reads '9…' in the print (clipped). '9+' is a best guess.",
+    "pills": [
+      { "icon": "threads", "label": "lorena_maruch" },
+      { "icon": "plus", "label": "Add" }
+    ],
+    "dashboardCard": {
+      "title": "Your dashboard",
+      "value": "1.9M",
+      "text": "views in the last 30 days."
+    }
+  },
+
+  "kpis": {
+    "views": {
+      "label": "Views",
+      "value": "1,873,567",
+      "delta": "+955.0%"
+    },
+    "viewers": {
+      "label": "Viewers",
+      "value": "946,628",
+      "delta": null,
+      "deltaFromReference": "+2,665.2%",
+      "verify": true,
+      "note": "Delta is not legible in the fresh print, so it is not shown. The older page-08 media-kit crop of the same period shows '+2.665,2%' (PT) = '+2,665.2%'. Set `delta` to that string once the client confirms."
+    },
+    "viewsFromFollowers": {
+      "label": "Views from followers",
+      "value": "297,727",
+      "delta": "+215.3%"
+    },
+    "viewsFromNonFollowers": {
+      "label": "Views from non-followers",
+      "value": "1,575,256",
+      "delta": "+1,794.9%"
+    },
+    "followers": {
+      "label": "Followers",
+      "value": "39,241",
+      "delta": "+24.4%"
+    },
+    "netFollowers": {
+      "label": "Net followers",
+      "value": "+7,696"
+    },
+    "follows": {
+      "label": "Follows",
+      "value": "+8,919",
+      "verify": true,
+      "note": "Card is cut off at the right edge of the print; the label is a best guess."
+    }
+  },
+
+  "charts": {
+    "viewsDaily": {
+      "metric": "views",
+      "from": "2026-10-10",
+      "values": [1500, 1500, 1500, 1500, 1500, 1500, 1500, 72000, 36000, 10000, 6000, 104000, 160000, 180000, 344000, 168000, 453000, 83000, 28000, 20000, 30000, 32000, 22000, 19000, 15000, 8000, 15000, 8000, 10000, 9000],
+      "yMin": 0,
+      "yMax": 457000,
+      "yTicks": ["457K", "228K", "0"],
+      "xTicks": [
+        { "index": 0, "label": "Oct 10" },
+        { "index": 14, "label": "Oct 24" },
+        { "index": 29, "label": "Nov 8" }
+      ],
+      "sparkLabels": ["Oct 10", "Nov 8"],
+      "approximate": true,
+      "source": "Daily views digitised from the print by the lead (sums to ≈1.84M vs 1,873,567 total). Cross-checked against the page-08 sparkline. The top gridline (457K) is Instagram's max for the period, so the peak day is drawn touching it."
+    },
+    "followersDaily": {
+      "metric": "followers",
+      "from": "2026-10-10",
+      "values": [31545, 31545, 31545, 31545, 31545, 31545, 31545, 32535, 33330, 33590, 33850, 34745, 35945, 37420, 38640, 39160, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241, 39241],
+      "yMin": 31545,
+      "yMax": 39241,
+      "yTicks": ["39.2K", "35.3K", "31.5K"],
+      "xTicks": [
+        { "index": 0, "label": "Oct 10" },
+        { "index": 14, "label": "Oct 24" },
+        { "index": 29, "label": "Nov 8" }
+      ],
+      "approximate": true,
+      "source": "Followers per day digitised from the higher-resolution page-08 crop of the same chart (start 31,545 + net 7,696 = 39,241). Matches the lead's transcription of the fresh print within ~1%."
+    }
+  },
+
+  "contentTypes": {
+    "title": "Views by content type",
+    "legend": [
+      { "key": "followers", "label": "Followers" },
+      { "key": "nonFollowers", "label": "Non-followers" }
+    ],
+    "rows": [
+      { "label": "Reels", "value": "1.5M", "segments": [5.6, 74.4] },
+      { "label": "Stories", "value": "204K", "segments": [7.8, 2.8] },
+      { "label": "Posts", "value": "169K", "segments": [2.1, 6.6] },
+      { "label": "Live videos", "value": "0", "segments": [0, 0] }
+    ],
+    "segmentsAre": "percent of the full track (track = total views); measured from the print, approximate",
+    "approximate": true
+  },
+
+  "interactionsTeaser": {
+    "show": true,
+    "title": "Interactions by content type",
+    "chips": ["All", "Likes", "Comments", "Reposts", "Shares"]
+  },
+
+  "audience": {
+    "gender": {
+      "title": "Gender",
+      "rows": [
+        { "key": "women", "label": "Women", "value": "44.0%", "percent": 44.0 },
+        { "key": "men", "label": "Men", "value": "56.0%", "percent": 56.0 }
+      ]
+    },
+    "age": {
+      "title": "Age range",
+      "legend": [
+        { "key": "women", "label": "Women" },
+        { "key": "men", "label": "Men" }
+      ],
+      "rows": [
+        { "label": "13-17", "value": "0.1%", "segments": null, "total": 0.1, "verify": true, "note": "Women/men split not legible (bar is a tiny tick); drawn as a minimal tick." },
+        { "label": "18-24", "value": "3.9%", "segments": [2.1, 1.8] },
+        { "label": "25-34", "value": "38.5%", "segments": [21.4, 17.1] },
+        { "label": "35-44", "value": "31.3%", "segments": [11.7, 19.6] },
+        { "label": "45-54", "value": null, "segments": null, "verify": true, "note": "Cut off in the print. Ask the client." },
+        { "label": "55-64", "value": null, "segments": null, "verify": true, "note": "Not in the print. Ask the client." },
+        { "label": "65+", "value": null, "segments": null, "verify": true, "note": "Not in the print. Ask the client." }
+      ],
+      "segmentsAre": "percent of the full track (0-100%), women then men; measured from the print, approximate"
+    }
+  },
+
+  "screens": {
+    "profile": {
+      "kind": "profile"
+    },
+    "summary": {
+      "kind": "dashboard",
+      "tab": 0,
+      "statusBar": "home",
+      "title": "Summary",
+      "featured": "views",
+      "cards": ["followers", "netFollowers"]
+    },
+    "performance": {
+      "kind": "dashboard",
+      "tab": 1,
+      "statusBar": "performance",
+      "title": "All content",
+      "cards": ["views", "viewers", "viewsFromFollowers", "viewsFromNonFollowers"],
+      "selected": "views",
+      "smallLabels": ["viewsFromFollowers", "viewsFromNonFollowers"],
+      "scrollTo": { "card": "viewers", "x": 46 },
+      "chart": "viewsDaily",
+      "contentTypes": true,
+      "interactionsTeaser": true
+    },
+    "audience": {
+      "kind": "dashboard",
+      "tab": 3,
+      "statusBar": "audience",
+      "title": "All content",
+      "cards": ["followers", "netFollowers", "follows"],
+      "selected": "followers",
+      "chart": "followersDaily",
+      "gender": true,
+      "age": true
+    }
+  }
+}
