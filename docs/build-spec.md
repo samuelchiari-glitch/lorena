@@ -24,6 +24,12 @@ This is **revision 2** (2026-11-11). §11 lists what changed from revision 1 and
 >    - every copy mention of "skin & hair care", including the hero/about lines, the eyebrows, the footer and the `<meta name="description">` in `scripts/wrap-site.sh`.
 >
 >    The site's categories are now Stays, Food and Fashion. **Keep the skincare data and assets in the repo** (e.g. mark the category disabled in `data/videos.json`) so the chapter can come back later with a one-line change. Reviewers: if `#care` or any skincare mention is still visible, that is a **must** finding.
+> 7. **Stays gets a mixed photo + video rail (client request, 2026-11-11).** The client sent many stays photos and wants them used in Stays.
+>    - **The rail:** turn the Stays chapter's rail/carousel into a MIXED rail. Interleave the 5 real stays videos with the client's stays photos: cabin, A-frame, dome, deck/ofurô, kitchen and couple shots (`assets/img/stays/*` and the web derivatives). About 8–12 items, starting with a video.
+>    - **Photo cards:** same card frame and size as the video cards, cover-cropped to the card ratio with good framing, no sound button. Tapping one may open it larger if that's cheap.
+>    - **Video rules stay as they are:** autoplay muted on arrival, one sound owner.
+>    - **Duplicates:** if the two standalone photos under the chapter now duplicate rail items, replace them with different shots or remove them.
+>    - **Reviewers:** if Stays doesn't show a mixed photo + video rail using the client's stays photos, that is a **must** finding.
 > 5. **Note for the integrator:** a second copy of the hero builder applied items 1–2 at 16:40–16:50 UTC (it touched `js/hero.js`, `js/signature.js`, `css/hero.css`, the hero and about blocks, `assets/img/cover.jpg`, `scripts/make-images.py` and `hero-*.webp`). Meanwhile the workflow's hero builder deliberately left the full-bleed framing and the theme-zone work unfinished. Consolidate the two, finish the full-bleed → rounded-card hero, and re-test every hero context in §9.E.
 
 ---
