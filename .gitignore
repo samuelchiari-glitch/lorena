@@ -1,0 +1,5 @@
+# raw exports / working files (large, not published)
+_source/
+node_modules/
+.DS_Store
+*.log
