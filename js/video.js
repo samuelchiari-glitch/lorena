@@ -12,6 +12,11 @@
  * DOM contract: a card carries .has-sound while it owns sound and dispatches a bubbling `vcard:sound` event when that changes.
  * Module contract (site.js): boot(ctx) renders the chapters + registers every card (every JS mode); ready(); finish().
  * Helpers for fan.js: cardHTML(item, opts), esc(str), formatDuration(sec).
+ *
+ * Data (data/videos.json): a category with `disabled: true` is skipped everywhere (client feedback 6); a category's
+ * `rail` lists its rail items in order, and may mix in photo items (type "photo", client feedback 7): a photo thumb
+ * shows the still in the feature card (poster-only: no sound or pause button, one Ken Burns pass). A category that is
+ * enabled but has no shell in site.html gets one rendered from its data, so re-enabling a chapter is a data change.
  */
 import { makeIO } from './scroll.js';
 
@@ -43,6 +48,7 @@ const items = new Map(); // id -> item (filled by cardHTML, so both renderers sh
 export function cardHTML(item, opts = {}) {
   items.set(item.id, item);
   const hasVideo = !!item.src;
+  const posterAlt = opts.feature && !hasVideo ? esc(item.alt) : ''; // a still is the content; a video names itself
   const audio = hasVideo && item.audio !== false;
   const cls = ['vcard', opts.fan ? 'fan__card' : '', opts.feature ? 'vcard--feature' : ''].filter(Boolean).join(' ');
   const attrs = [
@@ -58,7 +64,7 @@ export function cardHTML(item, opts = {}) {
     : '';
   const hit = opts.fan ? `<button class="fan__hit" type="button" aria-label="Show: ${esc(item.title)}"></button>` : '';
   return `<figure ${attrs}>`
-    + `<div class="vcard__media"><img class="vcard__poster" data-src="${esc(item.poster)}" alt="" width="540" height="960" decoding="async">${video}</div>`
+    + `<div class="vcard__media"><img class="vcard__poster" data-src="${esc(item.poster)}" alt="${posterAlt}" width="540" height="960" decoding="async">${video}</div>`
     + `<span class="vcard__glyph" aria-hidden="true">${ICON_GLYPH}</span>`
     + hit
     + `<button class="vcard__sound" type="button" aria-pressed="false" aria-label="Turn sound on"${audio ? '' : ' hidden'}>${ICON_SOUND}</button>`
@@ -67,23 +73,47 @@ export function cardHTML(item, opts = {}) {
     + '</figure>';
 }
 
+const isPhoto = (item) => item.type === 'photo';
+
 function thumbHTML(item, active) {
-  const verb = item.src ? 'Play' : 'Show';
-  return `<button class="rail__thumb" type="button" data-id="${esc(item.id)}" aria-label="${verb}: ${esc(item.title)}"${active ? ' aria-current="true"' : ''}>`
+  const verb = isPhoto(item) ? 'View photo' : item.src ? 'Play' : 'Show';
+  return `<button class="rail__thumb${isPhoto(item) ? ' rail__thumb--photo' : ''}" type="button" data-id="${esc(item.id)}" aria-label="${verb}: ${esc(item.title)}"${active ? ' aria-current="true"' : ''}>`
     + `<img data-src="${esc(item.thumb)}" alt="" width="240" height="427" decoding="async"></button>`;
 }
 
-const catLabel = (cat) => { const p = String(cat.eyebrow || '').split('·'); return (p[1] || p[0] || '').trim(); };
-const metaText = (cat, item) => { const d = formatDuration(item.duration); return `${catLabel(cat)}${d ? ` · ${d}` : ''}`; };
+export const catName = (cat) => (cat && (cat.name || cat.key)) || '';
+const metaText = (cat, item) => {
+  if (isPhoto(item)) return `${catName(cat)} · Photo`;
+  const d = formatDuration(item.duration);
+  return `${catName(cat)}${d ? ` · ${d}` : ''}`;
+};
+
+/** Chapter shell from the data, for an enabled category that site.html has no markup for. */
+function shellHTML(cat) {
+  const a = esc(cat.anchor || cat.key);
+  return `<article id="${a}" class="chapter" data-chapter="${esc(cat.key)}" aria-labelledby="${a}-title"><div class="chapter__head wrap">`
+    + `<p class="t-eyebrow" data-highlight>${esc(cat.eyebrow)}</p>`
+    + `<h3 id="${a}-title" class="t-lockup t-lockup--sm" data-oval><span class="t-sans">${esc(cat.sans)}</span> <span class="t-serif">${esc(cat.serif)}</span></h3>`
+    + `<p class="t-caption chapter__sub">${esc(cat.subtitle)}</p></div>`
+    + `<div class="chapter__body" data-chapter-body="${esc(cat.key)}"></div></article>`;
+}
 
 /** Static boot render of every chapter body (feature card + caption + rail), then the thumb swap. */
 export function renderChapters(data) {
   if (!data || !Array.isArray(data.categories)) return;
   const byId = new Map((data.videos || []).map((v) => [v.id, v]));
+  const content = document.getElementById('content');
   data.categories.forEach((cat, ci) => {
-    const body = document.querySelector(`[data-chapter-body="${cat.key}"]`);
+    if (cat.disabled) return;
+    let body = document.querySelector(`[data-chapter-body="${cat.key}"]`);
+    if (!body && content) {
+      content.insertAdjacentHTML('beforeend', shellHTML(cat));
+      body = content.querySelector(`[data-chapter-body="${cat.key}"]`);
+    }
     if (!body || body.hasAttribute('data-rendered')) return;
-    const list = (data.videos || []).filter((v) => v.category === cat.key).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const list = Array.isArray(cat.rail)
+      ? cat.rail.map((id) => byId.get(id)).filter(Boolean)
+      : (data.videos || []).filter((v) => v.category === cat.key && !isPhoto(v)).sort((a, b) => (a.order || 0) - (b.order || 0));
     const feature = byId.get(cat.feature) || list[0];
     if (!feature) return;
     list.forEach((it) => items.set(it.id, it));
@@ -135,6 +165,7 @@ let unlocked = false;
 let rafId = 0;
 let hintShown = false;
 let warmIO = null;
+let farIO = null;
 let visIO = null;
 let kbIO = null;
 
@@ -157,6 +188,11 @@ function ensureIOs() {
     const s = states.get(e.target);
     if (s) { s.near = e.isIntersecting; if (s.near) warm(s); }
   }), { rootMargin: '100% 0px', threshold: 0 });
+  // memory (iOS): a warmed card more than 2 viewports away drops its source; warmIO restores it on the way back
+  farIO = makeIO((entries) => entries.forEach((e) => {
+    const s = states.get(e.target);
+    if (s && !e.isIntersecting) unwarm(s);
+  }), { rootMargin: '200% 0px', threshold: 0 });
   kbIO = makeIO((entries) => entries.forEach((e) => {
     const s = states.get(e.target);
     if (!s || e.isIntersecting === s.kbOn) return;
@@ -165,15 +201,25 @@ function ensureIOs() {
   }), { threshold: 0 });
 }
 
-/** Warm-up (§6.3): muted first, then poster + src together, preload metadata once. */
+/** Warm-up (§6.3): muted first, then poster + src together, preload metadata once. Data saver: only on a tap. */
 function warm(s) {
-  if (s.warmed || !hasSrc(s) || !s.warmOK || !s.item) return;
+  if (s.warmed || !hasSrc(s) || !s.warmOK || !s.item || (saveData() && !s.userPlay)) return;
   s.warmed = true;
   s.v.muted = true;
   s.v.setAttribute('muted', '');
   s.v.poster = s.item.poster;
   s.v.src = s.item.src;
   s.v.preload = 'metadata';
+}
+
+function unwarm(s) {
+  if (!s.warmed || owner === s || !s.v.paused) return;
+  s.warmed = false;
+  s.tok++; // the next `playing` fades the footage in again over the poster
+  s.el.classList.remove('is-live');
+  s.v.removeAttribute('src');
+  s.v.removeAttribute('poster');
+  try { s.v.load(); } catch (_) { /* ignore */ }
 }
 
 export function register(card) {
@@ -198,7 +244,8 @@ export function register(card) {
     card.classList.add('is-playing');
     card.classList.remove('is-blocked');
     if (s.liveTok !== s.tok) { s.liveTok = s.tok; card.classList.add('is-live'); } // token: first `playing` of this source
-    if (!hintShown && hasAudio(s) && owner !== s && !qReduce.matches && (!s.fan || s.eligible)) { hintShown = true; flashHint(s, 2500); }
+    // the first-play hint goes to a chapter card: the fan has its own caption line ("tap for sound")
+    if (!hintShown && !s.fan && hasAudio(s) && owner !== s && !qReduce.matches) { hintShown = true; flashHint(s, 2500); }
   });
   s.v.addEventListener('pause', () => card.classList.remove('is-playing'));
   if (s.btn) s.btn.addEventListener('click', (e) => { e.stopPropagation(); toggleSound(card); });
@@ -211,6 +258,7 @@ export function register(card) {
     if (!boxRatio.has(s.box)) { boxRatio.set(s.box, 0); visIO.observe(s.box); }
   } else visIO.observe(card);
   warmIO.observe(card);
+  farIO.observe(card);
   return s;
 }
 
@@ -419,9 +467,9 @@ export function swapSource(card, item) {
   card.dataset.id = item.id;
   s.tok++;
   card.classList.remove('is-live', 'is-blocked', 'needs-gesture', 'show-hint');
-  const img = card.querySelector('.vcard__poster');
-  if (img) { img.removeAttribute('data-src'); img.src = item.poster; }
   const has = !!item.src;
+  const img = card.querySelector('.vcard__poster');
+  if (img) { img.removeAttribute('data-src'); img.src = item.poster; img.alt = has ? '' : item.alt || ''; }
   const audio = has && item.audio !== false;
   card.dataset.hasVideo = String(has);
   card.dataset.audio = String(audio);

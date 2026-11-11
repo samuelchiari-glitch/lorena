@@ -14,6 +14,9 @@
 .fan{ -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 .fan img{ -webkit-user-drag: none; }
 .fan .fan__card:not(.is-focus) :is(.vcard__sound, .vcard__pause, .vcard__hint, .vcard__glyph){ visibility: hidden; opacity: 0; }
+/* crisp, shadowless side cards (the overlapping bottoms formed a grey arc); a light, tight shadow lifts the focus */
+.fan .fan__card{ box-shadow: none; }
+.fan .fan__card.is-focus{ box-shadow: 0 14px 28px -20px rgba(77,52,45,.5); }
 
 /* ---------- video card controls (§6.1): media 0 < glyph/.fan__hit 1 < sound/pause/hint 2 */
 .vcard__sound, .vcard__pause{
@@ -65,8 +68,9 @@
 .vcard__glyph svg{ width: 24px; height: 24px; }
 .vcard[data-has-video="true"]:is(.is-blocked, .no-autoplay):not(.is-playing) .vcard__glyph{ display: grid; }
 
-/* poster-only still: one Ken Burns pass per viewport entry (4.5 s, under the 5 s limit) */
-.vcard[data-has-video="false"].kb-run .vcard__poster{ animation: vcard-kb 4.5s ease-in-out 1 forwards; }
+/* poster-only still: one Ken Burns pass per viewport entry (4.5 s, under the 5 s limit), on the chapter feature
+   cards and the focused fan card only (side cards stay still: calmer, and cheaper to composite) */
+.vcard[data-has-video="false"].kb-run:not(.fan__card:not(.is-focus)) .vcard__poster{ animation: vcard-kb 4.5s ease-in-out 1 forwards; will-change: transform; }
 @keyframes vcard-kb{ from{ transform: none; } to{ transform: translate(-1%, -1%) scale(1.06); } }
 
 .vcard--feature[data-has-video="true"]{ cursor: pointer; }

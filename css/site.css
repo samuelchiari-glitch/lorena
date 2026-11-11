@@ -167,7 +167,10 @@ main [id], footer[id]{ scroll-margin-top: var(--anchor-offset); }
 html.lenis, html.lenis body { height:auto; }
 .lenis:not(.lenis-autoToggle).lenis-stopped { overflow:clip; }
 .lenis [data-lenis-prevent], .lenis [data-lenis-prevent-wheel], .lenis [data-lenis-prevent-touch],
-.lenis [data-lenis-prevent-vertical], .lenis [data-lenis-prevent-horizontal] { overscroll-behavior:contain; }
+.lenis [data-lenis-prevent-vertical] { overscroll-behavior:contain; }
+/* horizontal scrollers (rails, fan) contain the x axis only: a vertical swipe that starts on one must still
+   scroll the page (native touch scrolling on iOS; overflow-x:auto makes a rail a y scroll container too) */
+.lenis [data-lenis-prevent-horizontal] { overscroll-behavior-x:contain; overscroll-behavior-y:auto; }
 html.lenis{ scroll-behavior: auto; scrollbar-width: none; }
 html.lenis::-webkit-scrollbar, html.lenis body::-webkit-scrollbar{ display: none; }
 
@@ -610,11 +613,6 @@ html:not(.js) .fan__hint{ display: none; }
 .rail__thumb::after{ content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .rail__thumb[aria-current="true"]::after{ box-shadow: inset 0 0 0 2px var(--mahogany), inset 0 0 0 4px var(--vanilla); }
 .rail__thumb:focus-visible{ outline-offset: 2px; }
-/* stays photo pair under the rail (client originals, 2026-11-11): the gallery's pair rhythm, curtain + parallax */
-.chapter__photos{ display: flex; justify-content: space-between; align-items: flex-start; margin-top: var(--space-2xl); }
-.chapter__photo figcaption{ margin-bottom: 10px; color: var(--ink); }
-.chapter__photo--left{ width: 56%; }
-.chapter__photo--right{ width: 40%; margin-top: 80px; }
 /* === /section: content === */
 
 /* ======================================================================== */

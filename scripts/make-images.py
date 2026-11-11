@@ -8,15 +8,17 @@ Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-wood-hands.jpg (client original img-9196)
   assets/img/web/gallery-NN-{480,800}.webp           q76  the Canva-extracted gallery photos still on the page
-  assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (Stays chapter + gallery)
+  assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (gallery)
   assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
   assets/video/thumbs/<id>.webp    240x427 (9:16)    q72  same source
+  photo items (type "photo" in data/videos.json, the Stays rail): `poster` 720x1280 q78 and `thumb`
+  240x427 q72, cover-cropped to 9:16 from `master` around the horizontal centre `crop` (0..1)
 
 A "-800" file is never upscaled: if the original is narrower, it keeps the original
 width (the printed manifest gives the real width for srcset descriptors).
 Video ids and sources come from data/videos.json (poster path = the target, source =
-the mp4's sibling .jpg when `src` is set, else assets/video/_ref/<id>.jpg).
+the mp4's sibling .jpg when `src` is set, else assets/video/_ref/<id>.jpg; photo items use `master`).
 """
 import json
 import sys
@@ -28,15 +30,15 @@ ROOT = Path(__file__).resolve().parent.parent
 FORCE = '--force' in sys.argv
 
 # The Canva-extracted gallery photos the page still shows (spec §4.7), in page order.
-# 08, 14 and 29 were retired for the client's originals (docs/inbox.md, 2026-11-11).
-GALLERY = ['03', '22', '17', '02', '09', '18']
+# 08, 14 and 29 were retired for the client's originals (docs/inbox.md, 2026-11-11); 17 (it repeated the
+# fan's yellow satin), 02 (a hair-mist product, client feedback 6) and the kitchen single (now in the
+# Stays rail) were replaced by 04, 20 and 07 in polish round 1 (docs/qa-report.md).
+GALLERY = ['03', '22', '04', '20', '09', '18', '07']
 
 # Web masters made from the client's high-res originals (_source/drive-2, EXIF-oriented, sRGB,
-# long side <= 2400 px, q86): output name -> master. Used by the Stays chapter and the gallery.
+# long side <= 2400 px, q86): output name -> master. Used by the gallery. (The Stays photos in
+# assets/img/stays/ are photo items in data/videos.json: see the loop at the end of main().)
 PHOTOS = {
-    'stays-aframe-deck': 'assets/img/stays/aframe-deck.jpg',        # dsc01358
-    'stays-ofuro-deck': 'assets/img/stays/ofuro-deck.jpg',          # dsc02763
-    'stays-kitchen-above': 'assets/img/stays/kitchen-above.jpg',    # dsc02755
     'portrait-white-floor': 'assets/img/portrait-white-floor.jpg',  # img-9560
     'portrait-wood-shoulder': 'assets/img/portrait-wood-shoulder.jpg',  # img-9201
 }
@@ -71,12 +73,12 @@ def resize_w(src, out, width, q):
     return w, h
 
 
-def cover(src, out, size, q):
-    """Cover-crop to `size` (centre)."""
+def cover(src, out, size, q, cx=0.5):
+    """Cover-crop to `size` around the horizontal centre cx (0..1; vertically centred)."""
     if fresh(src, out):
         return size
     im = load(src)
-    save(ImageOps.fit(im, size, Image.LANCZOS, centering=(0.5, 0.5)), out, q)
+    save(ImageOps.fit(im, size, Image.LANCZOS, centering=(cx, 0.5)), out, q)
     return size
 
 
@@ -111,6 +113,11 @@ def main():
         vids = json.loads(vids_path.read_text(encoding='utf-8'))
         for v in vids.get('videos', []):
             vid = v['id']
+            if v.get('type') == 'photo':
+                src, cx = ROOT / v['master'], float(v.get('crop', 0.5))
+                manifest[f'card-{vid}'] = cover(src, ROOT / v['poster'], (720, 1280), 78, cx)
+                manifest[f'thumb-{vid}'] = cover(src, ROOT / v['thumb'], (240, 427), 72, cx)
+                continue
             if v.get('src'):
                 src = (ROOT / v['src']).with_suffix('.jpg')
             else:
