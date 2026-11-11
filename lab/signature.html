@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signature Writing Lab</title>
+<meta name="description" content="Lorena Maruch's real signature written stroke by stroke through a pen mask: play-once and scrubbed, at 390 px and 900 px.">
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --vanilla: #F1EADA;
+    --mahogany: #584738;
+    --muted: #6b6458;
+    --line: rgba(88, 71, 56, .22);
+    --pen: #c0392b;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding: 32px 16px 64px;
+    background: var(--vanilla);
+    color: var(--mahogany);
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  h1 { font-size: 18px; font-weight: 600; letter-spacing: .02em; margin: 0 0 4px; }
+  h2 { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin: 32px 0 10px; }
+  p.meta { color: var(--muted); margin: 0 0 16px; max-width: 760px; }
+  code { font-size: 12px; }
+
+  .controls {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    margin: 0 -16px; padding: 12px 16px;
+    background: color-mix(in srgb, var(--vanilla) 92%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(6px);
+  }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  .controls input[type="range"] { width: min(360px, 60vw); accent-color: var(--mahogany); }
+  .controls output { font-variant-numeric: tabular-nums; min-width: 9ch; color: var(--muted); }
+  button, select {
+    font: inherit; color: var(--mahogany); background: transparent;
+    border: 1px solid var(--mahogany); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  }
+  button:hover { background: var(--mahogany); color: var(--vanilla); }
+  select { border-radius: 6px; padding: 5px 8px; }
+
+  .frame { max-width: 100%; padding: 24px 0; outline: 1px dashed var(--line); background: var(--vanilla); }
+  .frame--phone { width: 390px; }
+  .frame--wide { width: 900px; }
+  .sig { display: block; width: 100%; height: auto; color: var(--mahogany); }
+  .sig .debug { display: none; }
+  .show-pens .sig .debug { display: inline; }
+  .readout { color: var(--muted); margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+  .error { color: #9b2c1f; }
+</style>
+</head>
+<body>
+<h1>Signature writing lab</h1>
+<p class="meta">
+  <code>assets/signature/lorena-signature.svg</code>: the filled artwork is drawn through a mask,
+  and two hand-traced pens (1 = L, 2 = M) write it at constant pen speed with a short pen lift between them.
+  Drag the slider to scrub (as ScrollTrigger would) or press Replay for the play-once version.
+  How to use it on the site: <code>assets/signature/README.md</code>.
+</p>
+
+<div class="controls">
+  <label>Progress <input id="scrub" type="range" min="0" max="1" step="0.001" value="0"></label>
+  <output id="pct">0%</output>
+  <button id="replay" type="button">Replay</button>
+  <label>Duration
+    <select id="duration">
+      <option value="1.8">1.8 s</option>
+      <option value="2.2" selected>2.2 s</option>
+      <option value="2.6">2.6 s</option>
+    </select>
+  </label>
+  <label><input id="pens" type="checkbox"> Show pens</label>
+</div>
+
+<h2>Phone · 390 px</h2>
+<div class="frame frame--phone" id="phone"></div>
+
+<h2>Desktop · 900 px</h2>
+<div class="frame frame--wide" id="wide"></div>
+
+<p class="readout" id="readout"></p>
+
+<script>
+/* ------------------------------------------------------------------
+   The recipe (same code as in assets/signature/README.md)
+   ------------------------------------------------------------------ */
+function createSignature(svg, { pause = 0.045 } = {}) {
+  const ink = svg.querySelector('.ink');
+  const maskRef = ink.getAttribute('mask');
+  const pens = [...svg.querySelectorAll('.pen')];
+  const lens = pens.map((pen) => pen.getTotalLength());
+  const total = lens.reduce((a, b) => a + b, 0);
+  const gap = pause * total;                       // pen lift, in length units
+  const span = total + gap * (pens.length - 1);    // whole timeline, in length units
+  const guards = [...svg.querySelectorAll('.pen-guard[data-release]')]
+    .map((g) => [g, Number(g.dataset.pen) - 1, Number(g.dataset.release)]);
+  // one dash as long as the pen, then a gap longer than the pen: no second dash can show
+  pens.forEach((pen, i) => { pen.style.strokeDasharray = `${lens[i]}px ${lens[i] + 20}px`; });
+  let raf = 0;
+
+  function render(progress) {
+    const p = Math.min(1, Math.max(0, Number(progress) || 0));
+    let t = p * span;
+    const drawn = pens.map((pen, i) => {
+      const f = Math.min(1, Math.max(0, t / lens[i]));
+      t -= lens[i] + gap;
+      // hidden until it starts: a zero-length dash would still paint a round-cap dot
+      pen.style.visibility = f > 0 ? 'visible' : 'hidden';
+      pen.style.strokeDashoffset = `${lens[i] * (1 - f)}px`;
+      return f * lens[i];
+    });
+    for (const [g, i, at] of guards) g.style.visibility = drawn[i] < at ? 'visible' : 'hidden';
+    // fully written: drop the mask, so the final state is the untouched artwork
+    if (p >= 1) ink.removeAttribute('mask');
+    else if (ink.getAttribute('mask') !== maskRef) ink.setAttribute('mask', maskRef);
+  }
+
+  // where the pen is, in viewBox units (null at rest and during the pen lift)
+  function penPoint(progress) {
+    if (!(progress > 0 && progress < 1)) return null;
+    let t = progress * span;
+    for (let i = 0; i < pens.length; i++) {
+      if (t <= lens[i]) return t >= 0 ? pens[i].getPointAtLength(t) : null;
+      t -= lens[i] + gap;
+    }
+    return null;
+  }
+
+  function stop() { cancelAnimationFrame(raf); raf = 0; }
+
+  // play once, linear in time = constant pen speed
+  function play({ duration = 2.2, onUpdate, onComplete } = {}) {
+    stop();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      render(1); onUpdate?.(1); onComplete?.(); return;
+    }
+    let t0 = 0;
+    const tick = (now) => {
+      t0 ||= now;
+      const p = Math.min(1, (now - t0) / (duration * 1000));
+      render(p); onUpdate?.(p);
+      if (p < 1) raf = requestAnimationFrame(tick); else { raf = 0; onComplete?.(); }
+    };
+    render(0); onUpdate?.(0);
+    raf = requestAnimationFrame(tick);
+  }
+
+  return { render, play, stop, penPoint, lengths: lens, length: total };
+}
+
+/* Inline the SVG (a mask only works inline) and give each copy its own mask id. */
+function mountSignature(host, svgText, suffix) {
+  host.innerHTML = svgText;
+  const svg = host.querySelector('svg');
+  const mask = svg.querySelector('mask');
+  mask.id = `${mask.id}-${suffix}`;
+  svg.querySelector('.ink').setAttribute('mask', `url(#${mask.id})`);
+  svg.classList.add('sig');
+  svg.setAttribute('aria-hidden', 'true');      // the lab labels it in text
+  return svg;
+}
+
+/* Lab-only: the pen centre lines in red, drawn on top. */
+function addPenOverlay(svg) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'debug');
+  svg.querySelectorAll('.pen').forEach((pen) => {
+    const line = document.createElementNS(NS, 'path');
+    line.setAttribute('d', pen.getAttribute('d'));
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', 'var(--pen)');
+    line.setAttribute('stroke-width', '1.25');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    g.appendChild(line);
+    const start = pen.getPointAtLength(0);
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', start.x); dot.setAttribute('cy', start.y); dot.setAttribute('r', '5');
+    dot.setAttribute('fill', 'var(--pen)');
+    g.appendChild(dot);
+  });
+  svg.appendChild(g);
+}
+
+(async () => {
+  const scrub = document.getElementById('scrub');
+  const pct = document.getElementById('pct');
+  const readout = document.getElementById('readout');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let text;
+  try {
+    const res = await fetch('../assets/signature/lorena-signature.svg');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    text = await res.text();
+  } catch (err) {
+    readout.innerHTML = `<span class="error">Could not load the SVG (${err.message}). Serve the site over HTTP, e.g. <code>npx serve .</code> from the repo root.</span>`;
+    return;
+  }
+  const sigs = [['phone', 'phone'], ['wide', 'wide']].map(([id, suffix]) => {
+    const svg = mountSignature(document.getElementById(id), text, suffix);
+    addPenOverlay(svg);
+    return createSignature(svg);
+  });
+
+  const show = (p) => { scrub.value = p; pct.textContent = `${(p * 100).toFixed(1)}%`; };
+  const renderAll = (p) => { sigs.forEach((s) => s.render(p)); show(p); };
+  const replay = () => {
+    const duration = Number(document.getElementById('duration').value);
+    sigs.forEach((s, i) => s.play({ duration, onUpdate: i === 0 ? show : undefined }));
+  };
+
+  scrub.addEventListener('input', () => { sigs.forEach((s) => s.stop()); renderAll(Number(scrub.value)); });
+  document.getElementById('replay').addEventListener('click', replay);
+  document.getElementById('pens').addEventListener('change', (e) => {
+    document.body.classList.toggle('show-pens', e.target.checked);
+  });
+
+  const [L, M] = sigs[0].lengths;
+  const total = sigs[0].length;
+  readout.textContent =
+    `Pen lengths: L ${L.toFixed(1)} + M ${M.toFixed(1)} = ${total.toFixed(1)} viewBox units ` +
+    `(${(total * 390 / 1056).toFixed(0)} px of pen travel in the 390 px frame, ` +
+    `${(total * 900 / 1056).toFixed(0)} px in the 900 px frame).` +
+    (reduced ? ' Reduced motion is on: Replay shows the signature fully drawn.' : '');
+
+  document.documentElement.dataset.ready = 'true';
+  if (reduced) renderAll(1);
+  else replay();
+})();
+</script>
+</body>
+</html>
