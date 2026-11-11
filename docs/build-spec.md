@@ -17,6 +17,7 @@ This is **revision 2** (2026-11-11). §11 lists what changed from revision 1 and
 > 2. **Hero image** = the client's cover photo `_source/drive-2/foto-de-capa.jpg`, delivered as `assets/img/cover.jpg`. `scripts/make-images.py` builds the `hero-*.webp` files from it.
 > 3. **Fonts:** the real Lorena serif "The Seasons" ships via Adobe Fonts kit `juy5uwr` on GitHub Pages only. The link is injected by `scripts/wrap-site.sh`, never put in `site.html`, because the Artifact CSP blocks use.typekit.net. Serif stacks start with `"the-seasons"`, then the LM stand-ins.
 > 4. More client files (photos, 2 more stays videos) are listed in `docs/inbox.md`. They are integrated after this build.
+> 5. **Note for the integrator:** a second copy of the hero builder applied items 1–2 at 16:40–16:50 UTC (it touched `js/hero.js`, `js/signature.js`, `css/hero.css`, the hero and about blocks, `assets/img/cover.jpg`, `scripts/make-images.py` and `hero-*.webp`). Meanwhile the workflow's hero builder deliberately left the full-bleed framing and the theme-zone work unfinished. Consolidate the two, finish the full-bleed → rounded-card hero, and re-test every hero context in §9.E.
 
 ---
 
