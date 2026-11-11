@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "Single source for every video card (build spec §6.6). Adding a real video = encode it (scripts/encode-video.sh) + set src, poster, duration and audio, then run python3 -I scripts/make-images.py. Titles and the About/chapter copy are for client approval.",
+  "_about": "Single source for every video card (build spec §6.6). Adding a real video = encode it (scripts/encode-video.sh) + set src, poster, duration and audio, then run python3 -I scripts/make-images.py. Titles and the About/chapter copy are for client approval. stays-07 (pousada-pool, client delivery 2026-11-11) has audio:false: its track is only low handling rumble (about -35 LUFS, nothing above 2 kHz).",
   "categories": [
     {
       "key": "stays",
@@ -54,12 +54,12 @@
       "id": "stays-01",
       "category": "stays",
       "title": "Breakfast in the dome",
-      "alt": "Geodesic glamping dome interior: freestanding tub by a panoramic window, breakfast being set on a table.",
-      "src": null,
+      "alt": "High view inside a geodesic glamping dome: a whirlpool tub on white pebbles by the panoramic window, and Lorena, in a white robe, setting out breakfast for two at a small round table.",
+      "src": "assets/video/stays/dome-breakfast.mp4",
       "poster": "assets/video/posters/stays-01.webp",
       "thumb": "assets/video/thumbs/stays-01.webp",
-      "duration": null,
-      "audio": null,
+      "duration": 21.1,
+      "audio": true,
       "brand": null,
       "order": 1
     },
@@ -127,6 +127,19 @@
       "audio": true,
       "brand": null,
       "order": 6
+    },
+    {
+      "id": "stays-07",
+      "category": "stays",
+      "title": "Pool, arches & a canopy bed",
+      "alt": "Tour of a pousada: a plunge pool by thatched-roof suites, a sofa niche under arched alcoves, a canopy bed draped in white voile, a rustic bathroom and a wooden deck by the pool.",
+      "src": "assets/video/stays/pousada-pool.mp4",
+      "poster": "assets/video/posters/stays-07.webp",
+      "thumb": "assets/video/thumbs/stays-07.webp",
+      "duration": 40.6,
+      "audio": false,
+      "brand": null,
+      "order": 7
     },
     {
       "id": "restaurants-01",

@@ -610,6 +610,11 @@ html:not(.js) .fan__hint{ display: none; }
 .rail__thumb::after{ content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .rail__thumb[aria-current="true"]::after{ box-shadow: inset 0 0 0 2px var(--mahogany), inset 0 0 0 4px var(--vanilla); }
 .rail__thumb:focus-visible{ outline-offset: 2px; }
+/* stays photo pair under the rail (client originals, 2026-11-11): the gallery's pair rhythm, curtain + parallax */
+.chapter__photos{ display: flex; justify-content: space-between; align-items: flex-start; margin-top: var(--space-2xl); }
+.chapter__photo figcaption{ margin-bottom: 10px; color: var(--ink); }
+.chapter__photo--left{ width: 56%; }
+.chapter__photo--right{ width: 40%; margin-top: 80px; }
 /* === /section: content === */
 
 /* ======================================================================== */

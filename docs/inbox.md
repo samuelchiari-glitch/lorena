@@ -1,30 +1,62 @@
-# Inbox: client files waiting to be integrated
+# Inbox: client files
 
-Raw files are in `_source/drive-2/` (gitignored, downloaded from the client's Drive folder on 2026-11-11). Integrate them **after** the current build workflow finishes, so the section builders aren't disturbed.
+Raw files are in `_source/drive-2/` (gitignored, downloaded from the client's Drive folder on 2026-11-11).
+
+**Status: integrated on 2026-11-11, after the build workflow.** Every file is marked below with where it went, or why it was left out. The web masters were made from the originals with the EXIF orientation applied, converted to sRGB, the long side capped at 2400 px, saved at q86 and with the metadata stripped. `scripts/make-images.py` builds their `-480`/`-800` WebP derivatives (q76), like the others.
 
 ## Photos (originals 1365–6192 px tall)
-- `foto-de-capa.jpg`: the client's chosen **cover photo** (portrait in a white robe). It replaces the hero image (`assets/img/web/hero-*.webp`, made by `scripts/make-images.py`).
-- **Retratos (good for About and the gallery):**
-  - `img-9196.jpg`, `img-9201.jpg`, `img-9204.jpg`: white shirt against a wood wall.
-  - `img-9560.jpg`: lying on a white background.
-- **Hospedagens (Stays chapter and gallery):**
-  - `dsc01104.jpg`: deck with a parasol, couple.
-  - `dsc01358.jpg`: A-frame glass deck.
-  - `dsc02726.jpg`: kitchen with a view.
-  - `dsc02755.jpg`: kitchen seen from above.
-  - `dsc02763.jpg`: deck with an ofurô tub.
-  - `02.jpg` and `03.jpg`: cooking, wooden loft.
-  - `likeappro-3279.jpg`: bathtub, couple.
-  - `likeappro-9669.jpg`: kitchen, couple.
+
+| Original | Web master | Where it is used |
+|---|---|---|
+| `foto-de-capa.jpg` (cover, white robe) | `assets/img/cover.jpg` | Hero (`hero-*.webp`). Integrated during the build (spec client feedback 2). |
+| `img-9196.jpg` (white shirt, wood wall, hands in her hair) | `assets/img/portrait-wood-hands.jpg` | **About** photo (`about-480/800.webp`). It replaces the kit's black-outfit portrait. `portrait-about.jpg` stays in the repo but is no longer referenced. |
+| `img-9201.jpg` (white shirt, wood wall, over the shoulder) | `assets/img/portrait-wood-shoulder.jpg` | **Gallery**, group 3, right: "Portrait · Linen". It replaces `14` (pendant). |
+| `img-9560.jpg` (lying on a white background) | `assets/img/portrait-white-floor.jpg` | **Gallery**, group 1, left (it opens the gallery): "Portrait · On white". It replaces `08` (glamping dome walk). |
+| `dsc01358.jpg` (A-frame glass deck) | `assets/img/stays/aframe-deck.jpg` | **Stays chapter**, a new photo pair under the thumb rail, left: "Cabin · Glass A-frame". |
+| `dsc02763.jpg` (deck with an ofurô tub) | `assets/img/stays/ofuro-deck.jpg` | **Stays chapter** pair, right: "Deck · Hot tub". |
+| `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | **Gallery**, group 3, single (it closes the gallery): "Stays · Kitchen, from above". It replaces `29` (wine, black & white). |
+| `img-9204.jpg` | — | Not used. It is a near-duplicate of `img-9201` (same shirt, wall and over-the-shoulder pose), and About already uses this shoot. |
+| `dsc02726.jpg` (kitchen with a view) | — | Not used. It shows the same kitchen and outfit as `dsc02755`, which is the more graphic frame. One kitchen shot is enough. |
+| `dsc01104.jpg` (deck, parasol, couple) | — | Not used. The couple is the subject, and the site features Lorena alone. Good golden-hour light: the first pick if the client wants a couples' stays image. |
+| `02.jpg`, `03.jpg` (cooking, wooden loft) | — | Not used. They are couple-centred and low-key, and `03` shows mostly her back. They are 9:16 phone frames. |
+| `likeappro-3279.jpg` (bathtub, couple) | — | Not used. The focus is on the couple, and the "bath with a view" story is already told by video `stays-03`. |
+| `likeappro-9669.jpg` (kitchen, couple) | — | Not used. It is an intimate couple moment, not a fit for a brand portfolio page. |
+
+- **Stays photo pair.** It is static HTML inside `#stays`, after `[data-chapter-body]`, so it is complete at rest. It reuses the gallery's pair rhythm (56% left, 40% right, 80 px drop) and the spec's photo effects: the image curtain with the Sand wash (pair staggered by 0.12 s) and the inner parallax. The CSS is in `css/site.css` (content block, `.chapter__photos`).
+- **Retired gallery crops:** `08`, `14` and `29`.
+  - `08` was a low-res Canva crop (876 px wide) of a back view on the grass.
+  - `14` was phone quality, and it repeated the jewellery theme of `03` (Details · Rings).
+  - `29` had an Instagram carousel badge ("1/2") burned into its corner.
+  - Their derivatives were deleted from `assets/img/web/`. The masters remain in `assets/img/gallery/`.
+- **Gallery now.** The gallery keeps 9 photos in 3 × (pair + single), with the serif line between groups 2 and 3. Its categories are Portrait, Details, Food / Fashion, Beauty, Wellness / Fashion, Portrait, Stays.
+- **This supersedes the spec.** It replaces the About photo in spec §4.3 and rows `08`, `14` and `29` of the §4.7 table.
 
 ## Videos (already encoded with `scripts/encode-video.sh`)
-- `assets/video/stays/dome-breakfast.mp4` (+ `.jpg`): geodesic dome from above, breakfast. 21 s, 4.4 MB.
-- `assets/video/stays/pousada-pool.mp4` (+ `.jpg`): pousada with pool, arches and a canopy bed. 40 s, 10.5 MB.
-- Earlier: `aframe-one-day.mp4` (hospedagens-06), `dome-bathtub.mp4` (hospedagens-03), `aframe-living-room.mp4` (hospedagens-05).
-- Both new videos still need entries in `data/videos.json`.
+
+| File | `data/videos.json` | Notes |
+|---|---|---|
+| `assets/video/stays/dome-breakfast.mp4` (21 s, 4.4 MB) | **`stays-01`** "Breakfast in the dome" (the media-kit item, until now poster-only) | `src` is set, `duration` 21.1, `audio` true (about −17 LUFS, like the others). The poster and thumb are now built from the encoded first frame. The alt text was rewritten from the footage. |
+| `assets/video/stays/pousada-pool.mp4` (41 s, 10.5 MB) | **new `stays-07`** "Pool, arches & a canopy bed", order 7 | `audio` is **false**: the track is only low handling rumble (about −35 LUFS, nothing above 2 kHz), so the sound button and the "Tap for sound" hint stay hidden. Set it to `true` if the client wants that ambience. Its poster and thumb are new. |
+| Earlier: `aframe-one-day.mp4` (`stays-06`), `dome-bathtub.mp4` (`stays-03`), `aframe-living-room.mp4` (`stays-05`) | unchanged | |
+
+- **Stays rail:** 7 items, of which 5 are real videos (`01`, `03`, `05`, `06`, `07`). Only `stays-02` (the one-woman band) and `stays-04` (sunset over the valley) are still placeholders, because their files have not arrived yet.
+- **Feature card:** still `stays-06`.
+- **The fan is unchanged.** Its stays picks (`stays-05`, `stays-03`) were already real. Its other 5 picks are other niches and still poster-only. Swapping a pick for `stays-01` or `stays-07` is the client's call (spec §10 Q4).
 
 ## Fonts
-- Adobe Fonts kit `juy5uwr` ("Lorena Maruch site") holds The Seasons Light, Regular, Light Italic and Regular Italic. CSS family: `"the-seasons"`. Embed: `<link rel="stylesheet" href="https://use.typekit.net/juy5uwr.css">`.
-- Allowed domains: www.lorenamaruch.com, lorenamaruch.com, samuelchiari-glitch.github.io, localhost.
-- **Pages only:** inject the link in `scripts/wrap-site.sh`. The Artifact CSP blocks use.typekit.net, so it must not go in `site.html`.
-- Put `"the-seasons"` first in the serif font stacks, before the LM Serif stand-ins.
+Integrated during the build: the Adobe Fonts kit `juy5uwr` (`"the-seasons"`) is linked by `scripts/wrap-site.sh` on Pages only, and serif stacks start with `"the-seasons"`. Details are in `docs/qa-report.md` §2.
+
+## Runtime files (Artifact publish list delta)
+
+Added:
+- `assets/img/web/` `stays-aframe-deck`, `stays-ofuro-deck`, `stays-kitchen-above`, `portrait-white-floor` and `portrait-wood-shoulder`, each as `-480` and `-800`.
+- `assets/video/posters/stays-07.webp` and `assets/video/thumbs/stays-07.webp`.
+- `assets/video/stays/dome-breakfast.mp4` and `pousada-pool.mp4`.
+
+Regenerated under the same names:
+- `about-480/800.webp`
+- `posters/stays-01.webp` and `thumbs/stays-01.webp`
+
+Removed: `assets/img/web/gallery-{08,14,29}-{480,800}.webp`.
+
+The publish grows by about 14.9 MB of video and 0.7 MB of images, to about 43 MB in total, under the 64 MB per-publish limit. The masters in `assets/img/` and `assets/img/stays/` are not referenced at runtime.

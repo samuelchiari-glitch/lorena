@@ -16,7 +16,14 @@ This is **revision 2** (2026-11-11). §11 lists what changed from revision 1 and
 > 1. **No arch.** Remove the hero arch and the `.about__arch`. The hero works like the Lando reference. At scroll 0 the cover photo is full-bleed, filling the whole first screen. On scroll it shrinks into a centred rounded-rectangle card (corner radius ≈ 28–36 px), the background turns dark, and the signature draws.
 > 2. **Hero image** = the client's cover photo `_source/drive-2/foto-de-capa.jpg`, delivered as `assets/img/cover.jpg`. `scripts/make-images.py` builds the `hero-*.webp` files from it.
 > 3. **Fonts:** the real Lorena serif "The Seasons" ships via Adobe Fonts kit `juy5uwr` on GitHub Pages only. The link is injected by `scripts/wrap-site.sh`, never put in `site.html`, because the Artifact CSP blocks use.typekit.net. Serif stacks start with `"the-seasons"`, then the LM stand-ins.
-> 4. More client files (photos, 2 more stays videos) are listed in `docs/inbox.md`. They are integrated after this build.
+> 4. More client files (photos, 2 more stays videos) are listed in `docs/inbox.md`. They are integrated after this build. **Done 2026-11-11:** the About photo (§4.3) is now `portrait-wood-hands.jpg`; gallery rows `08`, `14` and `29` (§4.7) were replaced by client originals; the Stays chapter gained a photo pair under its rail; `stays-01` and the new `stays-07` play real video. `docs/inbox.md` has the details.
+> 6. **Remove the Skin & Hair care chapter for now (client decision, 2026-11-11).** Take everything skin/hair-care off the page:
+>    - the `#care` chapter;
+>    - its menu and in-page links;
+>    - any skincare cards in the fan (refill the fan from the other categories);
+>    - every copy mention of "skin & hair care", including the hero/about lines, the eyebrows, the footer and the `<meta name="description">` in `scripts/wrap-site.sh`.
+>
+>    The site's categories are now Stays, Food and Fashion. **Keep the skincare data and assets in the repo** (e.g. mark the category disabled in `data/videos.json`) so the chapter can come back later with a one-line change. Reviewers: if `#care` or any skincare mention is still visible, that is a **must** finding.
 > 5. **Note for the integrator:** a second copy of the hero builder applied items 1–2 at 16:40–16:50 UTC (it touched `js/hero.js`, `js/signature.js`, `css/hero.css`, the hero and about blocks, `assets/img/cover.jpg`, `scripts/make-images.py` and `hero-*.webp`). Meanwhile the workflow's hero builder deliberately left the full-bleed framing and the theme-zone work unfinished. Consolidate the two, finish the full-bleed → rounded-card hero, and re-test every hero context in §9.E.
 
 ---

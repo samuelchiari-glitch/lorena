@@ -6,8 +6,9 @@
 
 Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
-  assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-about.jpg
-  assets/img/web/gallery-NN-{480,800}.webp           q76  the 9 gallery photos used on the page
+  assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-wood-hands.jpg (client original img-9196)
+  assets/img/web/gallery-NN-{480,800}.webp           q76  the Canva-extracted gallery photos still on the page
+  assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (Stays chapter + gallery)
   assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
   assets/video/thumbs/<id>.webp    240x427 (9:16)    q72  same source
@@ -26,8 +27,19 @@ from PIL import Image, ImageOps
 ROOT = Path(__file__).resolve().parent.parent
 FORCE = '--force' in sys.argv
 
-# The gallery photos the page shows (spec §4.7), in page order.
-GALLERY = ['08', '03', '22', '17', '02', '09', '18', '14', '29']
+# The Canva-extracted gallery photos the page still shows (spec §4.7), in page order.
+# 08, 14 and 29 were retired for the client's originals (docs/inbox.md, 2026-11-11).
+GALLERY = ['03', '22', '17', '02', '09', '18']
+
+# Web masters made from the client's high-res originals (_source/drive-2, EXIF-oriented, sRGB,
+# long side <= 2400 px, q86): output name -> master. Used by the Stays chapter and the gallery.
+PHOTOS = {
+    'stays-aframe-deck': 'assets/img/stays/aframe-deck.jpg',        # dsc01358
+    'stays-ofuro-deck': 'assets/img/stays/ofuro-deck.jpg',          # dsc02763
+    'stays-kitchen-above': 'assets/img/stays/kitchen-above.jpg',    # dsc02755
+    'portrait-white-floor': 'assets/img/portrait-white-floor.jpg',  # img-9560
+    'portrait-wood-shoulder': 'assets/img/portrait-wood-shoulder.jpg',  # img-9201
+}
 
 
 def load(path):
@@ -76,7 +88,7 @@ def main():
     for w in (828, 1242, 1527):
         manifest[f'hero-{w}'] = resize_w(cover_src, web / f'hero-{w}.webp', w, 78)
 
-    about_src = ROOT / 'assets/img/portrait-about.jpg'
+    about_src = ROOT / 'assets/img/portrait-wood-hands.jpg'
     for w in (480, 800):
         manifest[f'about-{w}'] = resize_w(about_src, web / f'about-{w}.webp', w, 76)
 
@@ -84,6 +96,10 @@ def main():
         src = ROOT / f'assets/img/gallery/{n}.jpg'
         for w in (480, 800):
             manifest[f'gallery-{n}-{w}'] = resize_w(src, web / f'gallery-{n}-{w}.webp', w, 76)
+
+    for name, master in PHOTOS.items():
+        for w in (480, 800):
+            manifest[f'{name}-{w}'] = resize_w(ROOT / master, web / f'{name}-{w}.webp', w, 76)
 
     # contact card (spec §4.8, optional small card): the rust knit portrait
     contact_src = ROOT / 'assets/img/contact/06.jpg'
