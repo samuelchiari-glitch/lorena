@@ -1,13 +1,13 @@
 /* content.css: content section builder's rules (fan, video cards, chapters; spec §4.4, §6).
    Loaded after site.css; the static layout stays in site.css (=== section: content ===). */
 
-/* ---------- niche icon: one 4.8 s cross-fade cycle per entry (1.2 s each, .3 s fades), rests on the first icon */
+/* ---------- niche icon: one 3.6 s cross-fade cycle per entry (stays, food, fashion: 1.2 s each, .3 s fades),
+   rests on the first icon */
 .fan__icons.is-cycling .fan__icon{ animation: fan-icon 1.5s ease-in-out 1 both; }
-.fan__icons.is-cycling .fan__icon:first-child{ animation: fan-icon-first 4.8s ease-in-out 1 both; }
+.fan__icons.is-cycling .fan__icon:first-child{ animation: fan-icon-first 3.6s ease-in-out 1 both; }
 .fan__icons.is-cycling .fan__icon:nth-child(2){ animation-delay: .9s; }
 .fan__icons.is-cycling .fan__icon:nth-child(3){ animation-delay: 2.1s; }
-.fan__icons.is-cycling .fan__icon:nth-child(4){ animation-delay: 3.3s; }
-@keyframes fan-icon-first{ 0%, 18.75%{ opacity: 1; } 25%, 93.75%{ opacity: 0; } 100%{ opacity: 1; } }
+@keyframes fan-icon-first{ 0%, 25%{ opacity: 1; } 33.33%, 91.67%{ opacity: 0; } 100%{ opacity: 1; } }
 @keyframes fan-icon{ 0%{ opacity: 0; } 20%, 80%{ opacity: 1; } 100%{ opacity: 0; } }
 
 /* ---------- fan: swipe surface */

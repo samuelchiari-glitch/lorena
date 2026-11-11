@@ -92,3 +92,13 @@ Each is the original of a media-kit item:
 - `garden-breakfast.mp4`: outdoor breakfast among plants (restaurants-04).
 
 Add them to `data/videos.json` (and the posters/thumbs) after the polish round, replacing the restaurant placeholders. Consider a mixed rail like the Stays one.
+
+## Fashion videos (received 2026-11-11 20:17; encoded into assets/video/fashion/)
+- `chanel-boutique.mp4` (36 s): CHANEL boutique, N°1 serum, N°5 book, trying products.
+  - **CLIENT: this is THE highlight. It goes in the CENTRE card of the 7-card fan (the largest, upright card in the middle).** Feature it in Fashion too.
+  - It used to be filed under skin care, but the client now puts it in Fashion.
+- `burgundy-blazer.mp4` (30 s): burgundy blazer, red sneakers, street and stairs (≈ fashion-01).
+- `teal-dress-deck.mp4` (27 s): teal flowing dress on a deck above the mountains (≈ fashion-02).
+- `picnic.mp4` (19 s): picnic, white tank top, sandals, scarf (≈ fashion-04).
+- `yellow-satin-lake.mp4` (26 s): yellow satin dress on a lakeside deck (≈ fashion-03).
+- Still missing: fashion-05 (hand on a terracotta clutch) and fashion-06 (bun, gold earring). Keep their posters only if the rail needs them; otherwise drop them.

@@ -47,7 +47,7 @@ export function finish()    // finishAll(): jump to the final state, drop your i
 | `makeIO(cb, opts)` | IntersectionObserver with `root: document` (falls back to the implicit root). **Use it for every observer that has a `rootMargin`** (warm-up, eager-load, Ken Burns or icon replays). In the Artifact iframe the implicit root ignores `rootMargin`. |
 | `onApproach(el, arm, {ahead=.75, onSkip})` | calls `arm(el)` once, when `el` is within `ahead` viewports below the fold. Guard: if `el.top < innerHeight` it **does not arm** (calls `onSkip`). Returns a cancel function. |
 | `armReveal(el, build, {start='top 85%', trigger, ahead, onSkip})` | the standard reveal. `build(el)` runs inside `scope()` and returns a **paused** GSAP timeline already in its from-state, or `{ tl, cleanup }`. The helper sets `data-armed`, plays the timeline from a `once` ScrollTrigger at `start`, then runs `cleanup()` and removes `data-armed` on complete. The watchdog forces the final state if an element sits visible for 1.2 s without playing. |
-| `track(el, tl, cleanup)` / `markPlayed(el)` / `release(el)` | for arming you do yourself (e.g. the fan entrance with its own trigger). You must `release(el)` when it has played. |
+| `track(el, tl, cleanup, {due})` / `markPlayed(el)` / `release(el)` | for arming you do yourself (e.g. the fan entrance with its own trigger). You must `release(el)` when it has played. `due(rect, innerHeight)` (optional) says when the element should have played; the watchdog only counts from then (the fan plays at `center 75%`). |
 | `scope(fn)` | **create every tween, ScrollTrigger and SplitText inside it.** `finishAll()` reverts them all to CSS. Arming callbacks that run later must call `scope()` again. |
 | `onFinish(fn)` | an extra cleanup step for `finishAll()` |
 | `refresh()` | debounced `ScrollTrigger.refresh()`; call it after you change layout |
@@ -66,7 +66,7 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 | `data-parallax` | the frame's direct child `<img>` moves `y 0 → -48`, scrubbed. In motion mode the img is 48px taller. |
 | `data-deal="0..3"` | dealt card scrub (y 110, scale .94, rotation from the table), `top 100% → top 55%`, `scrub .5`. Already set on each chapter feature card. |
 | `data-rise="24"` (+ `data-rise-start`) | the element's children rise once (stagger .06). Used on the rails (`top 92%`) and the contact rows (`16`, `top 90%`). |
-| `data-bg-scrub="#E6DECB"` | section background: computed colour → this colour, `top 60% → bottom bottom` (gallery) |
+| `data-bg-scrub="#E6DECB"` (+ `data-bg-from`, `data-bg-range="start\|end"`) | section background: computed colour (or `data-bg-from`) → this colour, `top 60% → bottom bottom` by default (gallery). About uses `#4D342D → #F1EADA` over `top bottom → top 72%`: the hand-off from the dark Instagram block. |
 
 - Markup you insert **after** `ready()` needs `reveals.scan(rootEl)` (it is idempotent).
 - Also exported: `splitLockup(h)`, which applies the aria rules and returns `{chars, revert}`; it is meant for the hero h1. Also `buildOval`, `buildHighlight`, `buildCurtain`.
@@ -77,7 +77,7 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 - **Exports:** `scrollToTarget('#id' | el | 0, {focus})`, `toast(msg)`, `openMenu()`, `closeMenu()`, `isMenuOpen()`.
 - **In-page links.** Every `a[href^="#"]` goes through one delegated router. Do not bind your own anchor scrolling. Lenis `scrollTo` uses no offset (it subtracts `scroll-margin-top` itself). `main [id], footer[id]` have `scroll-margin-top: var(--anchor-offset)`.
 - **Header theme.** It comes from a 1px IO band at the bar's midline over every `[data-theme]` element; the last one in document order wins. A section only needs `data-theme="light|dark"`. The hero's `.hero__dark-zone` (`data-theme="dark"`) is `display:none` until **hero.css** shows it with `.motion .hero__dark-zone{display:block}`. The IO picks it up automatically.
-- **Header backing.** It is cleared while `scrollY < .35 × .hero__stage.offsetHeight` (motion) or `< 1` (static). In motion it hides on scroll down and shows on scroll up. It needs nothing from the hero.
+- **Header backing.** It is cleared while `scrollY < .hero[data-clear-until]` (motion: hero.js sets it where the shrinking photo's edge reaches the header controls, ≈ 0.17 H; `.35 × stage` is the fallback) or `< 1` (static). In motion it hides on scroll down and shows on scroll up. Inside the hero track its colour fades are .15 s (`.hdr--quick`), and the first theme applies with no transition (`.hdr--boot`). With JS the bar starts clear with Vanilla ink (`@media (scripting: enabled)`), so no-JS keeps the frosted bar.
 - **Copy buttons.** `[data-copy="value"]` inside `.contact__line`, next to `.contact__value`.
 - **Scroll indicator.** Created by `ui.ready()` in motion mode (`.scrollbar`).
 
@@ -95,7 +95,7 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 - **`[hidden]{display:none!important}`** is global. Use the `hidden` attribute for JS-only controls and unhide them in `boot()`. The fan controls and the brands pause button ship `hidden`.
 - **No-JS.** `html:not(.js)` hides the empty IG screen boxes and collapses the fan box. `html.js` is added first thing in `site.js`.
 - **Frosted surfaces.** Every `backdrop-filter` is preceded by the `-webkit-` version.
-- **Animated properties.** Animate only transform, opacity, clip-path and stroke-dashoffset, plus the gallery background and the hero `--hero-bg`. `will-change` goes only on fan cards and the hero photo.
+- **Animated properties.** Animate only transform, opacity, clip-path and stroke-dashoffset, plus the gallery background and the hero `--hero-bg`. `will-change` goes only on the hero photo while the hero track is in play (`.hero--past` drops it) and on a Ken Burns poster while it runs; GSAP promotes fan cards only while they tween.
 
 ## 7. Per-section starting points
 
@@ -106,11 +106,11 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
   - `signature.js` has `signatureTimeline()` per §7.3 and `playSignature(svg,{paused})`. `site.js` uses `playSignature` to arm the footer (`top 80%`, 1.8 s `power1.inOut`); keep that export's signature.
   - Your motion CSS (220svh, sticky, sig/handle/dark-zone display) goes in `hero.css`.
 - **Content.**
-  - `video.js` `boot()` renders the four chapter bodies (`[data-chapter-body]`): a feature card with `data-deal`, a caption, and a rail with `data-rise`. It also calls `register()` on every `[data-vcard]`. `cardHTML(item, {fan, index, feature, deal})` is the shared markup from §6.1. It renders no `src` or `poster` on `<video>`, and the poster `<img>` is lazy.
+  - `video.js` `boot()` renders the chapter bodies of the enabled categories (`[data-chapter-body]`; Skin & hair care is `disabled` in the data, and an enabled category without markup gets a shell rendered from the data): a feature card with `data-deal`, a caption, and a rail with `data-rise`. It also calls `register()` on every `[data-vcard]`. `cardHTML(item, {fan, index, feature, deal})` is the shared markup from §6.1. It renders no `src` or `poster` on `<video>`, and the poster `<img>` is lazy.
   - `fan.js` renders the 7 cards and places them through `--x --y --rot --s --z`. It also does an **instant** focus change (buttons, ← →, tap), updating the caption, counter, "More …" link, `.fan__hit` labels and the sound hint. Replace that with the GSAP carousel. Note that GSAP's inline `transform` overrides the CSS slot transform. `--u` is 12.78px at 390 (compute it as `clamp(8.9, 2.7778vw, 13.33) × 1.18`).
   - The API stubs (`register`, `toggleSound`, `setEligible`, `swapSource`) are no-ops.
   - Sound and pause buttons and the hint are `display:none` in `site.css` until you style them in `content.css`.
-  - The fan icons are 4 stacked SVGs (`.fan__icon`); only the first one is visible.
+  - The fan icons are 3 stacked SVGs (`.fan__icon`: stays, food, fashion); only the first one is visible.
 - **Proof.**
   - `insights.js` renders all four screens statically when it is imported.
   - `proof.js` already binds `[data-metric]`, `[data-metric-label]` and `[data-period]` from `metrics.json`. In motion mode it upgrades each screen on approach (`renderScreen`, `data-ig-flash` on the profile) and runs `initMotion()` on `.stats` on approach.
