@@ -506,6 +506,8 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 [data-ig-screen="summary"]:not([data-ig-rendered=""]){ aspect-ratio: 358/364; }
 [data-ig-screen="performance"]:not([data-ig-rendered=""]){ aspect-ratio: 358/747; }
 [data-ig-screen="audience"]:not([data-ig-rendered=""]){ aspect-ratio: 358/780; }
+/* no JS: the screens cannot render, so drop their empty boxes (the fallback line and the stats stay) */
+html:not(.js) [data-ig-screen]{ display: none; }
 /* === /section: instagram === */
 
 /* ======================================================================== */
@@ -545,8 +547,9 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 }
 @media (min-width: 992px){ .fan{ --fan-k: 1; } }
 .fan:focus-visible{ outline-offset: -3px; }
-.fan__noscript{ position: absolute; inset: 0; display: grid; place-items: center; }
-.fan__card{
+.fan__noscript{ margin: 0; text-align: center; }
+html:not(.js) .fan{ height: auto; padding-block: 40px 24px; }
+.fan .fan__card{
   --x: 0; --y: 0; --rot: 0deg; --s: 1; --z: 1;
   position: absolute; left: calc(50% - var(--card-w) / 2); top: calc(50% - var(--card-h) / 2);
   width: var(--card-w); aspect-ratio: 9/16;
@@ -616,6 +619,7 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 .numbers__screen figcaption{ color: var(--muted); }
 .numbers__screen [data-ig-screen]{ --ig-shot-width: 430px; }
 .numbers__note{ margin-top: 48px; max-width: 32ch; }
+html:not(.js) .numbers__screens{ display: none; }
 /* === /section: numbers === */
 
 /* ======================================================================== */

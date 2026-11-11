@@ -52,7 +52,7 @@ export function cardHTML(item, opts = {}) {
     : '';
   const hit = opts.fan ? `<button class="fan__hit" type="button" aria-label="Show: ${esc(item.title)}"></button>` : '';
   return `<figure ${attrs}>`
-    + `<div class="vcard__media"><img class="vcard__poster" src="${esc(item.poster)}" alt="${withVideo ? '' : esc(item.alt)}" width="540" height="960" decoding="async" loading="lazy">${video}</div>`
+    + `<div class="vcard__media"><img class="vcard__poster" src="${esc(item.poster)}" alt="" width="540" height="960" decoding="async" loading="lazy">${video}</div>`
     + hit
     + `<button class="vcard__sound" type="button" aria-pressed="false" aria-label="Turn sound on"${audio ? '' : ' hidden'}>${ICON_SOUND}</button>`
     + `<button class="vcard__pause" type="button" aria-pressed="false" aria-label="Pause video"${hasVideo ? '' : ' hidden'}>${ICON_PAUSE}</button>`
