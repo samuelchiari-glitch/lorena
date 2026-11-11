@@ -545,7 +545,7 @@ html:not(.js) [data-ig-screen]{ display: none; }
   position: relative; height: calc(var(--u) * 36); margin-top: 20px;
   touch-action: pan-y;
 }
-@media (min-width: 992px){ .fan{ --fan-k: 1; --card-w: calc(var(--u) * 20); } }   /* Lando's desktop card: 20 rem */
+@media (min-width: 992px){ .fan{ --fan-k: 1; --card-w: calc(var(--u) * 20); height: calc(var(--u) * 40); margin-top: 48px; } }   /* Lando's desktop card: 20 rem */
 .fan__probe{ position: absolute; left: 0; top: 0; width: var(--u); height: 0; visibility: hidden; pointer-events: none; }
 .fan:focus-visible{ outline-offset: -3px; }
 .fan__noscript{ margin: 0; text-align: center; }
