@@ -658,12 +658,12 @@ html:not(.js) .fan__hint{ display: none; }
   .numbers__screens{ -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 120px), transparent); }
 }
 .numbers__screen{ position: relative; flex: 0 0 min(calc(100% - 28px), 400px); display: flex; flex-direction: column; align-items: center; gap: 16px; scroll-snap-align: start; container-type: inline-size; }
-/* The two tall screens show their top cards and charts under a soft fade, with "Show the full screen" (proof.js)
-   resting on the fade, so a cropped screen is barely taller than Home and the rail keeps no empty band under it. */
+/* The two tall screens show their top cards and chart (118cqw: the first section ends there), with "Show the full
+   screen" (proof.js) straddling the cut, so a cropped screen is barely taller than Home: no empty band under it. */
 .numbers__screen.is-cropped [data-ig-screen]{ max-height: 118cqw; overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 20px), transparent); mask-image: linear-gradient(#000 calc(100% - 20px), transparent); }
 .numbers__more{ color: var(--ink); background: var(--bg); }
-.numbers__screen.is-cropped .numbers__more{ position: absolute; bottom: 6px; left: 50%; translate: -50% 0; }
+.numbers__screen.is-cropped .numbers__more{ margin-top: -38px; }
 .numbers__screen figcaption{ color: var(--muted); }
 .numbers__tabs ~ .numbers__screens figcaption{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the pills name them */
 .numbers__screen [data-ig-screen]{ --ig-shot-width: 430px; }
