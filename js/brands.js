@@ -20,6 +20,7 @@
  */
 import { getLenis, isMotion, makeIO, onApproach, refresh, scope } from './scroll.js';
 import { initMotion } from './motion.js';
+import { countFrom } from './proof.js';
 
 const SPEED = 56;          // px per second (§4.6)
 const RAMP = 0.4;          // s, playbackRate ramp when the scroll direction flips
@@ -165,9 +166,13 @@ function startMarquee(section) {
     setPaused(false);
   }
 
-  // wide screens: re-check the copies (and loop length) after a resize
+  // wide screens: re-check the copies (and loop length) after a width change (iOS fires resize whenever its
+  // toolbar collapses or expands; the rows do not depend on the height)
   let t = 0;
+  let lastW = innerWidth;
   M.onResize = () => {
+    if (innerWidth === lastW) return;
+    lastW = innerWidth;
     clearTimeout(t);
     t = setTimeout(() => { if (M) M.rows.forEach(buildLoop); }, 200);
   };
@@ -241,7 +246,7 @@ export function ready(ctx) {
   followScroll();
   drift();
   const count = M.section.querySelector('[data-brand-count][data-count]');
-  if (count) onApproach(count, () => { if (isMotion()) initMotion(count); });
+  if (count) onApproach(count, () => { if (isMotion()) { countFrom(count); initMotion(count); } });
   refresh();
 }
 

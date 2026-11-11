@@ -2,6 +2,21 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preload" href="assets/fonts/lm-sans-var-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/eb-garamond-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="modulepreload" href="js/site.js">
+<link rel="modulepreload" href="js/scroll.js">
+<link rel="modulepreload" href="js/ui.js">
+<link rel="modulepreload" href="js/reveals.js">
+<link rel="modulepreload" href="js/motion.js">
+<link rel="modulepreload" href="js/hero.js">
+<link rel="modulepreload" href="js/signature.js">
+<link rel="modulepreload" href="js/insights.js">
+<link rel="modulepreload" href="js/fan.js">
+<link rel="modulepreload" href="js/video.js">
+<link rel="modulepreload" href="js/brands.js">
+<link rel="modulepreload" href="js/proof.js">
+<link rel="preload" href="data/videos.json" as="fetch" crossorigin>
+<link rel="preload" href="data/brands.json" as="fetch" crossorigin>
+<link rel="preload" href="data/metrics.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="css/insights.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/hero.css">
@@ -14,7 +29,7 @@
   <a class="skip" href="#main">Skip to content</a>
 
   <!-- section:chrome -->
-  <header class="hdr" data-nav="light">
+  <header class="hdr">
     <div class="hdr__bar">
       <a class="hdr__brand" href="#top">Lorena Maruch</a>
       <div class="hdr__actions">
@@ -26,7 +41,7 @@
     </div>
   </header>
 
-  <div class="menu on-dark" id="menu" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <div class="menu on-dark" id="menu" role="dialog" aria-label="Menu" hidden>
     <nav class="menu__nav wrap" aria-label="Sections">
       <ul class="menu__list">
         <li><a class="menu__link" href="#content"><span class="t-sans">Content</span></a></li>
@@ -79,7 +94,7 @@
     <!-- /section:instagram -->
 
     <!-- section:about -->
-    <section id="about" class="about" data-theme="light" aria-labelledby="about-title">
+    <section id="about" class="about" data-theme="light" data-bg-scrub="#F1EADA" data-bg-from="#4D342D" data-bg-range="top bottom|top 72%" aria-labelledby="about-title">
       <div class="wrap about__inner">
         <p class="t-eyebrow about__eyebrow" data-highlight>Hello</p>
         <h2 id="about-title" class="t-lockup t-lockup--offset" data-oval><span class="t-sans">About</span> <span class="t-serif">Lorena</span></h2>
@@ -158,7 +173,7 @@
       <div class="wrap">
         <p class="t-eyebrow numbers__eyebrow" data-highlight>Instagram · last 30 days</p>
         <h2 id="numbers-title" class="t-lockup" data-oval><span class="t-sans">By the</span> <span class="t-serif">numbers</span></h2>
-        <ul class="stats" role="list">
+        <ul class="stats" role="list" data-motion-scope>
           <li class="stat">
             <p class="t-number"><span data-count data-metric="profile.dashboardCard.value">1.9</span><span class="u">M</span></p>
             <p class="t-eyebrow stat__label" data-metric-label="kpis.views.label" data-highlight>Views</p>
@@ -172,7 +187,7 @@
             <p class="t-eyebrow stat__label" data-metric-label="kpis.netFollowers.label" data-highlight>Net followers</p>
           </li>
         </ul>
-        <div class="numbers__screens">
+        <div class="numbers__screens" data-lenis-prevent-horizontal>
           <figure class="numbers__screen">
             <figcaption class="t-eyebrow">Home</figcaption>
             <div data-ig-screen="summary" data-ig-static></div>

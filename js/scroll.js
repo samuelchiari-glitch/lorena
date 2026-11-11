@@ -19,8 +19,10 @@
  *                                 -> ScrollTrigger {once} at `start` plays it -> on complete: cleanup,
  *                                 data-armed removed. build(el) returns a PAUSED gsap timeline already in
  *                                 its from-state, or { tl, cleanup }. Motion mode only.
- *   track(el, tl, cleanup)        register an element you armed yourself (sets data-armed); the watchdog
+ *   track(el, tl, cleanup, {due}) register an element you armed yourself (sets data-armed); the watchdog
  *                                 and finishAll() can then force it. release(el) when it has played.
+ *                                 due(rect, innerHeight) (optional): true once the element should have
+ *                                 played (default: as soon as it is in view); the watchdog counts from then.
  *   release(el)                   un-arm (removes data-armed, runs cleanup once).
  *   scope(fn)                     run fn inside the shared gsap.context(): every tween, ScrollTrigger and
  *                                 SplitText created in it is reverted by finishAll(). Returns fn's result.
@@ -38,6 +40,7 @@ export const isMotion = () => root.classList.contains('motion');
 
 let lenis = null;
 let ctx = null;
+let watchdogTimer = 0;
 let finished = false;
 const finishers = new Set();
 const armed = new Map(); // el -> { el, tl, cleanup, played, seen, done }
@@ -76,7 +79,7 @@ export function initScroll() {
   window.lenis = lenis;
 
   ScrollTrigger.addEventListener('scrollEnd', watchdog);
-  setInterval(watchdog, 1000);
+  watchdogTimer = setInterval(watchdog, 1000);
   addEventListener('beforeprint', finishAll);
   const rm = matchMedia('(prefers-reduced-motion: reduce)');
   const onRM = () => { if (rm.matches) finishAll(); };
@@ -169,10 +172,10 @@ function force(entry) {
   complete(entry);
 }
 
-export function track(el, tl, cleanup) {
+export function track(el, tl, cleanup, { due } = {}) {
   const prev = armed.get(el);
   if (prev) complete(prev);
-  const entry = { el, tl, cleanup, played: false, seen: 0, done: false };
+  const entry = { el, tl, cleanup, due, played: false, seen: 0, done: false };
   armed.set(el, entry);
   el.setAttribute('data-armed', '');
   return entry;
@@ -235,6 +238,7 @@ function watchdog() {
       if (now - entry.seen > dur + 2000) force(entry);
       return;
     }
+    if (entry.due && !entry.due(r, ih)) { entry.seen = 0; pending = true; return; }
     if (!entry.seen) { entry.seen = now; pending = true; }
     else if (now - entry.seen > 1200) force(entry);
     else pending = true;
@@ -247,6 +251,7 @@ function watchdog() {
 export function finishAll() {
   if (finished) return;
   finished = true;
+  clearInterval(watchdogTimer);
   const { gsap, ScrollTrigger } = window;
   armed.forEach(force);
   finishers.forEach((fn) => {

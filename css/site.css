@@ -193,7 +193,9 @@ html.lenis::-webkit-scrollbar, html.lenis body::-webkit-scrollbar{ display: none
 
 .t-sans {                   /* the "bold" line, feminised: medium weight, narrow, airy */
   display: block;
-  font-family: var(--font-sans);
+  /* until LM Sans arrives, a system condensed face (iOS/macOS, Android, Windows) keeps the narrow lines close
+     to their final width, instead of the wide Helvetica Neue / Arial snapping in */
+  font-family: "LM Sans", "Avenir Next Condensed", "sans-serif-condensed", "Arial Narrow", var(--font-sans);
   font-weight: var(--sans-lockup-wght);
   font-stretch: 82%;
   text-transform: uppercase;
@@ -281,7 +283,7 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 .t-intro .t-accent { font-size: 1em; }
 .t-statement {              /* §2.2: .t-sans at --fs-statement, caps, .t-accent words inside (no swash) */
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: "LM Sans", "Avenir Next Condensed", "sans-serif-condensed", "Arial Narrow", var(--font-sans);
   font-size: var(--fs-statement);
   font-weight: calc(var(--sans-lockup-wght) - 40);
   font-stretch: 80%;
@@ -374,12 +376,18 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
   transition: color var(--dur-default) var(--ease-default), background-color var(--dur-default) var(--ease-default),
               transform .45s var(--ease-default);
 }
+/* with JS the bar starts clear with Vanilla ink (the cover is dark under its scrim) until ui.js sets data-nav */
+@media (scripting: enabled){
+  .hdr:not([data-nav]){ color: var(--vanilla); background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 .hdr[data-nav="dark"]{
   color: var(--vanilla);
   background: rgba(77,52,45,.85);
   background: color-mix(in srgb, var(--bg-dark) 85%, transparent);
 }
 .hdr.hdr--clear{ background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hdr.hdr--quick{ transition-duration: .15s, .15s, .45s; }   /* inside the hero: the theme follows the scrub closely */
+.hdr.hdr--boot{ transition: none !important; }            /* ui.js: the first theme applies instantly */
 .hdr.is-hidden{ transform: translateY(-100%); }
 .hdr__bar{
   height: var(--header-h);
@@ -467,7 +475,7 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
    sticky, the card shrink, signature, handle, theme zones) live in css/hero.css. */
 .hero{ --hero-bg: var(--vanilla); background: var(--hero-bg); position:relative;
        margin-top: calc(-1 * env(safe-area-inset-top, 0px)); }
-.hero__stage{ position:relative; height:100svh; overflow:clip; background: var(--hero-bg);
+.hero__stage{ position:relative; height:100svh; overflow:hidden; overflow:clip; background: var(--hero-bg);
   --hero-copy-top: calc(env(safe-area-inset-top, 0px) + var(--header-h) + 28px);
   /* Cover framing, derived from the copy at any viewport (cover.jpg is 2:3; its eye line is at .387 of
      its height, the eye midpoint at .544 of its width). The image box is sized so the eye line sits at
@@ -488,14 +496,19 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
 .hero__photo img{ position:absolute; left:var(--img-x); top:var(--img-y); width:var(--img-w); height:var(--img-h);
   max-width:none; object-fit:cover; transform-origin: calc(50vw - var(--img-x)) calc(50svh - var(--img-y));
   transform: scale(1.06); }   /* the scrub's start state, in both modes */
-/* Scrim for the Vanilla copy, laid out from the same tokens as the copy (px, not % of the height):
-   a soft wash from the top plus a low oval behind the serif line, which crosses the hair. */
+/* Scrim for the Vanilla copy, laid out from the same tokens as the copy (px, not % of the height): a light
+   wash from the top (.36, gone just under the lockup) plus a tight, soft oval behind the serif line, where it
+   crosses the hair. Measured over the real pixels (5th percentile, 320-430 px): header ink >= 5.4, eyebrow
+   >= 4.7, "LORENA" >= 4.5, "Maruch" >= 3.0 (large text). */
 .hero__scrim{ position:absolute; inset:0; pointer-events:none;
   background:
-    radial-gradient(ellipse 62% 96px at 50% calc(var(--lockup-bottom) - 40px), rgba(77,52,45,.5), rgba(77,52,45,0)),
-    linear-gradient(to bottom, rgba(77,52,45,.62) 0px, rgba(77,52,45,.5) var(--hero-copy-top),
-                    rgba(77,52,45,.34) var(--lockup-bottom), rgba(77,52,45,0) calc(var(--lockup-bottom) + 120px)); }
-.hero__shade{ position:absolute; inset:0; background:var(--mahogany-deep); opacity:0; pointer-events:none; }
+    radial-gradient(ellipse 52% 76px at 50% calc(var(--lockup-bottom) - 40px), rgba(77,52,45,.5), rgba(77,52,45,0)),
+    linear-gradient(to bottom, rgba(77,52,45,.36) 0px, rgba(77,52,45,.34) calc(var(--hero-copy-top) + 40px),
+                    rgba(77,52,45,.2) calc(var(--lockup-bottom) - 40px), rgba(77,52,45,0) calc(var(--lockup-bottom) + 36px)); }
+/* Motion only (hero.js fades it in from 0.4 H): darkens the card's lower half, where the Vanilla signature
+   crosses the cream robe; the eye line (≈ 41% of the stage) keeps a light .12 veil. */
+.hero__shade{ position:absolute; inset:0; opacity:0; pointer-events:none;
+  background: linear-gradient(to bottom, rgba(77,52,45,.12) 0%, rgba(77,52,45,.12) 46%, rgba(77,52,45,.58) 64%, rgba(77,52,45,.62) 80%); }
 .hero__light-zone, .hero__dark-zone, .sig--hero, .hero__handle{ display:none; }
 /* === /section: hero === */
 
@@ -525,7 +538,8 @@ html:not(.js) [data-ig-screen]{ display: none; }
 .about__inner{ position: relative; display: flex; flex-direction: column; }
 .about__eyebrow{ margin-bottom: 20px; }
 .about .t-lockup{ position: relative; z-index: 2; }
-.about__photo{ width: 78%; margin: -24px 0 0 auto; aspect-ratio: 4/5; }
+.about .t-lockup--offset .t-serif{ padding-right: calc(.04em + 6px); }   /* not on the photo's hard right edge */
+.about__photo{ width: 78%; margin: 10px 0 0 auto; aspect-ratio: 4/5; }   /* clear of the italic: the warm wood wall would swallow it */
 .about__bio{ max-width: 32ch; margin-top: 40px; }
 .about__roles{ margin-top: 16px; color: var(--ink); }
 .about__statement{ margin-top: 64px; }
@@ -533,7 +547,7 @@ html:not(.js) [data-ig-screen]{ display: none; }
 
 /* ======================================================================== */
 /* === section: content === */
-.content{ position: relative; background: var(--bg); padding-block: var(--section-pad) var(--space-4xl); overflow-x: clip; }
+.content{ position: relative; background: var(--bg); padding-block: var(--section-pad) var(--space-4xl); overflow-x: hidden; overflow-x: clip; }   /* hidden first: Safari < 16 has no clip */
 
 /* fan intro */
 .fan-intro{ display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -564,7 +578,7 @@ html:not(.js) .fan__hint{ display: none; }
   width: var(--card-w); aspect-ratio: 9/16;
   transform: translate(calc(var(--x) * var(--u)), calc(var(--y) * var(--u))) rotate(var(--rot)) scale(var(--s));
   z-index: var(--z);
-  backface-visibility: hidden; will-change: transform;
+  backface-visibility: hidden;   /* no permanent will-change: GSAP promotes a card only while it tweens (force3D auto) */
 }
 .fan__hit{ position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
 .fan__caption{ display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: 8px; }
@@ -589,7 +603,7 @@ html:not(.js) .fan__hint{ display: none; }
 /* chapters (§4.4b) */
 .chapter{ padding-block: var(--space-4xl) 0; }
 .chapter__head{ display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
-.chapter__sub{ max-width: 30ch; }
+.chapter__sub{ max-width: 30ch; text-wrap: balance; }
 .chapter__feature{ display: flex; flex-direction: column; align-items: center; margin-top: 32px; }
 .vcard--feature{ width: min(78vw, 320px); aspect-ratio: 9/16; }
 .chapter__caption{ margin-top: 18px; text-align: center; }
@@ -613,6 +627,10 @@ html:not(.js) .fan__hint{ display: none; }
 .rail__thumb::after{ content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .rail__thumb[aria-current="true"]::after{ box-shadow: inset 0 0 0 2px var(--mahogany), inset 0 0 0 4px var(--vanilla); }
 .rail__thumb:focus-visible{ outline-offset: 2px; }
+.rail__play{ position: absolute; left: 8px; bottom: 8px; width: 24px; height: 24px; display: grid; place-items: center;
+  border-radius: 50%; color: var(--vanilla); background: rgba(77,52,45,.5);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); pointer-events: none; }
+.rail__play svg{ width: 12px; height: 12px; margin-left: 1px; }
 /* === /section: content === */
 
 /* ======================================================================== */
@@ -623,9 +641,24 @@ html:not(.js) .fan__hint{ display: none; }
 .stats{ list-style: none; margin: 56px 0 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 32px; }
 .stat{ display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .stat .t-number{ color: var(--ink); }
-.numbers__screens{ width: 100%; display: flex; flex-direction: column; align-items: center; gap: 64px; margin-top: var(--space-4xl); }
-.numbers__screen{ width: 100%; max-width: 430px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+/* The three recreated screens: one snap rail (a screen plus a peek of the next), full-bleed like the chapter
+   rails, with proof.js's tab pills above it (one screen high instead of three; JS-only, like the screens). */
+.numbers__tabs{ display: flex; justify-content: center; gap: 6px; margin-top: var(--space-3xl); }
+.numbers__tabs .pill{ position: relative; min-height: 40px; padding: 0 10px; font-size: 11px; letter-spacing: .08em; border-color: var(--line); }   /* fits 288 px (320 wide) */
+.numbers__tabs .pill::after{ content: ""; position: absolute; inset: -2px 0; }   /* 44 px hit area */
+.numbers__tabs .pill[aria-current="true"]{ background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.numbers__screens{ position: relative; align-self: stretch; margin: 24px calc(-1 * var(--pad-x-r)) 0 calc(-1 * var(--pad-x-l));
+  display: flex; align-items: flex-start; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
+  padding: 4px var(--pad-x-r) 24px var(--pad-x-l); scroll-padding-inline: var(--pad-x-l) var(--pad-x-r); }
+.numbers__screens::-webkit-scrollbar{ display: none; }
+.numbers__screen{ flex: 0 0 min(calc(100% - 28px), 400px); display: flex; flex-direction: column; align-items: center; gap: 16px; scroll-snap-align: start; container-type: inline-size; }
+/* the two tall screens show their top cards and charts, with a soft fade, until "Show the full screen" (proof.js) */
+.numbers__screen.is-cropped [data-ig-screen]{ max-height: 132cqw; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+.numbers__more{ color: var(--ink); }
 .numbers__screen figcaption{ color: var(--muted); }
+.numbers__tabs ~ .numbers__screens figcaption{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the pills name them */
 .numbers__screen [data-ig-screen]{ --ig-shot-width: 430px; }
 .numbers__note{ margin-top: 48px; max-width: 32ch; }
 html:not(.js) .numbers__screens{ display: none; }
@@ -635,7 +668,7 @@ html:not(.js) .numbers__screens{ display: none; }
 /* === section: brands === */
 /* Default (static/reduced): one centred, wrapping grid of all 46 logos, duplicates hidden.
    js/brands.js adds .brands--marquee for the moving rows (css/proof.css). */
-.brands{ --muted: var(--ink); background: var(--surface); padding-block: var(--section-pad); overflow-x: clip; }
+.brands{ --muted: var(--ink); background: var(--surface); padding-block: var(--section-pad); overflow-x: hidden; overflow-x: clip; }
 .brands__head{ display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0; }
 .brands__head .t-lockup{ margin-top: 20px; }
 .brands__caption{ margin-top: 20px; max-width: 30ch; }
@@ -658,7 +691,8 @@ html:not(.js) .numbers__screens{ display: none; }
 .gallery__group{ margin-top: var(--space-2xl); }
 .gallery .t-lockup + .gallery__group{ margin-top: 56px; }
 .gallery__pair{ display: flex; justify-content: space-between; align-items: flex-start; }
-.gallery__item figcaption{ margin-bottom: 10px; color: var(--ink); }
+.gallery__item figcaption{ margin-bottom: 10px; color: var(--ink); text-wrap: balance; }
+.gallery__item--single figcaption{ width: calc(100% / .74 * .87); }   /* spans from the frame's left edge to the column's */
 .gallery__item--left{ width: 56%; }
 .gallery__item--right{ width: 40%; margin-top: 80px; }
 .gallery__item--single{ width: 74%; margin: var(--space-2xl) auto 0; }
@@ -701,7 +735,8 @@ a.contact__value span{ font-size: .8em; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px;
   color: var(--muted-on-dark); text-align: left;
 }
-.contact__top{ display: inline-flex; align-items: center; min-height: 44px; color: var(--muted-on-dark); text-decoration: none; }
+.contact__top{ display: inline-flex; align-items: center; gap: .35em; min-height: 44px; color: var(--muted-on-dark); text-decoration: none; }
+@media (max-width: 380px){ .contact__actions{ margin-left: auto; } }   /* wrapped pills stay right-aligned, like the Email row's */
 /* === /section: contact === */
 
 /* ------------------------------------------------------------------ wide screens (desktop polish later; must not break) */

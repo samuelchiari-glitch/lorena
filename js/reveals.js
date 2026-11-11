@@ -19,6 +19,8 @@
  *   data-rise[="24"]              container whose children rise y N -> 0 once (stagger .06, .6s power3.out).
  *     data-rise-start="top 92%"   ScrollTrigger start (default top 90%).
  *   data-bg-scrub="#E6DECB"       section background: computed colour -> this colour, top 60% -> bottom bottom.
+ *     data-bg-from="#4D342D"      start colour instead of the computed one (a hand-off from the section above).
+ *     data-bg-range="top bottom|top 72%"   ScrollTrigger start|end instead of the default.
  *
  * Exports: boot(ctx), ready(ctx), scan(root), splitLockup(heading), buildOval(heading),
  *          buildHighlight(el), buildCurtain(frame).
@@ -69,9 +71,10 @@ export function scan(rootEl = document) {
       });
     });
     all('[data-bg-scrub]').forEach((sec) => {
-      gsap.fromTo(sec, { backgroundColor: getComputedStyle(sec).backgroundColor }, {
+      const [start, end] = (sec.dataset.bgRange || 'top 60%|bottom bottom').split('|');
+      gsap.fromTo(sec, { backgroundColor: sec.dataset.bgFrom || getComputedStyle(sec).backgroundColor }, {
         backgroundColor: sec.dataset.bgScrub, ease: 'none',
-        scrollTrigger: { trigger: sec, start: 'top 60%', end: 'bottom bottom', scrub: true },
+        scrollTrigger: { trigger: sec, start, end, scrub: true },
       });
     });
   });

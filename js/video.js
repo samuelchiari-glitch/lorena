@@ -77,8 +77,9 @@ const isPhoto = (item) => item.type === 'photo';
 
 function thumbHTML(item, active) {
   const verb = isPhoto(item) ? 'View photo' : item.src ? 'Play' : 'Show';
-  return `<button class="rail__thumb${isPhoto(item) ? ' rail__thumb--photo' : ''}" type="button" data-id="${esc(item.id)}" aria-label="${verb}: ${esc(item.title)}"${active ? ' aria-current="true"' : ''}>`
-    + `<img data-src="${esc(item.thumb)}" alt="" width="240" height="427" decoding="async"></button>`;
+  return `<button class="rail__thumb" type="button" data-id="${esc(item.id)}" aria-label="${verb}: ${esc(item.title)}"${active ? ' aria-current="true"' : ''}>`
+    + `<img data-src="${esc(item.thumb)}" alt="" width="240" height="427" decoding="async">`
+    + `${item.src ? `<span class="rail__play" aria-hidden="true">${ICON_GLYPH}</span>` : ''}</button>`; // a mixed rail tells videos from stills
 }
 
 export const catName = (cat) => (cat && (cat.name || cat.key)) || '';

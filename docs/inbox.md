@@ -83,3 +83,12 @@ The thumb swaps were checked in motion and reduced modes:
 - `_source/drive-3/assinatura-lorena.svg` is Lorena's real "LM" signature: a filled outline exported from Illustrator.
 - The animated kit is being built in `assets/signature/` (outline masked by pen paths drawn in writing order; see its README).
 - After the polish round, the lead swaps it in for the placeholder EMS Allure signature. That means `js/signature.js` (hero scrub and the footer play-once) and `scripts/make-signature.mjs`, which then becomes obsolete.
+
+## Restaurant videos (received 2026-11-11 19:55; encoded into assets/video/restaurants/)
+Each is the original of a media-kit item:
+- `pronto-gnocchi.mp4`: PRONTO Light stuffed gnocchi, from the fridge to the table (restaurants-01).
+- `salad-table.mp4`: colourful salad with orange juice, a vegetarian table (restaurants-02).
+- `wine-tasting.mp4`: white wine, curly hair and a white top, a dinner on blue-patterned plates (restaurants-03).
+- `garden-breakfast.mp4`: outdoor breakfast among plants (restaurants-04).
+
+Add them to `data/videos.json` (and the posters/thumbs) after the polish round, replacing the restaurant placeholders. Consider a mixed rail like the Stays one.

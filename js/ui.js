@@ -13,7 +13,7 @@
 import { getLenis, isMotion, makeIO, onFinish } from './scroll.js';
 
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
-let hdr, menuBtn, menu, mainEl, footerEl, toastEl;
+let hdr, menuBtn, menu, mainEl, footerEl, toastEl, heroEl;
 let menuOpen = false;
 let menuTl = null;
 let stageH = 0;
@@ -26,8 +26,10 @@ export function boot() {
   mainEl = document.getElementById('main');
   footerEl = document.querySelector('footer.contact');
   toastEl = document.querySelector('.toast');
+  heroEl = document.querySelector('.hero');
   if (hdr) {
     menuBtn = hdr.querySelector('.hdr__menu');
+    hdr.classList.add('hdr--boot'); // the first theme and backing apply instantly (no fade from the no-JS bar)
     initTheme();
     initHeaderScroll();
   }
@@ -54,10 +56,15 @@ function initTheme() {
   const order = new Map(targets.map((el, i) => [el, i]));
   const active = new Set();
   let io = null;
+  let booting = true;
   const apply = () => {
     let best = null;
     active.forEach((el) => { if (best === null || order.get(el) > order.get(best)) best = el; });
     if (best) hdr.dataset.nav = best.dataset.theme === 'dark' ? 'dark' : 'light';
+    if (booting) {
+      booting = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => hdr.classList.remove('hdr--boot')));
+    }
   };
   const build = () => {
     if (io) io.disconnect();
@@ -77,6 +84,12 @@ function initTheme() {
 
 /* ------------------------------------------------------------------ header backing + hide/show (§4.0) */
 
+/** Motion: the bar stays clear until hero.js's data-clear-until (the photo's edge reaches the header text). */
+function clearUntil() {
+  const v = heroEl ? parseFloat(heroEl.dataset.clearUntil) : NaN;
+  return Number.isFinite(v) ? v : 0.35 * stageH;
+}
+
 function initHeaderScroll() {
   const stage = document.querySelector('.hero__stage');
   const measure = () => { stageH = stage ? stage.offsetHeight : innerHeight; };
@@ -93,10 +106,12 @@ function initHeaderScroll() {
     if (menuOpen) return;
     if (!isMotion()) {
       hdr.classList.toggle('hdr--clear', y < 1);
-      hdr.classList.remove('is-hidden');
+      hdr.classList.remove('is-hidden', 'hdr--quick');
       return;
     }
-    if (y < 0.35 * stageH) {
+    // inside the hero track the theme flips within a few frames of scroll: short colour fades there
+    hdr.classList.toggle('hdr--quick', !!heroEl && y < heroEl.offsetHeight);
+    if (y < clearUntil()) {
       hdr.classList.add('hdr--clear');
       hdr.classList.remove('is-hidden');
       return;
@@ -158,6 +173,15 @@ function buildMenuTl() {
   return tl;
 }
 
+/**
+ * While the menu is open everything outside it is inert, except the header's menu button (its close
+ * control, which stays reachable for screen readers: the menu is a non-modal dialog plus inert siblings).
+ */
+function setOutsideInert(on) {
+  const outside = [mainEl, footerEl, document.querySelector('.skip'), hdr.querySelector('.hdr__brand'), hdr.querySelector('.hdr__contact')];
+  outside.forEach((el) => { if (el) el.inert = on; });
+}
+
 export function openMenu() {
   if (menuOpen) return;
   menuOpen = true;
@@ -166,8 +190,7 @@ export function openMenu() {
   hdr.classList.add('is-menu-open');
   hdr.classList.remove('is-hidden');
   document.documentElement.classList.add('menu-open');
-  if (mainEl) mainEl.inert = true;
-  if (footerEl) footerEl.inert = true;
+  setOutsideInert(true);
   const lenis = getLenis();
   if (lenis) lenis.stop();
   if (isMotion() && window.gsap && !reduceMQ.matches) {
@@ -188,8 +211,7 @@ export function closeMenu({ restoreFocus = true } = {}) {
   menuBtn.setAttribute('aria-label', 'Menu');
   hdr.classList.remove('is-menu-open');
   document.documentElement.classList.remove('menu-open');
-  if (mainEl) mainEl.inert = false;
-  if (footerEl) footerEl.inert = false;
+  setOutsideInert(false);
   const lenis = getLenis();
   if (lenis) lenis.start(); // a stopped Lenis ignores scrollTo
   if (menuTl && isMotion() && !reduceMQ.matches) {

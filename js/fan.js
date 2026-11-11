@@ -1,17 +1,19 @@
 /**
  * fan.js: the 7-card fan (spec §4.4a; Lando §3 adapted). OWNER: content section builder.
  *
- * boot (every JS mode): render the 7 cards from data/videos.json (fan[], fanFocus) and place them in their slots
- *   through --x --y --rot --s --z (site.css), so the arc is complete without GSAP; focus carousel (swipe, tap,
- *   prev/next, ← →), caption/counter/labels, video eligibility, the niche icon cycle.
- * ready (motion only): the elastic entrance (armed on approach, plays at top 85%), elastic focus tweens with the
- *   wrap-around park, desktop hover spread. GSAP's inline transform then overrides the CSS slot transform;
- *   finish() drops it again. Static modes change focus instantly.
+ * boot (every JS mode): render the 7 cards from data/videos.json (fan[], fanFocus; cards of a disabled category
+ *   are skipped) and place them in their slots through --x --y --rot --s --z (site.css), so the arc is complete
+ *   without GSAP; focus carousel (swipe, tap, prev/next, ← →), caption/counter/labels, a roving tabindex (only
+ *   the focused card is a tab stop; keyboard focus follows the focus change), video eligibility, the icon cycle.
+ * ready (motion only): the elastic entrance (armed on approach, plays when the stack's centre reaches 75% of the
+ *   viewport, so the spring opens in full view), elastic focus tweens with the wrap-around park, the cards follow
+ *   the finger during a horizontal drag, desktop hover spread. GSAP's inline transform then overrides the CSS
+ *   slot transform; finish() drops it again. Static modes change focus instantly.
  * Click ownership: fan.js owns every click on a fan card; it calls video.toggleSound / video.setEligible only.
  *
  * Exports: boot(ctx), ready(ctx), finish(), SLOTS, slotOf(i, focus, n), setFocus(i, opts), getFocus(), cards().
  */
-import { cardHTML, esc, setEligible, toggleSound } from './video.js';
+import { cardHTML, catName, esc, setEligible, toggleSound } from './video.js';
 import { isMotion, makeIO, markPlayed, onApproach, release, scope, track } from './scroll.js';
 
 /** Slot table (§4.4a), values in u. x is the mobile column; desktop (>= 992) uses DESK_X. */
@@ -26,6 +28,8 @@ export const SLOTS = [
 ];
 const DESK_X = [-30, -22, -11, 0, 11, 22, 30];
 const EASE = 'elastic.out(1, 0.75)';
+const DRAG = 0.35; // cards follow the finger at this fraction of the drag
+const SWIPE = 40;  // px: a shorter drag springs back
 
 export const slotOf = (i, focus, n = 7) => (((i - focus + 3) % n) + n) % n;
 
@@ -74,7 +78,9 @@ function label(card) {
   const it = items[cards().indexOf(card)];
   const hit = card.querySelector('.fan__hit');
   if (!it || !hit) return;
-  const { label: l, pressed } = labelFor(it, slotOfCard(card) === 3, card.classList.contains('has-sound'));
+  const focused = slotOfCard(card) === 3;
+  const { label: l, pressed } = labelFor(it, focused, card.classList.contains('has-sound'));
+  hit.tabIndex = focused ? 0 : -1; // roving tabindex: side cards stay tappable, not tab stops
   hit.setAttribute('aria-label', l);
   if (pressed == null) hit.removeAttribute('aria-pressed'); else hit.setAttribute('aria-pressed', pressed);
 }
@@ -107,6 +113,12 @@ export function setFocus(i, { inherit = false, instant = false } = {}) {
   if (changed && !instant && animated()) animateFocus(prev);
   else if (animated()) list.forEach((c) => window.gsap.set(c, target(slotOfCard(c))));
   updateCaption();
+  // keyboard focus follows the carousel focus (never steals it from outside the fan)
+  const active = document.activeElement;
+  if (changed && active && active !== fanEl && fanEl.contains(active)) {
+    const hit = now.querySelector('.fan__hit');
+    if (hit) hit.focus({ preventScroll: true });
+  }
 }
 
 function animateFocus(prev) {
@@ -132,7 +144,7 @@ function updateCaption() {
   const it = items[focus];
   if (!it) return;
   const cat = cats.find((c) => c.key === it.category) || {};
-  const name = (String(cat.eyebrow || '').split('·')[1] || it.category || '').trim();
+  const name = catName(cat) || it.category || '';
   const sec = document.getElementById('content');
   const q = (s) => sec && sec.querySelector(s);
   const set = (s, v) => { const el = q(s); if (el && el.textContent !== v) el.textContent = v; };
@@ -163,21 +175,39 @@ function bindInput() {
     e.preventDefault();
     setFocus(focus + (e.key === 'ArrowRight' ? 1 : -1), { inherit: true });
   });
-  // swipe (pointer events; touch-action: pan-y keeps vertical scrolling native): swipe left = next
+  // swipe (pointer events; touch-action: pan-y keeps vertical scrolling native): swipe left = next.
+  // Motion mode: once the drag is horizontal the cards follow the finger (DRAG × dx); a release past SWIPE px
+  // commits ±1 with the elastic focus tween, a shorter one springs back.
   let sx = 0;
   let sy = 0;
   let pid = null;
-  fanEl.addEventListener('pointerdown', (e) => { if (e.isPrimary && e.button === 0) { pid = e.pointerId; sx = e.clientX; sy = e.clientY; } });
-  fanEl.addEventListener('pointercancel', () => { pid = null; });
-  fanEl.addEventListener('pointerup', (e) => {
-    if (e.pointerId !== pid) return;
+  let dragging = false;
+  const end = (commit) => {
+    const was = dragging;
     pid = null;
+    dragging = false;
+    if (was) swipedAt = performance.now(); // the click that follows a drag is not a tap
+    if (commit) setFocus(focus + commit, { inherit: true });
+    else if (was) springBack();
+  };
+  fanEl.addEventListener('pointerdown', (e) => { if (e.isPrimary && e.button === 0) { pid = e.pointerId; sx = e.clientX; sy = e.clientY; dragging = false; } });
+  fanEl.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pid) return;
     const dx = e.clientX - sx;
     const dy = e.clientY - sy;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > 1.2 * Math.abs(dy)) {
-      swipedAt = performance.now();
-      setFocus(focus + (dx < 0 ? 1 : -1), { inherit: true });
+    if (!dragging) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) >= Math.abs(dx)) { pid = null; return; } // vertical: the page scrolls
+      if (Math.abs(dx) < 8 || Math.abs(dx) <= 1.2 * Math.abs(dy)) return;
+      dragging = true;
     }
+    follow(dx);
+  });
+  fanEl.addEventListener('pointercancel', (e) => { if (e.pointerId === pid) end(0); });
+  fanEl.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== pid) return;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    end(Math.abs(dx) > SWIPE && Math.abs(dx) > 1.2 * Math.abs(dy) ? (dx < 0 ? 1 : -1) : 0);
   });
   // one owner per tap: side card -> focus it; focused card -> sound (when it has a video with sound)
   fanEl.addEventListener('click', (e) => {
@@ -190,6 +220,23 @@ function bindInput() {
     if (it && it.src && it.audio !== false) toggleSound(card);
   });
   fanEl.addEventListener('vcard:sound', (e) => { const c = e.target.closest('.fan__card'); if (c) label(c); });
+}
+
+/** Drag follow (motion mode): every card sits DRAG × dx off its slot. */
+function follow(dx) {
+  if (!animated()) return;
+  if (entrance) entrance.progress(1);
+  const u = unit();
+  cards().forEach((c) => {
+    window.gsap.killTweensOf(c);
+    window.gsap.set(c, { ...target(slotOfCard(c), u), x: target(slotOfCard(c), u).x + DRAG * dx });
+  });
+}
+
+function springBack() {
+  if (!animated()) return;
+  const u = unit();
+  cards().forEach((c) => window.gsap.to(c, { ...target(slotOfCard(c), u), duration: 0.5, ease: EASE, overwrite: 'auto' }));
 }
 
 /* ------------------------------------------------------------------ niche icon: one 4.8 s cycle per entry (§4.4a) */
@@ -266,8 +313,10 @@ function armEntrance() {
       duration: 1.2, ease: EASE, stagger: { amount: 0.2, from: 'center' },
     }, '-=0.4');
     entrance = tl;
-    track(fanEl, tl, () => { entrance = null; });
-    ScrollTrigger.create({ trigger: fanEl, start: 'top 85%', once: true, onEnter: () => { markPlayed(fanEl); tl.play(); } });
+    // the deal plays when the stack's centre reaches 75% of the viewport (in full view on a phone); the
+    // watchdog only counts from that point, so a visitor pausing above it never gets a forced, frozen fan
+    track(fanEl, tl, () => { entrance = null; }, { due: (r, ih) => r.top + r.height / 2 < 0.75 * ih });
+    ScrollTrigger.create({ trigger: fanEl, start: 'center 75%', once: true, onEnter: () => { markPlayed(fanEl); tl.play(); } });
   });
 }
 
@@ -295,7 +344,8 @@ export function boot(ctx) {
   if (!fanEl || !data || fanEl.querySelector('.fan__card')) return;
   const byId = new Map((data.videos || []).map((v) => [v.id, v]));
   cats = data.categories || [];
-  items = (data.fan || []).map((id) => byId.get(id)).filter(Boolean);
+  const off = new Set(cats.filter((c) => c.disabled).map((c) => c.key));
+  items = (data.fan || []).map((id) => byId.get(id)).filter((it) => it && !off.has(it.category));
   if (!items.length) return;
   fanEl.insertAdjacentHTML('beforeend', '<i class="fan__probe" aria-hidden="true"></i>'
     + items.map((it, i) => cardHTML(it, { fan: true, index: i })).join(''));
@@ -308,8 +358,15 @@ export function boot(ctx) {
   initIconCycle();
   const onDesk = () => relayout();
   if (qDesk.addEventListener) qDesk.addEventListener('change', onDesk); else if (qDesk.addListener) qDesk.addListener(onDesk);
+  // only a width change moves the arc (iOS fires resize whenever its toolbar collapses or expands)
   let rt = 0;
-  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(relayout, 150); });
+  let lastW = innerWidth;
+  addEventListener('resize', () => {
+    if (innerWidth === lastW) return;
+    lastW = innerWidth;
+    clearTimeout(rt);
+    rt = setTimeout(relayout, 150);
+  });
 }
 
 export function ready(ctx) {

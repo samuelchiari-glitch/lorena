@@ -5,16 +5,23 @@
  * What already works:
  *   boot(ctx)   bindMetrics(): every [data-metric] / [data-metric-label] / [data-period] is written
  *               from data/metrics.json (the static HTML carries the same strings).
- *   ready(ctx)  motion mode: each [data-ig-screen][data-ig-static] is upgraded on approach
- *               (remove data-ig-static, renderScreen() again, so motion.js arms it below the fold;
- *               the profile screen gets data-ig-flash), and the stats count up (initMotion on approach).
+ *               initTabs(): the Numbers screens sit in one horizontal snap rail; tab pills above it
+ *               scroll to a screen and show which one is in view (aria-current).
+ *   ready(ctx)  motion mode: each [data-ig-screen][data-ig-static] is upgraded on approach (the Numbers
+ *               screens all together, when their rail approaches: the ones off to the side then play when
+ *               they are swiped into view) (remove data-ig-static, renderScreen() again, so motion.js arms
+ *               it below the fold; the profile screen gets data-ig-flash), and the stats count up.
  * insights.js auto-renders every screen statically on import (the resting state).
  *
- * Exports: boot(ctx), ready(ctx), finish(), bindMetrics(metrics), getPath(obj, path), formatPeriod(period).
+ * Count-ups (stats, brand count) start at ~65% of their value (countFrom), so a number waiting just below
+ * its play line never reads 0; the three stats share one data-motion-scope (site.html) and start together.
+ *
+ * Exports: boot(ctx), ready(ctx), finish(), bindMetrics(metrics), getPath(obj, path), formatPeriod(period),
+ *          countFrom(el, k).
  */
 import { renderScreen } from './insights.js';
 import { initMotion } from './motion.js';
-import { isMotion, onApproach } from './scroll.js';
+import { isMotion, onApproach, refresh } from './scroll.js';
 
 export function getPath(obj, path) {
   return String(path).replace(/\[(\d+)\]/g, '.$1').split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
@@ -44,15 +51,81 @@ export function bindMetrics(m) {
   if (period) document.querySelectorAll('[data-period]').forEach((el) => { el.textContent = period; });
 }
 
+/** data-count-from = k × the element's own value, at its own precision (motion.js reads it when it arms). */
+export function countFrom(el, k = 0.65) {
+  const m = el.textContent.trim().match(/^[+-]?[\d.,]+/);
+  if (!m) return;
+  const raw = m[0].replace(/[+,]/g, '');
+  const v = parseFloat(raw);
+  if (Number.isFinite(v)) el.setAttribute('data-count-from', (v * k).toFixed((raw.split('.')[1] || '').length));
+}
+
+function initTabs() {
+  const rail = document.querySelector('#numbers .numbers__screens');
+  const figs = rail ? [...rail.querySelectorAll('.numbers__screen')] : [];
+  if (figs.length < 2 || rail.previousElementSibling?.classList.contains('numbers__tabs')) return;
+  const tabs = document.createElement('div');
+  tabs.className = 'numbers__tabs';
+  tabs.setAttribute('role', 'group');
+  tabs.setAttribute('aria-label', 'Instagram screens');
+  const btns = figs.map((fig, i) => {
+    const cap = fig.querySelector('figcaption');
+    if (!fig.id) fig.id = `ig-screen-${i + 1}`;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pill';
+    b.textContent = cap ? cap.textContent : String(i + 1);
+    b.setAttribute('aria-controls', fig.id);
+    b.addEventListener('click', () => {
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      rail.scrollTo({ left: fig.offsetLeft - figs[0].offsetLeft, behavior: reduce ? 'auto' : 'smooth' });
+    });
+    tabs.appendChild(b);
+    return b;
+  });
+  rail.before(tabs);
+  // the tall screens (Performance, Audience) are cropped to their top cards until expanded
+  figs.forEach((fig, i) => {
+    const shot = fig.querySelector('[data-ig-screen]');
+    if (!shot || !/^(performance|audience)$/.test(shot.dataset.igScreen)) return;
+    fig.classList.add('is-cropped');
+    if (!shot.id) shot.id = `ig-shot-${i + 1}`;
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'pill numbers__more';
+    more.textContent = 'Show the full screen';
+    more.setAttribute('aria-expanded', 'false');
+    more.setAttribute('aria-controls', shot.id);
+    more.addEventListener('click', () => {
+      const open = fig.classList.toggle('is-cropped') === false;
+      more.setAttribute('aria-expanded', String(open));
+      more.textContent = open ? 'Show less' : 'Show the full screen';
+      refresh(); // the page below moved: re-measure the scroll triggers
+    });
+    fig.appendChild(more);
+  });
+  let raf = 0;
+  const sync = () => {
+    raf = 0;
+    const x = rail.scrollLeft + figs[0].offsetLeft;
+    let cur = 0;
+    figs.forEach((f, i) => { if (Math.abs(f.offsetLeft - x) < Math.abs(figs[cur].offsetLeft - x)) cur = i; });
+    btns.forEach((b, i) => (i === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+  };
+  rail.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(sync); }, { passive: true });
+  sync();
+}
+
 export function boot(ctx) {
   bindMetrics(ctx.data && ctx.data.metrics);
+  initTabs();
 }
 
 export function ready(ctx) {
   const metrics = ctx.data && ctx.data.metrics;
   if (!ctx.motion || !isMotion() || !metrics) return;
   document.querySelectorAll('[data-ig-screen][data-ig-static]').forEach((el) => {
-    onApproach(el, () => {
+    onApproach(el.closest('.numbers__screens') || el, () => {
       if (!isMotion() || el.getAttribute('data-ig-rendered') !== '') return;
       el.removeAttribute('data-ig-static');
       if (el.closest('#instagram')) el.setAttribute('data-ig-flash', '');
@@ -60,7 +133,13 @@ export function ready(ctx) {
     });
   });
   const stats = document.querySelector('#numbers .stats');
-  if (stats) onApproach(stats, () => { if (isMotion()) initMotion(stats); });
+  if (stats) {
+    onApproach(stats, () => {
+      if (!isMotion()) return;
+      stats.querySelectorAll('[data-count]').forEach((el) => countFrom(el));
+      initMotion(stats);
+    });
+  }
 }
 
 export function finish() {}

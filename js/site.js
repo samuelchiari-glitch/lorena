@@ -58,8 +58,23 @@ function validateVideos(v) {
   (v.categories || []).forEach((c) => { if (c.feature && !ids.has(c.feature)) console.warn(`[videos] feature ${c.feature} not found`); });
 }
 
+/**
+ * The cover fades in from the Mahogany photo box, and its CSS settle starts, once the image is decoded, not at
+ * first paint (css/hero.css .is-loading). Only while it is still loading: an image already painted is left alone.
+ */
+function waitHeroImage() {
+  const photo = document.querySelector('.hero__photo');
+  const img = photo && photo.querySelector('img');
+  if (!img || img.complete) return;
+  photo.classList.add('is-loading');
+  const done = () => photo.classList.remove('is-loading');
+  img.addEventListener('load', () => { (img.decode ? img.decode() : Promise.resolve()).catch(() => {}).then(done); }, { once: true });
+  img.addEventListener('error', done, { once: true });
+}
+
 async function boot() {
   root.classList.add('js');
+  waitHeroImage();
 
   // 1. mode
   if (!reduceMQ.matches && libsReady()) {
