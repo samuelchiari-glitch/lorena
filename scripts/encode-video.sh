@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Web encode for Lorena's vertical videos (9:16).
-#   usage: scripts/encode-video.sh <input> <output.mp4> [poster.jpg]
+#   usage: [PRECROP=crop=W:H:X:Y] scripts/encode-video.sh <input> <output.mp4> [poster.jpg]
+#   PRECROP trims bands baked into a source (e.g. a white strip) before the 9:16 fill.
 #
 # Standard (validated on the first 3 stays videos: SSIM >= 0.977 vs. the
 # source scaled to the same size, visually identical at 2x zoom):
@@ -25,7 +26,7 @@ dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$in")
 cap=$(awk -v d="$dur" -v b="$MAX_BYTES" -v m="$MAX_KBPS" 'BEGIN { k = int((b * 8 / d) / 1000) - 140; if (k > m) k = m; print k }')
 
 # 9:16 crop-to-fill so non-9:16 sources don't letterbox
-vf="fps=${FPS},scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},format=yuv420p"
+vf="${PRECROP:+${PRECROP},}fps=${FPS},scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},format=yuv420p"
 
 has_audio=$(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$in" | head -1)
 af=(); [ -n "$has_audio" ] && af=(-af "loudnorm=I=${LUFS}:TP=-1.5:LRA=11" -ar 48000)

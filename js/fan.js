@@ -16,6 +16,8 @@
  */
 import { cardHTML, catName, esc, setEligible, toggleSound } from './video.js';
 import { isMotion, makeIO, markPlayed, onApproach, release, scope, track } from './scroll.js';
+import { DESKTOP, FINE, onMedia } from './desktop.js';
+import { rescanRoll } from './ui.js';
 
 /** Slot table (§4.4a), values in u. x is the mobile column; desktop (>= 992) uses DESK_X. */
 export const SLOTS = [
@@ -49,6 +51,7 @@ let held = null; // the focused card, kept on its poster (= its `start` frame) u
 let hovered = null;
 let leaveT = 0;
 let swipedAt = 0;
+let dealU = 0; // desktop: the unit the deal's spread uses, read when the spread starts (0 = not read yet)
 
 export const getFocus = () => focus;
 export const cards = () => (fanEl ? [...fanEl.querySelectorAll('.fan__card')] : []);
@@ -155,12 +158,34 @@ function updateCaption() {
   const more = q('.fan__more');
   if (more && cat.anchor) {
     more.setAttribute('href', `#${cat.anchor}`);
-    more.innerHTML = `More ${esc(name.toLowerCase())} <span aria-hidden="true">↓</span>`;
+    const html = `More ${esc(name.toLowerCase())} <span aria-hidden="true">↓</span>`;
+    if (!more.classList.contains('has-roll')) more.innerHTML = html;
+    else if (more.dataset.cat !== cat.key) {
+      // desktop text roll (ui.js): a split label is not re-split in place, so a fresh link takes its place
+      const fresh = more.cloneNode(false);
+      fresh.classList.remove('has-roll');
+      fresh.innerHTML = html;
+      more.replaceWith(fresh);
+      fresh.dataset.cat = cat.key;
+      rescanRoll(fresh);
+    }
+    const now = q('.fan__more');
+    if (now) now.dataset.cat = cat.key;
   }
   set('.fan__count-i', String(focus + 1).padStart(2, '0'));
   set('.fan__count-n', String(items.length).padStart(2, '0'));
   const hint = q('.fan__soundhint');
   if (hint) hint.hidden = !(it.src && it.audio !== false);
+}
+
+/** Desktop + fine pointer, motion: the hint names the hover spread (spec §4.4); restored on teardown. */
+function desktopHint(d) {
+  const hint = document.querySelector('#content .fan__hint');
+  if (!hint) return;
+  const prev = hint.innerHTML;
+  hint.innerHTML = 'Hover to spread<span class="fan__soundhint"> · click a card for sound</span>';
+  updateCaption();
+  d.cleanup(() => { hint.innerHTML = prev; updateCaption(); });
 }
 
 /* ------------------------------------------------------------------ input */
@@ -263,7 +288,8 @@ function spread(n) {
     const p = 1 - Math.abs((i - 3) / 3);
     const c = 1 + 0.2 * Math.max(0, 3 - d);
     let t;
-    if (i === n) t = { x: B.x, y: B.y - 2.5, scale: B.s * 1.08, rotation: B.rot };
+    // the hovered card lifts and grows; the centre card lifts less (2.5 u would reach the hint line above the fan)
+    if (i === n) t = { x: B.x, y: B.y - (i === 3 ? 1.2 : 2.5), scale: B.s * 1.08, rotation: B.rot };
     else if (i < n) t = { x: B.x - 8 * p * c, y: B.y, scale: B.s, rotation: B.rot - 3 / (d + 1) };
     else { const e = i === 6; t = { x: B.x + (e ? 0 : 8 * p * c), y: B.y + (e ? -1 : 0), scale: B.s, rotation: B.rot + 3 / (d + 1) }; }
     gsap.to(card, { x: t.x * u, y: t.y * u, scale: t.scale, rotation: t.rotation, opacity: 1, duration: 0.5, ease: EASE, overwrite: 'auto', delay: d * 0.02 });
@@ -279,20 +305,25 @@ function rest() {
   });
 }
 
-function bindHover() {
+/** The hover spread lives in a desktop + fine-pointer registration (js/desktop.js): torn down on resize to mobile. */
+function bindHover(d) {
   cards().forEach((card) => {
-    card.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'mouse' || !qHover.matches) return;
+    d.on(card, 'pointerenter', (e) => {
+      if (e.pointerType !== 'mouse') return;
       clearTimeout(leaveT);
       hovered = card;
       spread(slotOfCard(card));
     });
-    card.addEventListener('pointerleave', (e) => {
+    d.on(card, 'pointerleave', (e) => {
       if (e.pointerType !== 'mouse' || hovered !== card) return;
       hovered = null;
       clearTimeout(leaveT);
       leaveT = setTimeout(() => { if (!hovered) rest(); }, 50); // 50 ms grace between neighbours
     });
+  });
+  d.cleanup(() => {
+    clearTimeout(leaveT);
+    if (hovered) { hovered = null; rest(); }
   });
 }
 
@@ -320,23 +351,32 @@ function armEntrance() {
     held = list.find((c) => slotOfCard(c) === 3) || null;
     if (held) setEligible(held, false, { warm: true });
     gsapOn = true;
+    // desktop (chosen when armed): the stack rises faster and the deal starts as the fan's top enters the lower
+    // 15 % of the view, so the spread lands with the fan near the middle of the screen even at a brisk wheel
+    // (the phone timing stays as it was)
+    const desk = qDesk.matches;
     const tl = gsap.timeline({ paused: true, onComplete: () => release(fanEl) });
-    tl.to(list, { y: 0, duration: 0.8, ease: 'power2.out', stagger: { amount: 0.5, from: 'end' } });
-    tl.addLabel('spread', '-=0.4');
+    tl.to(list, { y: 0, duration: desk ? 0.5 : 0.8, ease: 'power2.out', stagger: { amount: desk ? 0.25 : 0.5, from: 'end' } });
+    tl.addLabel('spread', desk ? '-=0.2' : '-=0.4');
     tl.call(unhold, null, 'spread');
+    // desktop: the spread's unit is read when it starts, so a height change while the deck waits re-fits the arc
+    dealU = 0;
+    const du = () => (desk ? dealU || (dealU = unit()) : u);
     tl.to(list, {
-      x: (k, el) => target(slotOfCard(el), u).x,
-      y: (k, el) => target(slotOfCard(el), u).y,
-      rotation: (k, el) => target(slotOfCard(el), u).rotation,
-      scale: (k, el) => target(slotOfCard(el), u).scale,
+      x: (k, el) => target(slotOfCard(el), du()).x,
+      y: (k, el) => target(slotOfCard(el), du()).y,
+      rotation: (k, el) => target(slotOfCard(el), du()).rotation,
+      scale: (k, el) => target(slotOfCard(el), du()).scale,
       duration: 1.2, ease: EASE, stagger: { amount: 0.2, from: 'center' },
     }, 'spread');
     if (caption) tl.to(caption, { opacity: 1, duration: 0.4, ease: 'power1.out' }, 'spread');
     entrance = tl;
-    // the deal plays when the stack's centre reaches 75% of the viewport (in full view on a phone); the
-    // watchdog only counts from that point, so a visitor pausing above it never gets a forced, frozen fan
-    track(fanEl, tl, () => { entrance = null; }, { due: (r, ih) => r.top + r.height / 2 < 0.75 * ih });
-    ScrollTrigger.create({ trigger: fanEl, start: 'center 75%', once: true, onEnter: () => { markPlayed(fanEl); tl.play(); } });
+    // the deal plays when the stack's centre reaches 75% of the viewport (in full view on a phone; on desktop when
+    // the fan's top reaches 85 %); the watchdog only counts from that point, so a visitor pausing above it never
+    // gets a forced, frozen fan
+    const due = desk ? (r, ih) => r.top < 0.85 * ih : (r, ih) => r.top + r.height / 2 < 0.75 * ih;
+    track(fanEl, tl, () => { entrance = null; }, { due });
+    ScrollTrigger.create({ trigger: fanEl, start: desk ? 'top 85%' : 'center 75%', once: true, onEnter: () => { markPlayed(fanEl); tl.play(); } });
   });
 }
 
@@ -348,12 +388,26 @@ function takeOver() {
   cards().forEach((c) => window.gsap.set(c, target(slotOfCard(c), u)));
 }
 
+/**
+ * The unit changed (the width; at >= 992 also the height, the fitted --r), or the 992 line was crossed: the cards go
+ * to the arc at the current unit. Desktop: a deal still waiting is re-stacked (its spread reads the unit when it
+ * starts) and one under way is landed first; a hovered fan spreads again from its new arc.
+ */
 function relayout() {
   cards().forEach((c) => placeStatic(c, slotOfCard(c)));
-  if (animated() && !entrance) {
-    const u = unit();
-    cards().forEach((c) => { window.gsap.killTweensOf(c); window.gsap.set(c, target(slotOfCard(c), u)); });
+  if (!animated()) return;
+  const u = unit();
+  if (entrance) {
+    if (!qDesk.matches) return; // below 992 as before: the deal keeps the unit it was armed with
+    if (entrance.paused() && entrance.progress() === 0) { // still waiting: re-stack; the spread reads the unit later
+      dealU = 0;
+      window.gsap.set(cards(), { y: 10 * u });
+      return;
+    }
+    entrance.progress(1);
   }
+  cards().forEach((c) => { window.gsap.killTweensOf(c); window.gsap.set(c, target(slotOfCard(c), u)); });
+  if (hovered) spread(slotOfCard(hovered));
 }
 
 /* ------------------------------------------------------------------ module contract */
@@ -378,20 +432,28 @@ export function boot(ctx) {
   initIconCycle();
   const onDesk = () => relayout();
   if (qDesk.addEventListener) qDesk.addEventListener('change', onDesk); else if (qDesk.addListener) qDesk.addListener(onDesk);
-  // only a width change moves the arc (iOS fires resize whenever its toolbar collapses or expands)
+  // the arc moves with the unit. Below 992 the unit follows the width only, and iOS fires resize whenever its toolbar
+  // collapses or expands, so only a width change counts there. At >= 992 the fitted --r also reads the height (svh):
+  // a taller or shorter window (F11, docked devtools, the bookmarks bar) re-fits the arc too.
   let rt = 0;
   let lastW = innerWidth;
+  let lastU = unit();
   addEventListener('resize', () => {
-    if (innerWidth === lastW) return;
+    if (!qDesk.matches && innerWidth === lastW) return; // below 992 only a width change moves the arc (as before)
     lastW = innerWidth;
     clearTimeout(rt);
-    rt = setTimeout(relayout, 150);
+    rt = setTimeout(() => {
+      const u = unit();
+      if (qDesk.matches && Math.abs(u - lastU) < 0.01) return; // desktop: any change of the unit (width or height)
+      lastU = u;
+      relayout();
+    }, 150);
   });
 }
 
 export function ready(ctx) {
   if (!fanEl || !cards().length || !ctx.motion || !isMotion()) return;
-  bindHover();
+  onMedia(`${DESKTOP} and ${FINE}`, (d) => { bindHover(d); desktopHint(d); }, { motion: true, name: 'fan-hover' });
   onApproach(fanEl, armEntrance, { onSkip: takeOver });
 }
 

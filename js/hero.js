@@ -35,6 +35,10 @@
 import { isMotion, scope, getLenis } from './scroll.js';
 import { splitLockup } from './reveals.js';
 import { signatureTimeline, clearSignature } from './signature.js';
+import { isDesktop, onDesktop } from './desktop.js';
+
+/** Desktop rem (css/site.css desktop tokens: clamp(992px, 100vw, 1920px) / 108), from the stage width. */
+const deskRem = (W) => Math.min(1920, Math.max(992, W)) / 108;
 
 /** Rest = the whole stage, square corners (the cover is full-bleed at scroll 0). Read from the render. */
 export function restGeometry(stage) {
@@ -43,9 +47,17 @@ export function restGeometry(stage) {
   return { W, H, box: { top: 0, left: 0, right: W, bottom: H }, r: { rx: 0, ry: 0, rxb: 0, ryb: 0 } };
 }
 
-/** The card: ≈ 9:16, top at 20% so its centre sits at 49%, 28 px corners (the video cards' radius). */
+/**
+ * The card. Mobile: ≈ 9:16, top at 20% so its centre sits at 49%, 28 px corners (the video cards' radius).
+ * Desktop (≥ 992, docs/desktop-spec.md §4.1): portrait 3:4, .62 H tall, top at .19 H (centre on the stage's centre
+ * line), corners --radius-card (2.4 dr: 32 px at 1440). isDesktop() is read at refresh, never in scroll callbacks.
+ */
 export const CARD_RADIUS = 28;
 export function cardGeometry({ W, H }) {
+  if (isDesktop()) {
+    const h = 0.62 * H, w = 0.75 * h, left = (W - w) / 2, top = 0.19 * H, r = 2.4 * deskRem(W);
+    return { box: { top, left, right: left + w, bottom: top + h }, r: { rx: r, ry: r, rxb: r, ryb: r } };
+  }
   const h = 0.58 * H, w = 0.575 * h, left = (W - w) / 2, top = 0.2 * H;
   const r = CARD_RADIUS;
   return { box: { top, left, right: left + w, bottom: top + h }, r: { rx: r, ry: r, rxb: r, ryb: r } };
@@ -62,16 +74,18 @@ export function cardGeometry({ W, H }) {
 export const COVER_EYE_Y = 0.387;
 export const COVER_EYE_X = 0.544;
 const END_SCALE = 0.92;
+const DESK_COVER = 1.7; // desktop: the cover ≈ 1.7 card widths in the card (head and shoulders)
 function cardImageEnd(stage, img) {
   const H = stage.offsetHeight, W = stage.getBoundingClientRect().width;
   const left = img.offsetLeft, top = img.offsetTop, w = img.offsetWidth, h = img.offsetHeight;
   const { box } = cardGeometry({ W, H });
   const cw = box.right - box.left, ch = box.bottom - box.top;
-  const scale = W > H ? Math.min(END_SCALE, (1.9 * cw) / w) : END_SCALE;
+  const desk = isDesktop();
+  const scale = desk ? (DESK_COVER * cw) / w : W > H ? Math.min(END_SCALE, (1.9 * cw) / w) : END_SCALE;
   const ax = (x) => W / 2 + (x - W / 2) * scale, ay = (y) => H / 2 + (y - H / 2) * scale; // after the scale
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const y = clamp(box.top + 0.36 * ch - ay(top + COVER_EYE_Y * h), box.bottom + 12 - ay(top + h), box.top - 12 - ay(top));
-  const x = W > H ? clamp(box.left + cw / 2 - ax(left + COVER_EYE_X * w), box.right + 12 - ax(left + w), box.left - 12 - ax(left)) : 0;
+  const x = desk || W > H ? clamp(box.left + cw / 2 - ax(left + COVER_EYE_X * w), box.right + 12 - ax(left + w), box.left - 12 - ax(left)) : 0;
   return { x: Math.round(x), y: Math.round(y), scale: +scale.toFixed(4) };
 }
 
@@ -86,6 +100,9 @@ function cardImageEnd(stage, img) {
  */
 export const COVER_CHIN_Y = 0.54;
 const SIG_CLEAR = 16, SIG_FOOT = 12, SIG_BASE = 0.82, SIG_IN = 10, SIG_MIN = 0.44;
+// desktop: the ink's lowest point (the L's tail) is at .96 of the box; it keeps 3 dr above the stage's foot, and the
+// signature stays at least 1.3 card widths wide (it overflows the card on both sides, Lando ref 05)
+const SIG_LOW = 0.96, SIG_DESK_FOOT = 3, SIG_DESK_MIN = 1.3;
 function heroSigPlace(stage, img, sig) {
   const H = stage.offsetHeight, W = stage.getBoundingClientRect().width;
   sig.style.removeProperty('--sig-w'); // measure the CSS size
@@ -93,6 +110,17 @@ function heroSigPlace(stage, img, sig) {
   if (!img || !w0) return { top: Math.round(0.54 * H), width: null };
   const { y, scale } = cardImageEnd(stage, img);
   const chin = H / 2 + (img.offsetTop + COVER_CHIN_Y * img.offsetHeight - H / 2) * scale + y;
+  if (isDesktop()) {
+    // under her chin, centred on the card (CSS: min(60 dr, 800px) wide), allowed to hang below the card's lower edge
+    // like a signed print; narrowed to fit above the stage's foot, never below 1.3 card widths
+    const { box } = cardGeometry({ W, H });
+    const foot = H - SIG_DESK_FOOT * deskRem(W);
+    let top = chin - SIG_CLEAR, w = w0;
+    if (top + SIG_LOW * w * (h0 / w0) > foot) w = Math.max(SIG_DESK_MIN * (box.right - box.left), (foot - top) / (SIG_LOW * (h0 / w0)));
+    w = Math.min(w, w0);
+    top = Math.min(top, foot - SIG_LOW * w * (h0 / w0));
+    return { top: Math.round(top), width: w < w0 ? +w.toFixed(1) : null };
+  }
   const base = cardGeometry({ W, H }).box.bottom - SIG_IN; // the lowest the baseline may sit
   let h = h0;
   if (chin - SIG_CLEAR + SIG_BASE * h > base) h = Math.max(Math.min(h0, SIG_MIN * H * (h0 / w0)), (base - chin + SIG_CLEAR) / SIG_BASE);
@@ -111,9 +139,12 @@ export function boxToInset({ box, r }, { W, H }) {
 }
 
 const SNAP_VELOCITY = 100; // Lenis px/frame: a fling, not a scroll (Lando §6.1)
+const WIPE_MOBILE = ['ellipse(110% 110% at 50% 0%)', 'ellipse(100% 0% at 50% 0%)'];
+const WIPE_DESK = ['ellipse(150% 150% at 0% 100%)', 'ellipse(150% 0% at 0% 100%)'];
 let heroEl = null;
 let liveSplits = [];
 let setLightTop = null; // refreshInit listener (positions .hero__light-zone)
+let rewriteClip = null; // refresh listener (the clip at the restored scrub progress)
 
 export function boot(ctx) {
   if (!ctx.motion || !isMotion() || !window.gsap) return;
@@ -125,6 +156,7 @@ export function finish() {
   liveSplits.forEach((s) => { try { s.revert(); } catch (_) { /* already reverted */ } });
   liveSplits = [];
   if (setLightTop && window.ScrollTrigger) window.ScrollTrigger.removeEventListener('refreshInit', setLightTop);
+  if (rewriteClip && window.ScrollTrigger) window.ScrollTrigger.removeEventListener('refresh', rewriteClip);
   if (heroEl) {
     heroEl.classList.remove('hero--live', 'hero--past');
     const h1 = heroEl.querySelector('h1');
@@ -135,6 +167,8 @@ export function finish() {
     delete heroEl.dataset.clearUntil;
     const sig = heroEl.querySelector('.sig--hero');
     if (sig) { clearSignature(sig); sig.style.removeProperty('--sig-top'); sig.style.removeProperty('--sig-w'); }
+    const handle = heroEl.querySelector('.hero__handle');
+    if (handle) handle.style.removeProperty('opacity');
   }
 }
 
@@ -166,11 +200,19 @@ function setupHero() {
   const clip = { p: 0 };
   const writeClip = () => {
     if (!geo || !hero.classList.contains('hero--live')) return; // finish() drops the class before the revert
-    const { a, b, W, Hh } = geo, k = clip.p, m = (x, y) => q(x + (y - x) * k);
+    // desktop: whole pixels (a .5 px edge let the stage background bleed through as a 1 px light seam at 1024)
+    const qq = isDesktop() ? Math.round : q;
+    const { a, b, W, Hh } = geo, k = clip.p, m = (x, y) => qq(x + (y - x) * k);
     const box = { top: m(a.box.top, b.box.top), left: m(a.box.left, b.box.left), right: W - m(W - a.box.right, W - b.box.right), bottom: Hh - m(Hh - a.box.bottom, Hh - b.box.bottom) };
     const r = m(a.r.rx, b.r.rx);
     const str = boxToInset({ box, r: { rx: r, ry: r, rxb: r, ryb: r } }, { W, H: Hh });
     if (str !== lastClip) { lastClip = str; photo.style.setProperty('--hero-clip', str); }
+    // desktop: the handle shows only while the card is (nearly) settled, so on the way back up the growing card
+    // never runs over it (its chars still rise / drop with their own scrub); below 992 it is left alone
+    if (handle) {
+      if (isDesktop()) handle.style.opacity = String(Math.min(1, Math.max(0, (k - 0.88) / 0.1)).toFixed(3));
+      else if (handle.style.opacity) handle.style.removeProperty('opacity');
+    }
   };
   const measure = () => {
     const a = restGeometry(stage);
@@ -210,8 +252,10 @@ function setupHero() {
         defaults: { ease: 'power1.inOut' },
         scrollTrigger: { trigger: hero, start: at(0.12), end: at(0.45), scrub: true, invalidateOnRefresh: true },
       });
-      copyTl.fromTo(copy, { clipPath: 'ellipse(110% 110% at 50% 0%)', yPercent: 0 },
-        { clipPath: 'ellipse(100% 0% at 50% 0%)', yPercent: -8, duration: 1 }, 0);
+      // desktop: the copy is the bottom-left block, so the ellipse closes onto its bottom edge (origin 0% 100%)
+      const wipe = (i) => () => (isDesktop() ? WIPE_DESK : WIPE_MOBILE)[i];
+      copyTl.fromTo(copy, { clipPath: wipe(0), yPercent: 0 },
+        { clipPath: wipe(1), yPercent: -8, duration: 1 }, 0);
       if (scrim) copyTl.fromTo(scrim, { opacity: 1 }, { opacity: 0, duration: 1 }, 0); // it only serves the copy
       // The sans chars are split only while the scrub is past 0 and unsplit back at 0: split chars
       // lose the caps' kerning (sub-pixel glyph shifts), and at rest the cover must match static mode.
@@ -275,9 +319,18 @@ function setupHero() {
         const tw = self.getTween();
         if (tw) tw.progress(1); // jump the scrub to where it is heading (0 or 1): never frozen half-drawn
       };
+      // no invalidateOnRefresh: the tween has no layout-dependent values (start / end are re-read on every refresh
+      // anyway), and invalidating it on a refresh re-rendered it at 0 (mask on, pens hidden) while the silent restore
+      // to 1 never redrew it: a resize, a devtools toggle or a deep link left the held card without its signature
+      // desktop: leaving back above 0.55 H always clears it (no strokes trailing over her face as the card grows)
+      const snapBack = (self) => {
+        if (!isDesktop()) { snap(self); return; }
+        const tw = self.getTween();
+        if (tw) tw.progress(1);
+      };
       window.ScrollTrigger.create({
-        trigger: hero, start: at(0.55), end: at(1), scrub: 0.5, animation: tl, invalidateOnRefresh: true,
-        onLeave: snap, onLeaveBack: snap,
+        trigger: hero, start: at(0.55), end: at(1), scrub: 0.5, animation: tl,
+        onLeave: snap, onLeaveBack: snapBack,
       });
     }
   });
@@ -289,7 +342,8 @@ function setupHero() {
   setLightTop = () => {
     const hdr = document.querySelector('.hdr');
     const line = Math.max(0, (hdr ? hdr.offsetHeight : 64) - 32);
-    const h = H(), r = Math.max(0, line - 22) / (0.2 * h);
+    const h = H(), topFrac = cardGeometry({ W: stage.getBoundingClientRect().width, H: h }).box.top / h;
+    const r = Math.max(0, line - 22) / (topFrac * h);
     const heroTop = hero.getBoundingClientRect().top + scrollY;
     const from = r >= 1 ? h * 3 : easeInv(r) * h; // the scroll (from the hero's top) where the edge reaches the text
     hero.style.setProperty('--hero-light-top', `${(from + line - heroTop).toFixed(1)}px`);
@@ -298,7 +352,125 @@ function setupHero() {
   };
   setLightTop();
   window.ScrollTrigger.addEventListener('refreshInit', setLightTop);
+  // measure() runs at refreshInit, while ScrollTrigger holds the scrubs at their start (events suppressed), and the
+  // restore after the refresh is silent too: write the clip again once the refresh is done, or a resize inside the
+  // track (e.g. crossing 992 px) would leave the photo full-bleed until the next scroll
+  rewriteClip = () => { lastClip = ''; writeClip(); };
+  window.ScrollTrigger.addEventListener('refresh', rewriteClip);
 
   hero.classList.add('hero--live');
   writeClip();
+  setupMarquee(hero, stage, photo);
+}
+
+/* ------------------------------------------------------------------ desktop text marquee (§4.1, Lando refs 03/06) */
+
+/**
+ * Two rows of giant type behind the card (desktop + motion only, built here and removed on teardown, so no markup
+ * exists below 992): sans caps "STAYS · FOOD · FASHION" and the serif roles line, both approved copy, aria-hidden.
+ * They sit between the stage background and the photo, so the shrinking photo uncovers them; opacity 0 → 1 from
+ * 0.35 H to 0.7 H; the rows drift ±4vw (opposite) across the track. Each row loops with WAAPI at 40 px/s in opposite
+ * directions; the direction follows Lenis's, and both pause while the hero is off-screen.
+ */
+const MQ_ROWS = [
+  { text: 'Stays · Food · Fashion · ', cls: 'hero__mrow--sans', dir: 1 },
+  { text: 'Content creator · Model · Actress · Art director · ', cls: 'hero__mrow--serif', dir: -1 },
+];
+const MQ_SPEED = 40; // px/s
+const MQ_DRIFT = 0.04; // × viewport width
+function setupMarquee(hero, stage, photo) {
+  onDesktop((d) => {
+    const { gsap } = window;
+    if (!gsap) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'hero__marquee';
+    wrap.setAttribute('aria-hidden', 'true');
+    const rows = MQ_ROWS.map(({ text, cls, dir }) => {
+      const row = document.createElement('div');
+      row.className = `hero__mrow ${cls}`;
+      const track = document.createElement('div');
+      track.className = 'hero__mtrack';
+      row.appendChild(track);
+      wrap.appendChild(row);
+      return { row, track, text, dir, anim: null, reps: 0 };
+    });
+    stage.insertBefore(wrap, photo);
+    // `live` goes false before the loops are cancelled: the context revert that follows re-renders the direction ramp
+    // (its onUpdate calls sync), and pause() on a cancelled loop with a negative rate throws (WAAPI: infinite end)
+    let live = true;
+    d.cleanup(() => { live = false; rows.forEach((r) => r.anim && r.anim.cancel()); wrap.remove(); });
+
+    // the loops run only while the hero is on screen AND the rows have started to fade in (0.35 H): at rest they sit
+    // at opacity 0 behind the full-bleed cover, and running them there costs compositor work on the first view
+    let visible = true, shown = false, rate = 1;
+    const running = () => visible && shown;
+    // two identical halves, each at least 1.25 stage widths long; the loop moves by one half
+    const build = () => {
+      if (!live) return;
+      const W = stage.getBoundingClientRect().width;
+      rows.forEach((r) => {
+        const probe = document.createElement('span'); // one phrase, measured in place (fonts may have changed)
+        probe.textContent = r.text;
+        r.track.appendChild(probe);
+        const one = probe.getBoundingClientRect().width || 1;
+        probe.remove();
+        const reps = Math.max(1, Math.ceil((1.25 * W) / one));
+        if (reps === r.reps && r.anim) return;
+        r.reps = reps;
+        const half = r.text.repeat(reps);
+        r.track.textContent = '';
+        for (let i = 0; i < 2; i++) { const s = document.createElement('span'); s.textContent = half; r.track.appendChild(s); }
+        const halfW = one * reps;
+        const kf = r.dir > 0
+          ? [{ transform: 'translateX(0)' }, { transform: 'translateX(-50%)' }]
+          : [{ transform: 'translateX(-50%)' }, { transform: 'translateX(0)' }];
+        const duration = (halfW / MQ_SPEED) * 1000;
+        if (r.anim) r.anim.cancel();
+        r.anim = r.track.animate(kf, { duration, iterations: Infinity, easing: 'linear' });
+        r.anim.currentTime = duration * 10000; // deep into the loop: a negative rate (scrolling up) never reaches 0
+        r.anim.playbackRate = rate;
+        if (!running()) r.anim.pause();
+      });
+    };
+    build();
+    const sync = () => rows.forEach((r) => { if (live && r.anim) { r.anim.playbackRate = rate; if (running()) r.anim.play(); else r.anim.pause(); } });
+    const fading = (self) => { const on = self.progress > 0; if (on !== shown) { shown = on; sync(); } };
+    d.io((entries) => { visible = entries[entries.length - 1].isIntersecting; sync(); }, { threshold: 0 }).observe(hero);
+    if (window.ScrollTrigger) {
+      window.ScrollTrigger.addEventListener('refresh', build);
+      d.cleanup(() => window.ScrollTrigger.removeEventListener('refresh', build));
+    }
+
+    d.add(() => {
+      const H = () => stage.offsetHeight;
+      const at = (f) => () => `top+=${(f * H()).toFixed(1)} top`;
+      // desktop stage colour (css: --hero-bg-d over --hero-bg at >= 992): through the warm Tobacco midpoint by 0.35 H
+      // and into Mahogany-deep by 0.65 H, so the khaki in-between is brief and the marquee runs on the dark stage
+      gsap.timeline({ scrollTrigger: { trigger: hero, start: 'top top', end: at(1), scrub: true, invalidateOnRefresh: true } })
+        .fromTo(hero, { '--hero-bg-d': '#F1EADA' }, { '--hero-bg-d': '#B59E7D', duration: 0.35, ease: 'power1.in', immediateRender: true }, 0)
+        .to(hero, { '--hero-bg-d': '#4D342D', duration: 0.3, ease: 'power1.out' }, 0.35)
+        .to({}, { duration: 0.35 }, 0.65);
+      gsap.fromTo(wrap, { opacity: 0 }, {
+        opacity: 1, ease: 'none', immediateRender: true,
+        scrollTrigger: { trigger: hero, start: at(0.35), end: at(0.7), scrub: true, invalidateOnRefresh: true, onUpdate: fading, onRefresh: fading },
+      });
+      rows.forEach(({ row, dir }) => {
+        const amp = () => MQ_DRIFT * stage.getBoundingClientRect().width * dir;
+        gsap.fromTo(row, { x: () => amp() }, {
+          x: () => -amp(), ease: 'none', immediateRender: true,
+          scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true, invalidateOnRefresh: true },
+        });
+      });
+      // direction follows the scroll: ramp both rows' rate to ±1 over 400 ms
+      const proxy = { rate: 1 };
+      const ramp = gsap.quickTo(proxy, 'rate', { duration: 0.4, ease: 'power1.inOut', onUpdate: () => { rate = proxy.rate; sync(); } });
+      const lenis = getLenis();
+      if (lenis) {
+        let dir = 1;
+        const onScroll = (l) => { if (l.direction && l.direction !== dir) { dir = l.direction; ramp(dir); } };
+        const off = lenis.on('scroll', onScroll);
+        d.cleanup(typeof off === 'function' ? off : () => { try { lenis.off('scroll', onScroll); } catch (_) { /* gone */ } });
+      }
+    });
+  }, { motion: true, name: 'hero-marquee' });
 }

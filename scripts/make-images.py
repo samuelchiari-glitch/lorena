@@ -6,10 +6,14 @@
 
 Outputs (all WebP, sRGB, metadata stripped):
   assets/img/web/hero-{828,1242,1527}.webp           q78  from assets/img/cover.jpg (client cover, 1600x2400)
+  assets/img/web/hero-2048.webp                      q72  desktop only, from _source/drive-2/foto-de-capa.jpg (the
+                                                         same cover at 2688x4032) when present, else cover.jpg
+  assets/img/web/hero-2688.webp                      q68  desktop only (DPR 2), same source
   assets/img/web/about-{480,800}.webp                q76  from assets/img/portrait-wood-hands.jpg (client original img-9196)
   assets/img/web/gallery-NN-{480,800}.webp           q76  the Canva-extracted gallery photos still on the page
                                                          (landscape ones cover-cropped to 5:6: GALLERY_CROP)
   assets/img/web/<name>-{480,800}.webp               q76  the client's originals in PHOTOS (gallery, CHANEL spotlight)
+  assets/img/web/chanel-{chance,n5-boutique}-1200.webp  q74  desktop only (the spotlight pair's data-srcset-d)
   assets/img/web/contact-06-{320,480}.webp           q76  the contact card (assets/img/contact/06.jpg)
   assets/video/posters/<id>.webp   540x960 (9:16)    q78  cover-crop from the encoded first frame, else the _ref JPG
   assets/video/thumbs/<id>.webp    240x427 (9:16)    q72  same source
@@ -111,6 +115,12 @@ def main():
     cover_src = ROOT / 'assets/img/cover.jpg'
     for w in (828, 1242, 1527):
         manifest[f'hero-{w}'] = resize_w(cover_src, web / f'hero-{w}.webp', w, 78)
+    # desktop only (<picture> source at >= 992 px, docs/desktop-spec.md §4.1): cover.jpg is 1600 wide, so the 2048
+    # comes from the client's original (same framing, 2688 x 4032) when it is in _source/, else cover.jpg (capped)
+    cover_hi = ROOT / '_source/drive-2/foto-de-capa.jpg'
+    manifest['hero-2048'] = resize_w(cover_hi if cover_hi.exists() else cover_src, web / 'hero-2048.webp', 2048, 72)
+    # desktop DPR-2 laptops (1440 @ 2 needs about 3,100 px): the original's full 2688 width, q68, about 160 KB
+    manifest['hero-2688'] = resize_w(cover_hi if cover_hi.exists() else cover_src, web / 'hero-2688.webp', 2688, 68)
 
     about_src = ROOT / 'assets/img/portrait-wood-hands.jpg'
     for w in (480, 800):
@@ -128,6 +138,10 @@ def main():
     for name, master in PHOTOS.items():
         for w in (480, 800):
             manifest[f'{name}-{w}'] = resize_w(ROOT / master, web / f'{name}-{w}.webp', w, 76)
+    # desktop only (video.js assigns data-srcset-d at >= 992 px, docs/desktop-spec.md §4.5): the CHANEL pair is 560 /
+    # 444 px wide at 1440, so DPR 2 needs more than 800 px
+    for name in ('chanel-chance', 'chanel-n5-boutique'):
+        manifest[f'{name}-1200'] = resize_w(ROOT / PHOTOS[name], web / f'{name}-1200.webp', 1200, 74)
 
     # contact card (spec §4.8, optional small card): the rust knit portrait
     contact_src = ROOT / 'assets/img/contact/06.jpg'

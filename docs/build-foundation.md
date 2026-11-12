@@ -152,3 +152,12 @@ Lenis is configured exactly as in spec §5 (`anchors:false`, `syncTouch` off on 
 - **About eyebrow.** The eyebrow reads "About" above the "ABOUT / *Lorena*" lockup, as the spec says. It is visibly redundant; consider a different eyebrow if the client agrees.
 - **First view (Chromium).** It fetches the 8 nearest posters, because of Chromium's own lazy-load margin (≈ 300 KB). In total it is ≈ 940 KB uncompressed, or ≈ 670 KB transferred with text gzipped (images 427 KB, fonts 121 KB, libraries ≈ 55 KB, own HTML/CSS/JS/JSON 70 KB). The content builder should watch the 700 KB budget.
 - **Not done here:** the `lab/type.html` comparison panel (open question 14). It belongs to no section, so whoever finishes first should take it.
+
+## 10. Desktop (2026-11-12)
+
+The desktop layout (≥ 992 px) and the tablet plan (768–991) are specified in `docs/desktop-spec.md`; mobile (< 768) is frozen and checked against a pixel baseline (that spec, §0.1). Foundation pieces added for it:
+- `js/desktop.js`: the matchMedia lifecycle (`onDesktop`, `onMedia`, `isDesktop`, `rescanDesktop`): per-registration gsap.context, disposable reveals, listeners and observers, coalesced media changes, one refresh, teardown on `site:static`.
+- `js/scroll.js`: `armReveal` now returns `dispose()` and accepts `{ scope }` (no change for existing callers).
+- `js/reveals.js`: `buildOvalLines`, `scanDesktop` (`data-d-oval`, `data-d-highlight`, `data-d-drift`, `data-d-slide`); `buildHighlight(el, value)` takes an optional colour.
+- `js/ui.js`: the text roll (`data-roll`, `initRoll`, `rescanRoll`), the desktop nav's current-section marker, the header scale settle, the menu closing at ≥ 992.
+- `css/site.css`: the desktop region at the end (`desktop: tokens / grid / effects / chrome`, one empty block per section, `tablet`).

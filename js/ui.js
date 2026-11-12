@@ -9,8 +9,15 @@
  *                             subtracts scroll-margin-top itself), scrollIntoView otherwise.
  *   toast(message, ms=1600)   the status pill (role=status, aria-live polite).
  *   isMenuOpen()
+ *   initRoll(d, root)         desktop hover text roll on [data-roll] (Lando §5.6; docs/desktop-spec.md §3.2): splits the
+ *                             label into aria-hidden char spans + an .sr-only copy, restored on teardown. Registered by
+ *                             boot() for ≥ 992 + fine pointer + no reduced motion (any JS mode); call it again with
+ *                             the same d for markup inserted later (idempotent).
+ * Desktop header (≥ 992, docs/desktop-spec.md §3.3): the centred nav's current-section marker (every JS mode), the
+ * scale settle over the first 10 % of a viewport (motion), and the menu closing when the viewport becomes desktop.
  */
 import { getLenis, isMotion, makeIO, onFinish } from './scroll.js';
+import { DESKTOP, FINE, onDesktop, onMedia } from './desktop.js';
 
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
 let hdr, menuBtn, menu, mainEl, footerEl, toastEl, heroEl;
@@ -36,10 +43,12 @@ export function boot() {
   if (menu && menuBtn) initMenu();
   initRouter();
   initCopy();
+  initDesktopChrome();
 }
 
 export function ready(ctx) {
   if (ctx.motion && isMotion()) initScrollIndicator();
+  if (ctx.motion && isMotion() && hdr) initHeaderSettle();
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -178,7 +187,7 @@ function buildMenuTl() {
  * control, which stays reachable for screen readers: the menu is a non-modal dialog plus inert siblings).
  */
 function setOutsideInert(on) {
-  const outside = [mainEl, footerEl, document.querySelector('.skip'), hdr.querySelector('.hdr__brand'), hdr.querySelector('.hdr__contact')];
+  const outside = [mainEl, footerEl, document.querySelector('.skip'), hdr.querySelector('.hdr__brand'), hdr.querySelector('.hdr__nav'), hdr.querySelector('.hdr__contact')];
   outside.forEach((el) => { if (el) el.inert = on; });
 }
 
@@ -309,6 +318,133 @@ function initCopy() {
     }
     toast('Press and hold to copy');
   });
+}
+
+/* ------------------------------------------------------------------ desktop chrome (docs/desktop-spec.md §3.3) */
+
+const ROLL_MQ = `${DESKTOP} and ${FINE} and (prefers-reduced-motion: no-preference)`;
+
+/** Split one [data-roll] label; returns its undo function (or null if there is nothing to split). */
+function rollSplit(el) {
+  if (el.querySelector('.roll')) return null;
+  const target = el.querySelector('[data-roll-text]') || el;
+  const node = [...target.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+  if (!node) return null;
+  const text = node.textContent;
+  const label = text.trim();
+  const lead = text.slice(0, text.indexOf(label));
+  const trail = text.slice(text.indexOf(label) + label.length);
+  const wrap = document.createElement('span');
+  wrap.className = 'roll';
+  const sr = document.createElement('span');
+  sr.className = 'sr-only';
+  sr.textContent = label;
+  const vis = document.createElement('span');
+  vis.className = 'roll__t';
+  vis.setAttribute('aria-hidden', 'true');
+  [...label].forEach((ch, i) => {
+    const c = document.createElement('span');
+    c.className = 'roll__c';
+    c.style.setProperty('--i', i);
+    c.textContent = ch === ' ' ? '\u00a0' : ch; // a plain space would collapse inside its inline-block
+    vis.appendChild(c);
+  });
+  wrap.append(sr, vis);
+  const parts = [lead && document.createTextNode(lead), wrap, trail && document.createTextNode(trail)].filter(Boolean);
+  node.replaceWith(...parts);
+  el.classList.add('has-roll');
+  return () => {
+    if (!wrap.isConnected) return;
+    wrap.replaceWith(document.createTextNode(label));
+    target.normalize();
+    el.classList.remove('has-roll');
+  };
+}
+
+let liveRoll = null; // the running roll registration (null below 992, on touch, or under reduced motion)
+
+/** Split the [data-roll] labels of markup inserted after boot (no-op when the roll is not running). */
+export function rescanRoll(root = document) {
+  if (liveRoll) initRoll(liveRoll, root);
+}
+
+/**
+ * Text roll on every [data-roll] under root, undone by the registration d's teardown. Idempotent per d. The undo
+ * steps live in one map per registration (one cleanup runs them all), and a step whose element has left the page
+ * is dropped when a later scan comes by: replaced labels (the fan caption's link) do not pile up until teardown.
+ */
+export function initRoll(d, root = document) {
+  if (!d) return;
+  if (!d.rolled) {
+    d.rolled = new Map(); // element -> its undo step
+    d.cleanup(() => { d.rolled.forEach((undo) => undo()); d.rolled.clear(); });
+  }
+  d.rolled.forEach((undo, el) => { if (!el.isConnected) d.rolled.delete(el); });
+  const els = [...root.querySelectorAll('[data-roll]')];
+  if (root.nodeType === 1 && root.matches('[data-roll]')) els.unshift(root);
+  els.forEach((el) => {
+    if (d.rolled.has(el)) return;
+    const undo = rollSplit(el);
+    d.rolled.set(el, undo || (() => {}));
+  });
+}
+
+function initDesktopChrome() {
+  // the text roll: an interaction, so every JS mode (fine pointer, no reduced motion)
+  onMedia(ROLL_MQ, (d) => {
+    liveRoll = d;
+    initRoll(d);
+    return () => { liveRoll = null; };
+  }, { name: 'roll' });
+  if (!hdr) return;
+  // the menu belongs to touch/narrow layouts: crossing into desktop closes it. Focus inside the (now hidden) menu
+  // moves to the matching desktop nav link (same href), else to the wordmark, never dropping to <body>
+  onDesktop(() => {
+    if (!menuOpen) return;
+    const inside = menu && menu.contains(document.activeElement);
+    const href = inside && document.activeElement.getAttribute('href');
+    closeMenu({ restoreFocus: false });
+    if (!inside) return;
+    const next = (href && hdr.querySelector(`.hdr__nav a[href="${CSS.escape(href)}"], .hdr__actions a[href="${CSS.escape(href)}"]`))
+      || hdr.querySelector('.hdr__brand');
+    if (next) next.focus({ preventScroll: true });
+  }, { name: 'menu-close' });
+  // current-section marker on the centred nav: the section under a 1 % reading band at 45 % of the viewport
+  const links = [...hdr.querySelectorAll('.hdr__nav a[href^="#"]')];
+  const pairs = links.map((a) => [a, document.getElementById(a.getAttribute('href').slice(1))]).filter(([, s]) => s);
+  if (!pairs.length) return;
+  onDesktop((d) => {
+    const active = new Set();
+    const order = new Map(pairs.map(([, s], i) => [s, i]));
+    const apply = () => {
+      let best = null;
+      active.forEach((s) => { if (best === null || order.get(s) > order.get(best)) best = s; });
+      pairs.forEach(([a, s]) => { if (s === best) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+    };
+    const io = d.io((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? active.add(e.target) : active.delete(e.target)));
+      apply();
+    }, { rootMargin: '-45% 0px -54% 0px', threshold: 0 });
+    pairs.forEach(([, s]) => io.observe(s));
+    d.cleanup(() => pairs.forEach(([a]) => a.removeAttribute('aria-current')));
+  }, { name: 'nav-current' });
+}
+
+/** Lando §7.2 (desktop only): brand and actions settle from scale 1.12 to 1 over the first 10 % of a viewport. */
+function initHeaderSettle() {
+  onDesktop((d) => {
+    const { gsap } = window;
+    const brand = hdr.querySelector('.hdr__brand');
+    const actions = hdr.querySelector('.hdr__actions');
+    if (!gsap || !brand || !actions) return;
+    d.add(() => {
+      gsap.timeline({
+        scrollTrigger: { start: 0, end: () => Math.max(1, innerHeight * 0.1), scrub: true, invalidateOnRefresh: true },
+      })
+        .fromTo(brand, { scale: 1.12, transformOrigin: '0% 50%' }, { scale: 1, ease: 'none' }, 0)
+        .fromTo(actions, { scale: 1.12, transformOrigin: '100% 50%' }, { scale: 1, ease: 'none' }, 0);
+    });
+  }, { motion: true, name: 'header-settle' });
 }
 
 /* ------------------------------------------------------------------ scroll indicator (Lando §7.6, motion only) */

@@ -22,6 +22,7 @@
  * (its poster is already cropped to the band by scripts/make-images.py).
  */
 import { makeIO } from './scroll.js';
+import { DESKTOP } from './desktop.js';
 
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -92,7 +93,8 @@ function thumbHTML(item, active) {
   const verb = isPhoto(item) ? 'View photo' : item.src ? 'Play' : 'Show';
   return `<button class="rail__thumb" type="button" data-id="${esc(item.id)}" aria-label="${verb}: ${esc(item.title)}"${active ? ' aria-current="true"' : ''}>`
     + `<img data-src="${esc(item.thumb)}" alt="" width="240" height="427" decoding="async">`
-    + `${item.src ? `<span class="rail__play" aria-hidden="true">${ICON_GLYPH}</span>` : ''}</button>`; // a mixed rail tells videos from stills
+    + `${item.src ? `<span class="rail__play" aria-hidden="true">${ICON_GLYPH}</span>` : ''}` // a mixed rail tells videos from stills
+    + `<span class="rail__label" aria-hidden="true">${esc(item.title)}</span></button>`; // desktop hover title (CSS: >= 992, fine pointer)
 }
 
 export const catName = (cat) => (cat && (cat.name || cat.key)) || '';
@@ -105,11 +107,21 @@ const metaText = (cat, item) => {
 /** Chapter shell from the data, for an enabled category that site.html has no markup for. */
 function shellHTML(cat) {
   const a = esc(cat.anchor || cat.key);
-  return `<article id="${a}" class="chapter" data-chapter="${esc(cat.key)}" aria-labelledby="${a}-title"><div class="chapter__head wrap">`
+  return `<article id="${a}" class="chapter d-frame d-grid" data-chapter="${esc(cat.key)}" aria-labelledby="${a}-title"><div class="chapter__head wrap">`
     + `<p class="t-eyebrow" data-highlight>${esc(cat.eyebrow)}</p>`
     + `<h3 id="${a}-title" class="t-lockup t-lockup--sm" data-oval><span class="t-sans">${esc(cat.sans)}</span> <span class="t-serif">${esc(cat.serif)}</span></h3>`
-    + `<p class="t-caption chapter__sub">${esc(cat.subtitle)}</p></div>`
+    + `<p class="t-caption chapter__sub" data-d-highlight>${esc(cat.subtitle)}</p></div>`
     + `<div class="chapter__body" data-chapter-body="${esc(cat.key)}"></div></article>`;
+}
+
+/**
+ * The desktop contact sheet's shape for n thumbs (css/site.css `desktop: chapters`; unused below 992): rows of at most
+ * 6, as few rows as possible, columns spread so every row is full or nearly (11 -> 6 + 5, 8 -> 4 + 4, 4 -> 4).
+ */
+function sheetVars(n) {
+  const rows = Math.max(1, Math.ceil(n / 6));
+  const cols = Math.min(6, Math.max(4, Math.ceil(n / rows)));
+  return `--sheet-cols:${cols};--sheet-rows:${rows}`;
 }
 
 /** Static boot render of every chapter body (feature card + caption + rail), then the thumb swap. */
@@ -134,7 +146,7 @@ export function renderChapters(data) {
     body.innerHTML = `<div class="chapter__feature">${cardHTML(feature, { feature: true, deal: ci })}`
       + `<div class="chapter__caption"><p class="t-intro chapter__title">${esc(feature.title)}</p>`
       + `<p class="t-caption chapter__meta">${esc(metaText(cat, feature))}</p></div></div>`
-      + '<div class="rail" data-lenis-prevent-horizontal data-rise="24" data-rise-start="top 92%">'
+      + `<div class="rail" data-lenis-prevent-horizontal data-rise="24" data-rise-start="top 92%" style="${sheetVars(list.length)}">`
       + list.map((it) => thumbHTML(it, it.id === feature.id)).join('')
       + '</div>';
     body.setAttribute('data-rendered', '');
@@ -530,8 +542,14 @@ export function swapSource(card, item) {
  * before site.js has rendered the chapters the page is short, so native lazy-loading fetched them at first view.
  */
 function loadImgs(root) {
+  const desk = matchMedia(DESKTOP).matches;
   root.querySelectorAll('img[data-src]').forEach((img) => {
-    if (img.dataset.srcset) { img.srcset = img.dataset.srcset; img.removeAttribute('data-srcset'); }
+    // desktop-only larger candidates (data-srcset-d, the spotlight's 1200w): a phone never matches, so it keeps the
+    // candidates it chooses today (docs/desktop-spec.md §0 rule 4; a <picture> would break the `.frame > img` hooks)
+    const set = (desk && img.dataset.srcsetD) || img.dataset.srcset;
+    if (set) img.srcset = set;
+    img.removeAttribute('data-srcset');
+    img.removeAttribute('data-srcset-d');
     img.src = img.dataset.src;
     img.removeAttribute('data-src');
   });
@@ -539,12 +557,20 @@ function loadImgs(root) {
 
 function lazyImages(groups) {
   if (typeof IntersectionObserver === 'undefined') { groups.forEach(loadImgs); return; }
+  // A chapter body is display:contents at >= 992 (its card and sheet are grid items): a box-less element never
+  // intersects, so its feature card and rail are watched too (on mobile they sit inside the body, so its own entry
+  // fires first or at the same time and nothing changes there).
+  const owner = new Map(); // target -> group
   const io = makeIO((entries) => entries.forEach((e) => {
-    if (!e.isIntersecting) return;
-    io.unobserve(e.target);
-    loadImgs(e.target);
+    const g = owner.get(e.target);
+    if (!e.isIntersecting || !g) return;
+    owner.forEach((gg, t) => { if (gg === g) { io.unobserve(t); owner.delete(t); } });
+    loadImgs(g);
   }), { rootMargin: '50% 0px 150% 0px', threshold: 0 });
-  groups.forEach((g) => io.observe(g));
+  groups.forEach((g) => {
+    [g, ...(g.matches('[data-chapter-body]') ? g.querySelectorAll(':scope > .chapter__feature > .vcard, :scope > .rail') : [])]
+      .forEach((t) => { owner.set(t, g); io.observe(t); });
+  });
 }
 
 /* ------------------------------------------------------------------ module contract */

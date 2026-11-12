@@ -15,16 +15,24 @@
  *   count-up (motion.js initMotion, armed on approach).
  * finish(): finishAll() (reduced motion turned on, print, boot failure): cancel the loops and go
  *   back to the static grid.
+ * Desktop (>= 992, docs/desktop-spec.md §4.7): the loops run at 48 px/s and the rows drift ±4vw (both read
+ *   isDesktop() when a loop is (re)built / on refresh; the resize handler rebuilds the loops when the width
+ *   changes, which also covers crossing 992 and the logo size change); on a fine pointer a hovered row eases its
+ *   playbackRate to 0.2x over 400 ms and back on leave (a js/desktop.js registration).
  *
  * Exports: boot(ctx), ready(ctx), finish(), renderBrands(list), setPaused(bool).
  */
 import { getLenis, isMotion, makeIO, onApproach, refresh, scope } from './scroll.js';
+import { DESKTOP, FINE, isDesktop, onMedia } from './desktop.js';
 import { initMotion } from './motion.js';
 import { countFrom } from './proof.js';
 
 const SPEED = 56;          // px per second (§4.6)
+const SPEED_DESK = 48;     // px per second at >= 992 (desktop-spec §4.7: a logo crosses 1440 px in 30 s)
 const RAMP = 0.4;          // s, playbackRate ramp when the scroll direction flips
 const DRIFT = 0.06;        // × innerWidth, the whole row's scrubbed drift
+const DRIFT_DESK = 0.04;   // × innerWidth at >= 992
+const HOVER_RATE = 0.2;    // a hovered row's speed factor (fine pointer, >= 992)
 const ROW_DIR = [1, -1, 1]; // +1 = moves left (rows 1 and 3), -1 = moves right (row 2)
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -97,16 +105,21 @@ function buildLoop(r) {
   const kf = dir > 0
     ? [{ transform: 'translateX(0)' }, { transform: `translateX(${shift})` }]
     : [{ transform: `translateX(${shift})` }, { transform: 'translateX(0)' }];
-  const duration = Math.max(8000, (listW / SPEED) * 1000);
+  const duration = Math.max(8000, (listW / (isDesktop() ? SPEED_DESK : SPEED)) * 1000);
   const prev = r.anim;
   const progress = prev && prev.effect ? (prev.currentTime % prev.effect.getTiming().duration) / prev.effect.getTiming().duration : Math.random();
   if (prev) prev.cancel();
   const anim = track.animate(kf, { duration, iterations: Infinity, easing: 'linear' });
   // start deep into the infinite loop, so a negative playbackRate (scrolling up) never reaches time 0
   anim.currentTime = duration * (10000 + (Number.isFinite(progress) ? progress : 0));
-  anim.playbackRate = M ? M.rate : 1;
   r.anim = anim;
+  setRate(r);
   syncPlay();
+}
+
+/* a row's speed: the scroll direction (M.rate, ±1) times its own hover factor (r.k: 1, or 0.2 while hovered) */
+function setRate(r) {
+  if (r.anim) r.anim.playbackRate = (M ? M.rate : 1) * (r.k == null ? 1 : r.k);
 }
 
 function syncPlay() {
@@ -137,7 +150,7 @@ function startMarquee(section) {
   section.classList.add('brands--marquee');
   M = { section, rows: [], btn: null, io: null, paused: false, visible: false, rate: 1, onResize: null, offLenis: null, drift: [] };
   M.rows = [...box.querySelectorAll('.brands__row')].map((row, i) => ({
-    row, track: row.querySelector('.brands__track'), anim: null, dir: ROW_DIR[i % ROW_DIR.length],
+    row, track: row.querySelector('.brands__track'), anim: null, dir: ROW_DIR[i % ROW_DIR.length], k: 1,
   }));
   M.rows.forEach(buildLoop);
 
@@ -203,7 +216,7 @@ function followScroll() {
   const apply = () => {
     if (!M) return;
     M.rate = proxy.rate;
-    M.rows.forEach(({ anim }) => { if (anim) anim.playbackRate = proxy.rate; });
+    M.rows.forEach(setRate);
   };
   const onScroll = (l) => {
     const d = l.direction;
@@ -215,19 +228,35 @@ function followScroll() {
   M.offLenis = typeof off === 'function' ? off : () => { try { lenis.off('scroll', onScroll); } catch (_) { /* ignore */ } };
 }
 
-/* the whole row drifts ±6vw (opposite per row), scrubbed across the section's pass */
+/* the whole row drifts ±6vw (±4vw at >= 992; opposite per row), scrubbed across the section's pass */
 function drift() {
   const { gsap } = window;
   if (!gsap || !M) return;
   scope(() => {
     M.rows.forEach(({ row, dir }) => {
-      const amp = () => DRIFT * innerWidth * dir;
+      const amp = () => (isDesktop() ? DRIFT_DESK : DRIFT) * innerWidth * dir;
       gsap.fromTo(row, { x: () => amp() }, {
         x: () => -amp(), ease: 'none',
         scrollTrigger: { trigger: M.section, start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true },
       });
     });
   });
+}
+
+/* desktop, fine pointer: a hovered row slows to 0.2x over 400 ms (readable), back to full speed on leave */
+function hoverSlow() {
+  const { gsap } = window;
+  if (!gsap || !M) return;
+  onMedia(`${DESKTOP} and ${FINE}`, (d) => {
+    if (!M) return;
+    const rows = M.rows;
+    const ease = (r, k) => gsap.to(r, { k, duration: RAMP, ease: 'power1.inOut', overwrite: true, onUpdate: () => setRate(r) });
+    rows.forEach((r) => {
+      d.on(r.row, 'pointerenter', () => ease(r, HOVER_RATE));
+      d.on(r.row, 'pointerleave', () => ease(r, 1));
+    });
+    d.cleanup(() => rows.forEach((r) => { gsap.killTweensOf(r); r.k = 1; setRate(r); }));
+  }, { motion: true, name: 'brands-hover' });
 }
 
 /* ------------------------------------------------------------------ module contract */
@@ -245,6 +274,7 @@ export function ready(ctx) {
   if (!ctx.motion || !isMotion() || !M) return;
   followScroll();
   drift();
+  hoverSlow();
   const count = M.section.querySelector('[data-brand-count][data-count]');
   if (count) onApproach(count, () => { if (isMotion()) { countFrom(count); initMotion(count); } });
   refresh();

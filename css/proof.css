@@ -32,3 +32,74 @@
   border-style: solid; border-width: 5px 0 5px 9px; border-color: transparent transparent transparent currentColor;
 }
 .brands__pause.is-paused .brands__pause-icon::after{ display: none; }
+
+/* ------------------------------------------------------------------ desktop (>= 992 px): docs/desktop-spec.md §4.7, §4.8
+   Marquee rows: 100 px tall, 20 px apart, 53 px logos (4 dr x scale) 2.4 dr apart, a 6 % edge fade (brands.js: 48 px/s,
+   ±4 vw drift, a hovered row slows to 0.2x). */
+@media (min-width: 992px){
+  .brands--marquee .brands__rows{
+    gap: 20px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  .brands--marquee .brands__row{ height: 100px; }
+  .brands--marquee .brands__item{ margin-inline: calc(var(--dr) * 2.4); }
+}
+
+/* Gallery, pinned horizontal track (desktop-spec §4.8). js/gallery.js adds .gallery--track at >= 992 in motion mode
+   only (no JS, reduced motion and print keep the static grid of site.css). The section is 100svh + the track's
+   overflow tall (--gal-x, written on every ScrollTrigger refresh); its .wrap is the CSS-sticky pin (100svh, clipped);
+   .gallery__track is ONE grid row on the pin's vertical grid (row lines at 15 / 28 / 41 / 54 / 67 svh, module 13 svh,
+   content band 15-93 svh) and one column per stack, 6 dr apart; groups and pairs are display:contents, so every
+   figure is placed directly (its frame's top on a row line, its caption hanging 8 px above it). Frame heights are the
+   three sizes plus one XL: S 26, M 39, L 52, XL 65 svh; widths follow each frame's ratio (--ar on the frame). */
+@media (min-width: 992px){
+  /* + 5 dr of bare background at the foot, under the contact panel's -5 dr overlap: the pin releases above it */
+  .gallery--track{
+    box-sizing: border-box; padding: 0 0 calc(var(--dr) * 5);
+    height: calc(100vh + var(--gal-x, 0px) + var(--dr) * 5); height: calc(100svh + var(--gal-x, 0px) + var(--dr) * 5);
+  }
+  .gallery--track > .wrap{
+    position: sticky; top: 0; height: 100vh; height: 100svh; max-width: none; padding: 0; margin: 0;
+    display: block; overflow: hidden; overflow: clip;
+  }
+  .gallery--track .gallery__track{
+    --S: 26svh; --M: 39svh; --L: 52svh; --XL: 65svh;
+    display: grid; width: max-content; height: 100%;
+    grid-template-columns: repeat(8, auto);
+    grid-template-rows: [top] 15svh [r15] 13svh [r28] 13svh [r41] 13svh [r54] 13svh [r67] 26svh [r93] minmax(0, 1fr) [end];
+    column-gap: calc(var(--dr) * 6);
+    padding: 0 calc(var(--dr) * 12) 0 max(var(--d-margin), calc((100vw - var(--d-max)) / 2 + var(--d-margin)));   /* starts on the 1920 frame's edge */
+    align-items: start; justify-items: start;
+  }
+  .gallery--track .gallery__group, .gallery--track .gallery__pair{ display: contents; }
+  /* stack 0: the head, its lockup's cap line on row 41 (the quote's centre line), the eyebrow 2 dr above it */
+  .gallery--track .gallery__track > .t-eyebrow{ grid-column: 1; grid-row: r28 / r41; align-self: end; margin: 0 0 calc(var(--dr) * 2); }
+  .gallery--track .t-lockup{ grid-column: 1; grid-row: r41 / r93; width: calc(var(--dr) * 30); }
+  /* frames */
+  .gallery--track .gallery__item{ position: relative; width: auto; margin: 0; grid-row: var(--g-row) / end; }
+  .gallery--track .gallery__item .frame{ height: var(--g-h); width: calc(var(--g-h) * (var(--ar))); aspect-ratio: auto; }
+  .gallery--track .gallery__item figcaption{
+    position: absolute; left: 0; bottom: calc(100% + 8px); width: max-content; max-width: none; margin: 0; white-space: nowrap;
+  }
+  .gallery--track [data-parallax] > img{ width: calc(100% + var(--dr) * 4); height: 100%; max-width: none; }   /* sideways inner parallax */
+  /* the sequence (DOM order is kept; grid placement only): 1 white floor L r28 | 2 rings S r15 + breakfast M r54
+     (8 dr right) | 3 the serif line | 4 white suit XL r15 | 5 kitchen M r15 (6 dr right) + sailing S r67 |
+     6 garden dress L r28 | 7 linen S r15 + avocado M r54 (10 dr right) */
+  .gallery--track .gallery__group:nth-of-type(1) .gallery__item--left{ grid-column: 2; --g-row: r28; --g-h: var(--L); }
+  .gallery--track .gallery__group:nth-of-type(1) .gallery__item--right{ grid-column: 3; --g-row: r15; --g-h: var(--S); }
+  .gallery--track .gallery__group:nth-of-type(1) .gallery__item--single{ grid-column: 3; --g-row: r54; --g-h: var(--M); margin-left: calc(var(--dr) * 8); }
+  /* the quote breaks "Light, texture / and a little / slowness." at every width and in both serifs: a box in em
+     (6.6 em: the longest phrase is 5.85 em, "Light, texture and" 7.56 em) with greedy wrapping (balance moved the
+     break with sub-pixel widths: "Light," stood alone at 1024-1366) */
+  .gallery--track .gallery__line{
+    grid-column: 4; grid-row: r28 / r54; align-self: center;
+    width: 6.6em; max-width: none; margin: 0; font-size: var(--fs-intro-l); text-align: left; text-wrap: wrap;
+  }
+  .gallery--track .gallery__group:nth-of-type(2) .gallery__item--left{ grid-column: 5; --g-row: r15; --g-h: var(--XL); }
+  .gallery--track .gallery__group:nth-of-type(2) .gallery__item--single{ grid-column: 6; --g-row: r15; --g-h: var(--M); margin-left: calc(var(--dr) * 6); }
+  .gallery--track .gallery__group:nth-of-type(2) .gallery__item--right{ grid-column: 6; --g-row: r67; --g-h: var(--S); }
+  .gallery--track .gallery__group:nth-of-type(3) .gallery__item--left{ grid-column: 7; --g-row: r28; --g-h: var(--L); }
+  .gallery--track .gallery__group:nth-of-type(3) .gallery__item--right{ grid-column: 8; --g-row: r15; --g-h: var(--S); }
+  .gallery--track .gallery__group:nth-of-type(3) .gallery__item--single{ grid-column: 8; --g-row: r54; --g-h: var(--M); margin-left: calc(var(--dr) * 10); }
+}

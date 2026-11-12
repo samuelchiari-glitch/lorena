@@ -14,11 +14,13 @@
  *                                 calls arm(el) once, when el comes within `ahead` viewports below the fold.
  *                                 Guard: if el's top is already < innerHeight (visible, or above), arm is
  *                                 NOT called (onSkip is) and el keeps its final state. Returns a cancel fn.
- *   armReveal(el, build, {start='top 85%', trigger, ahead=.75, onSkip})
+ *   armReveal(el, build, {start='top 85%', trigger, ahead=.75, onSkip, scope})
  *                                 the standard reveal: onApproach -> build(el) inside scope() -> data-armed
  *                                 -> ScrollTrigger {once} at `start` plays it -> on complete: cleanup,
  *                                 data-armed removed. build(el) returns a PAUSED gsap timeline already in
- *                                 its from-state, or { tl, cleanup }. Motion mode only.
+ *                                 its from-state, or { tl, cleanup }. Motion mode only. Returns dispose()
+ *                                 (cancel, or force the final state + cleanup); `scope` swaps the gsap.context
+ *                                 (desktop.js registrations revert their own).
  *   track(el, tl, cleanup, {due}) register an element you armed yourself (sets data-armed); the watchdog
  *                                 and finishAll() can then force it. release(el) when it has played.
  *                                 due(rect, innerHeight) (optional): true once the element should have
@@ -194,33 +196,62 @@ export function markPlayed(el) {
   if (entry) entry.played = true;
 }
 
-export function armReveal(el, build, { start = 'top 85%', trigger, ahead = 0.75, onSkip } = {}) {
-  if (!el || !isMotion()) return;
-  onApproach(el, () => {
-    if (!isMotion()) return;
-    scope(() => {
+/**
+ * Play an armed reveal now, ahead of its own start (desktop gallery.js: the track's title must have finished before
+ * the pin moves it away). No-op if el is not armed or already playing; its own trigger later finds it played.
+ */
+export function playArmed(el, timeScale = 1) {
+  const entry = armed.get(el);
+  if (!entry || entry.played || entry.done || !entry.tl) return false;
+  entry.played = true;
+  if (timeScale !== 1 && typeof entry.tl.timeScale === 'function') entry.tl.timeScale(timeScale);
+  entry.tl.play();
+  return true;
+}
+
+/**
+ * Returns dispose(): before arming it cancels the approach observer; once armed (and not yet complete) it jumps
+ * the timeline to its end, kills its play trigger and runs the cleanup (the element is left in its final state).
+ * opts.scope (desktop.js) replaces the shared gsap.context, so a registration can revert what it created.
+ */
+export function armReveal(el, build, { start = 'top 85%', trigger, ahead = 0.75, onSkip, scope: run = scope } = {}) {
+  if (!el || !isMotion()) return () => {};
+  let entry = null;
+  let st = null;
+  let disposed = false;
+  const cancel = onApproach(el, () => {
+    if (!isMotion() || disposed) return;
+    run(() => {
       const res = build(el);
       if (!res) return;
       const tl = res.tl || res;
-      const entry = track(el, tl, res.cleanup);
+      entry = track(el, tl, res.cleanup);
+      const mine = entry;
       if (typeof tl.eventCallback === 'function') {
         const prev = tl.eventCallback('onComplete');
         tl.eventCallback('onComplete', function onDone(...args) {
           if (prev) prev.apply(this, args);
-          complete(entry);
+          complete(mine);
         });
       }
-      window.ScrollTrigger.create({
+      st = window.ScrollTrigger.create({
         trigger: trigger || el,
         start,
         once: true,
         onEnter: () => {
-          entry.played = true;
+          mine.played = true;
           tl.play();
         },
       });
     });
   }, { ahead, onSkip });
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    cancel();
+    if (st) { try { st.kill(); } catch (_) { /* already gone */ } }
+    if (entry && !entry.done) force(entry);
+  };
 }
 
 function watchdog() {

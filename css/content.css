@@ -84,6 +84,19 @@
   .rail__thumb:hover img{ transform: scale(1.04); }
 }
 
+/* desktop (docs/desktop-spec.md §5): a playing card shows its pause button on hover / keyboard focus only, like the
+   sound button (a paused card keeps it, to resume); the play badge and glyph sizes follow the bigger cards */
+@media (min-width: 992px) and (hover: hover) and (pointer: fine){
+  .vcard.is-playing:not(.is-user-paused, :hover, .is-hover, :focus-within) .vcard__pause{ opacity: 0; visibility: hidden; transition-delay: 0s, .25s, 0s, 0s, 0s; }
+  .vcard:focus-within .vcard__sound{ opacity: 1; pointer-events: auto; }   /* keyboard: the card's controls show with its focus */
+}
+@media (min-width: 992px){
+  .vcard__sound, .vcard__pause{ bottom: 14px; width: 44px; height: 44px; }
+  .vcard__sound{ right: 14px; }
+  .vcard__pause{ left: 14px; }
+  .vcard__hint{ top: 16px; left: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce){
   .fan__icons .fan__icon{ animation: none !important; }
   .vcard__poster{ animation: none !important; }

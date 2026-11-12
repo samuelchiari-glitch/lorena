@@ -17,8 +17,9 @@
 import { initScroll, finishAll, isMotion, onFinish, armReveal, refresh } from './scroll.js';
 import * as ui from './ui.js';
 import * as reveals from './reveals.js';
+import { initDesktopReveals } from './desktop.js';
 
-const SECTION_MODULES = ['hero', 'signature', 'fan', 'video', 'brands', 'proof'];
+const SECTION_MODULES = ['hero', 'signature', 'fan', 'video', 'brands', 'proof', 'gallery'];
 const EARLY_MODULES = ['hero']; // need no data: booted the moment they load, so the cover's scrub is live first
 const root = document.documentElement;
 const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
@@ -147,6 +148,10 @@ async function boot() {
   if (ctx.motion) window.ScrollTrigger.refresh();
   await safe('reveals.ready', () => reveals.ready(ctx));
   await safe('ui.ready', () => ui.ready(ctx));
+  // desktop (≥ 992) data-d-* reveals and scrubs in their own matchMedia registration (js/desktop.js), and the text
+  // roll for [data-roll] markup the section modules rendered during boot
+  await safe('desktop reveals', () => initDesktopReveals(reveals.scanDesktop));
+  await safe('ui.rescanRoll', () => ui.rescanRoll(document));
   for (const [name, m] of Object.entries(modules)) {
     if (typeof m.ready === 'function') await safe(`${name}.ready`, () => m.ready(ctx));
   }

@@ -416,6 +416,7 @@ em.t-accent, .t-accent {    /* inline accent words inside sans or serif copy */
   color: inherit; text-decoration: none; white-space: nowrap;
 }
 .hdr__actions{ display: flex; align-items: center; gap: 8px; }
+.hdr__nav{ display: none; }   /* the centred section nav is desktop only (=== desktop: chrome ===) */
 .hdr__contact{
   display: inline-flex; align-items: center; height: 44px; padding: 0 18px;
   border: 1px solid currentColor; border-radius: var(--radius-pill);
@@ -596,6 +597,7 @@ html:not(.js) .fan__hint{ display: none; }
   backface-visibility: hidden;   /* no permanent will-change: GSAP promotes a card only while it tweens (force3D auto) */
 }
 .fan__hit{ position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: none; cursor: pointer; }
+.fan__foot{ display: contents; }   /* the caption + controls row at >= 992 (=== desktop: content ===); no box below */
 .fan__caption{ display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: 8px; }
 .fan__cat{ color: var(--muted); }
 .fan__title{ margin-top: 8px; }
@@ -646,6 +648,7 @@ html:not(.js) .fan__hint{ display: none; }
   border-radius: 50%; color: var(--vanilla); background: rgba(77,52,45,.5);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); pointer-events: none; }
 .rail__play svg{ width: 12px; height: 12px; margin-left: 1px; }
+.rail__label{ display: none; }   /* the hover title of a contact-sheet thumb, desktop + fine pointer only */
 
 /* CHANEL spotlight (client, batch 2): after the Fashion rail, an editorial pair; the second frame overlaps the
    first's lower right, cut out by a Vanilla ring. Curtain (staggered .12 s) + inner parallax as in the gallery.
@@ -733,6 +736,10 @@ html:not(.js) .numbers__screens{ display: none; }
 .gallery{ --muted: var(--ink); position: relative; background-color: var(--bg); padding-block: var(--section-pad) calc(var(--section-pad) + 32px); }
 .gallery > .wrap{ display: flex; flex-direction: column; }
 .gallery > .wrap > .t-eyebrow{ text-align: center; margin-bottom: 20px; }
+/* .gallery__track (the desktop track, js/gallery.js) wraps the column's content: no box below 992, so the eyebrow,
+   lockup, groups and line stay the column's flex items; the eyebrow rule above, restated for its new parent */
+.gallery__track{ display: contents; }
+.gallery__track > .t-eyebrow{ text-align: center; margin-bottom: 20px; }
 .gallery__group{ margin-top: var(--space-2xl); }
 .gallery .t-lockup + .gallery__group{ margin-top: 56px; }
 .gallery__pair{ display: flex; justify-content: space-between; align-items: flex-start; }
@@ -776,6 +783,7 @@ html:not(.js) .numbers__screens{ display: none; }
 a.contact__value{ display: inline-flex; align-items: center; gap: .35em; min-height: 44px; }
 a.contact__value span{ font-size: .8em; }
 .contact__actions{ display: inline-flex; gap: 8px; }
+.contact__actions.contact__actions--d{ display: none; }   /* the Instagram / TikTok "Open" pills: desktop only (=== desktop: contact ===) */
 .contact .pill--line{ color: var(--vanilla); border-color: rgba(241,234,218,.4); }
 .contact__legal{
   width: 100%; margin-top: 40px;
@@ -790,3 +798,479 @@ a.contact__value span{ font-size: .8em; }
 @media (min-width: 768px){
   .about__photo{ width: 70%; }
 }
+
+/* ==========================================================================
+   DESKTOP (>= 992 px) and TABLET (768-991 px): docs/desktop-spec.md.
+   Nothing below this line matches under 768 px: every rule sits in a min-width media query, or styles a
+   desktop-only class / attribute (.d-frame, .d-grid, data-d-*, data-roll). Mobile is frozen (spec §0); check
+   with the baseline compare script (spec §0.1). Each builder edits only their own blocks (spec §3.5).
+   ========================================================================== */
+
+/* === desktop: tokens === */
+/* spec §2.1, §2.3: one fluid desktop rem (Lando's clamp(992, 100vw, 1920) / 108: 13.33 px at 1440), the grid
+   measures and the type scale, redefined over the mobile tokens. */
+@media (min-width: 992px){
+  :root{
+    --dr: calc(clamp(992px, 100vw, 1920px) / 108);
+    --d-margin: calc(var(--dr) * 2.5);          /* 33 px at 1440: frame side padding */
+    --d-gutter: calc(var(--dr) * 1.5);          /* 20 px: column gap */
+    --d-module: calc(var(--dr) * 8);            /* 107 px: vertical module (offsets in 4 dr steps) */
+    --d-max: 1920px;                            /* the frame stops growing here and centres */
+    --d-colw: calc((min(100vw, var(--d-max)) - 2 * var(--d-margin) - 11 * var(--d-gutter)) / 12);   /* 96 px */
+
+    --fs-display:   max(96px, calc(var(--dr) * 9.6));   /* 128 px  hero lockup */
+    --fs-h2:        max(60px, calc(var(--dr) * 6.4));   /*  85 px  section lockups */
+    --fs-h3:        max(44px, calc(var(--dr) * 4.8));   /*  64 px  chapter lockups */
+    --fs-statement: max(52px, calc(var(--dr) * 5.6));   /*  75 px  About statement */
+    --fs-number:    max(84px, calc(var(--dr) * 9));     /* 120 px  stat numerals */
+    --fs-intro:     max(22px, calc(var(--dr) * 2.25));  /*  30 px  serif intros */
+    --fs-intro-l:   max(34px, calc(var(--dr) * 3.6));   /*  48 px  big serif lines (desktop only) */
+    --fs-body:      clamp(16px, calc(var(--dr) * 1.25), 20px);
+    --fs-caption:   clamp(13px, var(--dr), 16px);
+    --fs-eyebrow:   clamp(11px, calc(var(--dr) * .9), 14px);
+
+    --section-pad: calc(var(--dr) * 12);        /* 160 px */
+    --header-h: 80px;
+    --radius-card: calc(var(--dr) * 2.4);       /* 32 px: video and fan cards */
+  }
+}
+/* === /desktop: tokens === */
+
+/* === desktop: grid === */
+/* spec §2.2: .d-frame (the 1920-capped frame with --d-margin sides) + .d-grid (12 columns, --d-gutter); children
+   placed with --d-col (a grid-column value) and --d-row (a grid-row value) from the section's desktop block.
+   Keep .wrap in the markup for mobile: .d-frame overrides its 640 px column at >= 992 (same specificity, later). */
+@media (min-width: 992px){
+  .d-frame{ width: 100%; max-width: var(--d-max); margin-inline: auto; padding-left: var(--d-margin); padding-right: var(--d-margin); }
+  .d-grid{ display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: start; }
+  .d-grid > *{ grid-column: var(--d-col, 1 / -1); grid-row: var(--d-row, auto); min-width: 0; }
+}
+/* === /desktop: grid === */
+
+/* === desktop: effects === */
+/* spec §3.2. Hover text roll (Lando §5.6; ui.js splits [data-roll] labels into .roll > .sr-only + .roll__t > .roll__c
+   only under this same media query): the chars rise one line, their text-shadow copy one line below rolls in. */
+@media (min-width: 992px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference){
+  .roll{ position: relative; display: inline-flex; vertical-align: top; height: 1.2em; line-height: 1.2; overflow: hidden; overflow: clip; }
+  .roll__t{ display: inline-flex; white-space: pre; }
+  .roll__c{ display: inline-block; text-shadow: 0 1.2em currentColor; transition: transform .6s var(--ease-out-3) calc(var(--i, 0) * 20ms); }
+  .has-roll:is(:hover, :focus-visible) .roll__c{ transform: translateY(-1.2em); }
+  /* an underlined link keeps its line under the rolling label (a decoration would not reach inline-block chars) */
+  .link-arrow.has-roll{ text-decoration: none; }
+  .link-arrow .roll{ background: linear-gradient(color-mix(in srgb, currentColor 45%, transparent), color-mix(in srgb, currentColor 45%, transparent)) 0 100% / 100% 1px no-repeat; }
+}
+/* === /desktop: effects === */
+
+/* === desktop: chrome === */
+/* spec §3.3: 80 px bar on the frame margins, a 3-column grid (brand | centred nav | actions); the two-line mini
+   lockup wordmark; nav links with the current-section underline (ui.js sets aria-current); no menu button. */
+@media (min-width: 992px){
+  /* on the 1920-capped frame's margins (above 1920 the bar's ends line up with the centred frame, not the screen) */
+  .hdr{ padding: env(safe-area-inset-top, 0px) max(var(--d-margin), calc((100% - var(--d-max)) / 2 + var(--d-margin))) 0; }
+  /* the full-width bar switches theme in .2 s (the dark backing lingered .4 s over the light gallery when scrolling up
+     out of Contact); the hero's quick mode and the boot rule keep their own timings */
+  .hdr:not(.hdr--quick){ transition-duration: .2s, .2s, .45s; }
+  .hdr__bar{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; }
+  /* the wordmark's text node stays exactly as on mobile (its accessible name); at >= 992 it is drawn as the two-line
+     mini lockup by two pseudo-elements (alt text "" keeps them out of the name) over the transparent text */
+  .hdr__brand{ position: relative; justify-self: start; -webkit-text-fill-color: transparent; }
+  .hdr__brand::before, .hdr__brand::after{ position: absolute; left: 0; white-space: nowrap; pointer-events: none; -webkit-text-fill-color: currentColor; }
+  .hdr__brand::before{
+    content: "Lorena"; content: "Lorena" / "";
+    top: 4px; font-family: var(--font-sans-lockup); font-size: 18px; font-weight: var(--sans-lockup-wght);
+    font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; line-height: .9;
+  }
+  .hdr__brand::after{
+    content: "Maruch"; content: "Maruch" / "";
+    top: 19px; left: 26px; font-family: var(--font-serif-lockup); font-size: 21px; font-style: italic; font-weight: 400;
+    font-feature-settings: "swsh" 1, "liga" 1; letter-spacing: 0; text-transform: none; line-height: 1;
+  }
+  .hdr__nav{ display: flex; align-items: center; gap: 36px; justify-self: center; }
+  .hdr__nav a{
+    position: relative; display: inline-flex; align-items: center; min-height: 44px; pointer-events: auto;
+    font-family: var(--font-sans); font-size: var(--fs-eyebrow); font-weight: 520; font-stretch: 100%;
+    letter-spacing: .18em; text-transform: uppercase; line-height: 1.2; color: inherit; text-decoration: none;
+  }
+  .hdr__nav a::after{
+    content: ""; position: absolute; left: 0; right: .18em; bottom: 9px; height: 1px; background: currentColor;
+    transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-default) var(--ease-default);
+  }
+  .hdr__nav a[aria-current="true"]::after{ transform: scaleX(1); }
+  .hdr__actions{ justify-self: end; }
+  .hdr__menu{ display: none; }            /* the nav + Contact cover every menu link; ui.js closes an open menu here */
+}
+@media (min-width: 992px) and (prefers-reduced-motion: reduce){
+  .hdr__nav a::after{ transition: none; }
+}
+/* === /desktop: chrome === */
+
+/* === desktop: hero === */
+/* owner HERO, spec §4.1 (motion-only states in css/hero.css inside the same media query). Rest = static mode: the
+   full-bleed cover with the lockup bottom-left on the frame margin and the roles caption bottom-right (cols 10-12),
+   its last baseline on the lockup's. */
+.hero__roles{ display: none; }                 /* desktop only (it repeats About: aria-hidden in the markup) */
+@media (min-width: 992px){
+  .hero__stage{
+    /* The lockup: --fs-display, but at most 16svh on short screens (2:1 browser windows), 9 dr (13.4svh at most) above
+       the stage's foot. The cover's 2:3 box at the stage width (1440 x 2160 at 1440; a tall stage grows it); its eye
+       line at 40 % of the stage, raised (down to 30 %) where the lips (.12 of the box under the eyes) would reach the
+       "Maruch" line: the face always clears the lockup (mobile's clamps keep the cover covering). */
+    --hero-fs: min(var(--fs-display), 16svh);
+    --hero-bottom: min(calc(var(--dr) * 9), 13.4svh);
+    --img-h: max(100svh, 150vw);
+    --eye-y: clamp(30svh, calc(100svh - var(--hero-bottom) - .9 * var(--hero-fs) - .12 * var(--img-h) - 16px), 40svh);
+    --hero-frame-x: max(var(--d-margin), calc((100vw - var(--d-max)) / 2 + var(--d-margin)));   /* the 1920 frame */
+  }
+  .hero, .hero__stage{ background: var(--hero-bg-d, var(--hero-bg)); }   /* hero.js: the desktop stage colour path */
+  .hero__copy{
+    position: absolute; left: var(--hero-frame-x); right: var(--hero-frame-x); bottom: var(--hero-bottom);
+    width: auto; max-width: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: last baseline;
+    text-align: left;
+  }
+  .hero__copy > .t-eyebrow:first-child{ grid-column: 1 / span 6; grid-row: 1; margin: 0 0 calc(var(--dr) * 1.5); }
+  .hero__copy .t-lockup{ grid-column: 1 / span 9; grid-row: 2; justify-self: start; align-items: flex-start; text-align: left; font-size: var(--hero-fs); }
+  .hero__copy .t-lockup .t-serif{ margin-left: 1.6em; }                 /* the media kit's offset */
+  .hero__copy .hero__roles{
+    display: block; grid-column: 10 / span 3; grid-row: 2; justify-self: end; margin: 0;
+    text-align: right; color: var(--vanilla); text-shadow: 0 1px 14px rgba(77,52,45,.45);
+  }
+  .hero__roles span{ display: block; white-space: nowrap; }            /* two lines: "… · Model" / "Actress · …" */
+  /* 16:9 and wider (1366 x 768, 1536 x 864, 1920 x 1080): the face crop is tighter, so the lockup is capped at 14svh
+     (151 px at 1080, not 171): the "h" of "Maruch" stays in her hair, clear of the jaw and chin */
+  @media (min-aspect-ratio: 16/9){
+    .hero__stage{ --hero-fs: min(var(--fs-display), 14svh); }
+  }
+  /* Vanilla type on the cover, measured over the real pixels (glyph pixels' background, 95th-percentile luminance,
+     992-2560 wide, 650-1440 tall): eyebrow >= 4.6, "LORENA" >= 5.3, "Maruch" >= 6.0, roles >= 5.4, header >= 4.1
+     (2:1 windows, where the hair parting sits under the nav; >= 5.2 at 16:10).
+     A soft oval behind the lockup (anchored to the copy's bottom in dr, so it follows it on short screens), a smaller
+     one behind the roles (over the cream robe), a low warm vignette and a band under the header. */
+  .hero__scrim{
+    background:
+      radial-gradient(ellipse 50% calc(var(--dr) * 31) at 22% calc(100% - var(--hero-bottom) - var(--dr) * 11), rgba(77,52,45,.76) 0%, rgba(77,52,45,.56) 45%, rgba(77,52,45,0) 100%),
+      radial-gradient(ellipse 30% calc(var(--dr) * 18) at 92% calc(100% - var(--hero-bottom) - var(--dr) * 2), rgba(77,52,45,.7) 0%, rgba(77,52,45,.5) 45%, rgba(77,52,45,0) 100%),
+      linear-gradient(to top, rgba(77,52,45,.6) 0%, rgba(77,52,45,.4) 22%, rgba(77,52,45,0) 50%),
+      linear-gradient(to bottom, rgba(77,52,45,.64), rgba(77,52,45,.5) 56px, rgba(77,52,45,.2) 110px, rgba(77,52,45,0) 180px);
+  }
+}
+/* === /desktop: hero === */
+
+/* === desktop: instagram === */
+/* owner EDITORIAL, spec §4.2: a spread on the dark block. The profile screen on cols 7-11 (560 px at 1440, it scales
+   with the frame), the copy on cols 2-5, vertically centred on the screen (the two 1fr rows around it share the
+   screen's extra height); the no-JS fallback line under the screen. */
+@media (min-width: 992px){
+  .ig{ padding-block: calc(var(--dr) * 6) var(--section-pad); }
+  .ig__inner{ grid-template-rows: 1fr auto auto auto 1fr auto; align-items: start; text-align: left; }
+  .ig__screen{ --d-col: 7 / span 5; --d-row: 1 / 6; --ig-shot-width: 100%; max-width: none; margin-top: 0; }
+  .ig .ig__eyebrow{ --d-col: 2 / span 4; --d-row: 2; justify-self: start; }
+  .ig__intro{ --d-col: 2 / span 4; --d-row: 3; margin-top: calc(var(--dr) * 2.5); max-width: 9em; font-size: var(--fs-intro-l); line-height: 1.12; text-wrap: balance; }
+  .ig__follow{ --d-col: 2 / span 4; --d-row: 4; justify-self: start; margin-top: calc(var(--dr) * 3); }
+  .ig__fallback{ --d-col: 7 / span 5; --d-row: 6; margin-top: calc(var(--dr) * 1.5); }
+  html:not(.js) .ig__inner{ grid-template-rows: auto auto auto auto auto auto; }   /* no screen: the copy over the fallback line */
+  html:not(.js) .ig__fallback{ --d-col: 2 / span 5; --d-row: 5; }   /* no screen: the line joins the copy column, under Follow */
+}
+/* === /desktop: instagram === */
+
+/* === desktop: about === */
+/* owner EDITORIAL, spec §4.3: eyebrow + the big offset lockup on cols 1-7; the portrait on cols 8-11 from the
+   lockup's cap line down (4:5, drifting up 4 dr into place); bio + roles on cols 2-5, their last line on the photo's
+   foot (the 1fr row takes the photo's extra height); then the centred statement on cols 2-11, one module lower. */
+@media (min-width: 992px){
+  .about{ padding-block: calc(var(--dr) * 6) var(--section-pad); }
+  .about__inner{ grid-template-rows: auto auto 1fr auto auto auto; }
+  .about__eyebrow{ --d-col: 1 / span 6; --d-row: 1; margin-bottom: calc(var(--dr) * 2); justify-self: start; }
+  .about .t-lockup{ --d-col: 1 / span 6; --d-row: 2; font-size: calc(var(--dr) * 10); }   /* "Lorena" ends on col 6: a column clear of the warm wood */
+  .about .t-lockup--offset .t-serif{ padding-right: .04em; }
+  .about__photo{ --d-col: 8 / span 4; --d-row: 2 / 6; width: 100%; margin: .1em 0 0; }   /* top on the caps' line */
+  .about__bio{ --d-col: 2 / span 4; --d-row: 4; max-width: 34ch; margin-top: calc(var(--dr) * 4); }
+  .about__roles{ --d-col: 2 / span 4; --d-row: 5; margin-top: calc(var(--dr) * 1.2); }
+  .about__statement{ --d-col: 2 / span 10; --d-row: 6; margin-top: var(--d-module); text-align: center; }
+  /* the italic serif comma ("slow," "places,") carries its own side bearing: the space after it read as double at
+     75 px (25 px against 13); the last accent ("&") is not followed by a comma */
+  .about__statement .t-accent:not(:last-of-type){ margin-right: -.16em; }
+}
+/* === /desktop: about === */
+
+/* === desktop: content === */
+/* owner CONTENT, spec §4.4 (the fan, a stage): unit = dr (Lando's 20 rem card, 3.3 rem radius, DESK_X); the caption
+   between prev / next on one row, the counter under it. */
+@media (min-width: 992px){
+  /* the stage fits one screen under the header, icon to counter (Lando's heading + fan in one view): the intro is
+     tight and the fan unit is dr, capped by the viewport height left over by the fixed parts (icon, lockup, hint,
+     caption, counter: 142 px + 16.4 dr) over the stage's 44 u (fan margin, box, caption gap), and never under .72 dr
+     (short windows keep a readable fan). Icon to counter: 808 px at 1440 x 900 (cards 210 x 373), 988 at 1920 x 1080,
+     711 at 1280 x 800, 683 at 1024 x 768. No top padding: About's bottom padding (one section-pad, 160 px at 1440)
+     is the whole gap from its statement to the icon. */
+  .content{ padding-top: 0; }
+  .fan-intro .fan__icons, .fan-intro .fan__icon{ width: 40px; height: 40px; }
+  .fan-intro .fan__icons{ margin-bottom: 12px; }
+  .fan__hint{ margin-top: calc(var(--dr) * .8); }
+  .fan{
+    --r: clamp(calc(var(--dr) * .72), calc((100vh - var(--header-h) - 142px - var(--dr) * 16.4) / 43.7), var(--dr));
+    --r: clamp(calc(var(--dr) * .72), calc((100svh - var(--header-h) - 142px - var(--dr) * 16.4) / 43.7), var(--dr));
+    margin-top: calc(var(--u) * 2.2);   /* room for the hovered centre card's lift under the hint */
+  }
+  .fan .fan__card{ --radius-card: calc(var(--u) * 3.3); }
+  .fan__foot{
+    display: grid; grid-template-columns: 48px minmax(0, calc(var(--dr) * 36)) 48px; column-gap: calc(var(--dr) * 2);
+    justify-content: center; align-items: center; margin-top: calc(var(--u) * 1.5);
+  }
+  .fan__foot > .fan__caption{ grid-column: 2; grid-row: 1; max-width: none; margin: 0; padding: 0; }
+  .fan__foot > .fan__controls{ display: contents; }
+  .fan__foot .fan__prev{ grid-column: 1; grid-row: 1; }
+  .fan__foot .fan__next{ grid-column: 3; grid-row: 1; }
+  .fan__foot .fan__count{ grid-column: 2; grid-row: 2; margin-top: 8px; }
+  .fan__foot .icon-btn{
+    width: 48px; height: 48px;
+    transition: background-color var(--dur-default) var(--ease-default), color var(--dur-default) var(--ease-default), border-color var(--dur-default) var(--ease-default);
+  }
+  .fan__title{ margin-top: 6px; }
+  .fan__more{ margin-top: 4px; }
+}
+@media (min-width: 992px) and (hover: hover) and (pointer: fine){
+  .fan__foot .icon-btn:hover{ background: var(--ink); color: var(--bg); border-color: var(--ink); }
+}
+/* === /desktop: content === */
+
+/* === desktop: chapters === */
+/* owner CONTENT, spec §4.5. Each chapter is a 12-column spread (.d-frame.d-grid): head + contact sheet on one side,
+   the feature card on the other, alternating (.chapter--flip: Food). Body and feature wrappers are display:contents:
+   row 1 head (on the card's top), row 2 sheet (on the card's foot), row 3 caption, so a thumb swap is always in view.
+   No sticky head: Chromium bounds a sticky grid item by the whole grid (it slid under the sheet). */
+@media (min-width: 992px){
+  .chapter{
+    --feat-h: min(76vh, calc(var(--dr) * 56));
+    --feat-h: min(76svh, calc(var(--dr) * 56));      /* 684 x 385 at 1440 x 900 */
+    --feat-w: calc(var(--feat-h) * 9 / 16);
+    /* the sheet's thumbs fill its 6 columns' width, capped so head + its rows never outgrow the card (the rail's
+       --sheet-rows; video.js) */
+    --sheet-gap: calc(var(--dr) * 1.2);
+    --head-h: calc(var(--fs-eyebrow) * 1.2 + var(--fs-h3) * 1.78 + var(--fs-body) * 2.8 + var(--dr) * 3);
+    --side-text: 1 / 7;
+    --side-card: 8 / 12;
+    padding-block: var(--section-pad) 0;
+  }
+  .chapter--flip{ --side-text: 7 / 13; --side-card: 2 / 6; }
+  .chapter > .chapter__head{
+    --d-col: var(--side-text); --d-row: 1;
+    max-width: none; margin: 0; padding: 0;
+    align-items: flex-start; text-align: left; gap: calc(var(--dr) * 1.5);
+  }
+  .chapter__head .t-lockup{ align-items: flex-start; text-align: left; }
+  .chapter__sub{ max-width: 34ch; font-size: var(--fs-body); text-wrap: pretty; }
+  .chapter__body, .chapter__feature{ display: contents; }
+  /* the card's outer edge on a column line: its right edge on col 11's (with the About photo and the IG screen) when
+     the text is left, its left edge on col 2's when the text is right (Food); the caption follows it */
+  .chapter{ --card-align: end; }
+  .chapter--flip{ --card-align: start; }
+  .chapter .vcard--feature{ grid-column: var(--side-card); grid-row: 1 / 3; justify-self: var(--card-align); width: min(var(--feat-w), 100%); }
+  .chapter__caption{ grid-column: var(--side-card); grid-row: 3; justify-self: var(--card-align); width: min(var(--feat-w), 100%); margin-top: calc(var(--dr) * 1.5); text-align: left; }
+  .chapter__title{ font-size: max(19px, calc(var(--dr) * 1.8)); }
+  .chapter__meta{ margin-top: 6px; }
+  /* the rail becomes a contact sheet of 9:16 thumbs (no scroller, no mask, no snap), its foot on the card's foot. Its
+     shape follows its count (video.js sets --sheet-cols / --sheet-rows: 11 -> 6 + 5, 8 -> 4 + 4, 4 -> 4), so every
+     row is full or nearly and the thumbs fill the 6 columns, as large as the card's height allows: 99 x 176 for
+     Stays, 120 x 213 for Fashion, 157 x 279 for Food at 1440 x 900. */
+  .chapter .rail{
+    --rows: var(--sheet-rows, 2);
+    --thumb-w: calc((var(--feat-h) - var(--head-h) - var(--dr) * 2 - var(--sheet-gap) * (var(--rows) - 1)) / var(--rows) * 9 / 16);
+    grid-column: var(--side-text); grid-row: 2; align-self: end;
+    display: grid; grid-template-columns: repeat(var(--sheet-cols, 6), minmax(0, var(--thumb-w))); gap: var(--sheet-gap);
+    margin: calc(var(--dr) * 2) 0 0; padding: 0;
+    overflow: visible; scroll-snap-type: none; -webkit-mask-image: none; mask-image: none;
+  }
+  .chapter .rail__thumb{ flex: none; width: auto; height: auto; aspect-ratio: 9 / 16; }
+  /* CHANEL spotlight (stage, row 4): A (4:5) cols 3-7, B (2:3) cols 7-10, one column over A, 16 dr lower */
+  .chapter > .spotlight{ --d-row: 4; max-width: none; margin: 0; padding: var(--section-pad) 0 0; gap: calc(var(--dr) * 1.2); }
+  .spotlight__sub{ max-width: 34ch; font-size: var(--fs-body); }
+  .spotlight__pair{
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--d-gutter);
+    width: 100%; max-width: none; margin-top: calc(var(--dr) * 4);
+  }
+  .spotlight__item--a{ grid-column: 3 / 8; grid-row: 1; width: auto; }
+  .spotlight__item--b{ grid-column: 7 / 11; grid-row: 1; width: auto; margin: calc(var(--dr) * 16) 0 0; }
+}
+/* contact-sheet thumbs show their title on hover (a Vanilla eyebrow on a Mahogany gradient at the foot) */
+@media (min-width: 992px) and (hover: hover) and (pointer: fine){
+  /* the title in the serif, sentence case, two lines at most (caps eyebrows stacked 3-5 one-word lines over the thumb) */
+  .chapter .rail__label{
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 32px 7px 0; border-bottom: 9px solid transparent;   /* the clamp clips at the padding box: no bottom padding for a third line to show in */
+    font-family: var(--font-serif); font-size: clamp(12px, calc(var(--dr) * .95), 15px); font-weight: 400; font-style: normal;
+    letter-spacing: 0; line-height: 1.2; text-transform: none; text-align: left; text-wrap: balance;
+    color: var(--vanilla); background: linear-gradient(to top, rgba(77,52,45,.9), rgba(77,52,45,.55) 55%, rgba(77,52,45,0));
+    opacity: 0; transition: opacity .3s var(--ease-out); pointer-events: none;
+  }
+  .chapter .rail__play{ transition: opacity .3s var(--ease-out); }
+  .chapter .rail__thumb:is(:hover, :focus-visible) .rail__label{ opacity: 1; }
+  .chapter .rail__thumb:is(:hover, :focus-visible) .rail__play{ opacity: 0; }
+}
+/* === /desktop: chapters === */
+
+/* === desktop: numbers === */
+/* owner PROOF, spec §4.6: a spread. The section is the 12-column grid (its two .wrap boxes are display:contents, so
+   the footnote, which sits after the screens in the markup, joins the head row): eyebrow + lockup on cols 1-6, the
+   footnote on cols 9-12 as the third-column paragraph (last line on the lockup's last baseline); the three stats in
+   one row (cols 1-4, 5-8, 9-12) under a hairline; the three screens side by side in the same cells, captions above
+   (no tabs, no snap rail, no mask), Performance and Audience starting 6 / 12 dr lower and closing up (data-d-drift). */
+@media (min-width: 992px){
+  .numbers{
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: start;
+    padding-inline: max(var(--d-margin), calc((100% - var(--d-max)) / 2 + var(--d-margin)));
+  }
+  .numbers > .wrap{ display: contents; text-align: left; }
+  .numbers__eyebrow{ grid-column: 1 / span 6; grid-row: 1; justify-self: start; margin: 0 0 calc(var(--dr) * 2); }
+  .numbers .t-lockup{ grid-column: 1 / span 6; grid-row: 2; align-items: flex-start; text-align: left; align-self: end; align-self: last baseline; }
+  .numbers__note{
+    grid-column: 9 / span 4; grid-row: 2; align-self: end; align-self: last baseline;
+    max-width: 30ch; margin: 0; font-size: var(--fs-body); line-height: 1.5; text-wrap: pretty;
+  }
+  .stats{
+    grid-column: 1 / -1; grid-row: 3; margin: var(--d-module) 0 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: start;
+  }
+  .stat{ align-items: flex-start; gap: calc(var(--dr) * 1.4); padding-top: calc(var(--dr) * 2.4); border-top: 1px solid var(--line); text-align: left; }
+  .numbers__tabs{ display: none; }
+  .numbers__screens{
+    grid-column: 1 / -1; grid-row: 4; margin-top: var(--d-module); padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: start;
+    overflow: visible; scroll-snap-type: none; scroll-padding-inline: 0;
+    -webkit-mask-image: none; mask-image: none;
+  }
+  .numbers__screen{
+    --shot-w: min(100%, calc(var(--dr) * 32.25));   /* 430 px at 1440 (1.33x at 1920), on its 444 px cell's left line */
+    width: var(--shot-w); justify-self: start; align-items: stretch; gap: calc(var(--dr) * 1.2); scroll-snap-align: none;
+  }
+  .numbers__screen [data-ig-screen]{ --ig-shot-width: 100%; }
+  /* the captions are the screens' labels again (below 992 the tab pills name them) */
+  .numbers__tabs ~ .numbers__screens figcaption, .numbers__screen figcaption{
+    position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; text-align: left;
+  }
+  .numbers__screen .numbers__more{ align-self: center; }
+}
+/* === /desktop: numbers === */
+
+/* === desktop: brands === */
+/* owner PROOF, spec §4.7: a spread head (eyebrow + lockup on cols 1-6; the count line on cols 9-12 in the serif at
+   --fs-intro, its last line on the lockup's last baseline) with the pause pill under it, right on col 12 (the foot is
+   moved up with `order`; the rows hold nothing focusable, so the tab order still follows the eye), then the full-bleed
+   rows (css/proof.css: 100 px rows, 53 px logos). Static / reduced motion: the wrapping grid at the desktop size. */
+@media (min-width: 992px){
+  .brands{ display: flex; flex-direction: column; }
+  .brands__head{ text-align: left; }
+  .brands__head > .t-eyebrow{ --d-col: 1 / span 6; --d-row: 1; justify-self: start; }
+  .brands__head .t-lockup{ --d-col: 1 / span 6; --d-row: 2; margin-top: calc(var(--dr) * 2); align-items: flex-start; text-align: left; align-self: end; align-self: last baseline; }
+  .brands__caption{
+    --d-col: 9 / span 4; --d-row: 2; align-self: end; align-self: last baseline;
+    max-width: 16em; margin: 0; color: var(--ink);
+    font-family: var(--font-serif); font-size: var(--fs-intro); font-weight: 400; line-height: 1.22; letter-spacing: -0.005em; text-wrap: pretty;
+  }
+  .brands__caption strong{ font-weight: 400; font-style: italic; }   /* the serif has no bold: the count is set in its italic */
+  .brands__foot{ order: 1; justify-content: flex-end; margin-top: calc(var(--dr) * 2.4); }
+  .brands__rows{ order: 2; margin-top: calc(var(--dr) * 6); }
+  .brands__list{ max-width: 1100px; gap: calc(var(--dr) * 2.4) calc(var(--dr) * 3.2); }
+  /* the monochrome logos in the page's ink, not #000: black mapped to Mahogany #584738 (measured: 88, 71, 56); a
+     static filter on each logo (rasterised once; the moving rows only translate) */
+  .brands__item img{ height: calc(var(--dr) * 4 * var(--scale, 1)); filter: invert(40%) sepia(5%) saturate(2000%) hue-rotate(346deg) brightness(71%); }
+  .motion .brands__rows:empty{ height: 340px; }   /* 3 x 100 + 2 x 20 (CLS) */
+}
+/* === /desktop: brands === */
+
+/* === desktop: gallery === */
+/* owner PROOF, spec §4.8. The STATIC desktop layout (no JS, reduced motion, CDN failure; motion mode replaces it with
+   the pinned horizontal track, .gallery--track in css/proof.css): the head left (eyebrow + lockup), then three groups
+   on the 12-column grid, captions above each frame flush left, each group one staircase band (below); the serif line
+   centred on cols 3-10 between groups 2 and 3. .gallery__pair is display:contents, so its two figures are the group
+   grid's items. */
+@media (min-width: 992px){
+  .gallery__track > .t-eyebrow{ text-align: left; margin-bottom: calc(var(--dr) * 2); }
+  .gallery .t-lockup{ align-items: flex-start; text-align: left; }
+  .gallery__group{ display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--d-gutter); align-items: start; margin-top: var(--d-module); }
+  .gallery .t-lockup + .gallery__group{ margin-top: var(--d-module); }
+  .gallery__pair{ display: contents; }
+  /* each group is ONE band of three frames on the spread sizes (M = 4 columns, S = 3), stepping down 8 dr a frame:
+     a staircase, mirrored in the middle group (left, right, left), about 2,700 px for the whole static gallery at
+     1440 (the stacked zigzag was 5,500) */
+  .gallery__item--left{ grid-column: 1 / span 4; grid-row: 1; width: auto; }
+  .gallery__item--right{ grid-column: 6 / span 3; grid-row: 1; width: auto; margin-top: calc(var(--dr) * 8); }
+  .gallery__item--single{ grid-column: 10 / span 3; grid-row: 1; width: auto; margin: calc(var(--dr) * 16) 0 0; }
+  .gallery__group:nth-of-type(2) .gallery__item--left{ grid-column: 9 / span 4; }
+  .gallery__group:nth-of-type(2) .gallery__item--right{ grid-column: 5 / span 3; }
+  .gallery__group:nth-of-type(2) .gallery__item--single{ grid-column: 1 / span 3; }
+  .gallery__item figcaption, .gallery__item--left figcaption, .gallery__item--single figcaption{ width: auto; margin-bottom: 8px; }
+  .gallery__line{ width: calc(var(--d-colw) * 8 + var(--d-gutter) * 7); max-width: none; margin: var(--d-module) auto 0; font-size: var(--fs-intro-l); }
+}
+/* === /desktop: gallery === */
+
+/* === desktop: contact === */
+/* owner EDITORIAL, spec §4.9: the dark panel (5 dr top radius) over a soft Tobacco glow; a centred stage (eyebrow,
+   the signature, the lockup overlapping its lower loop by .2 em, the intro) with the rust-knit print tucked under the
+   signature's first stroke on cols 3-4 (the section's one accent); the four contacts as four cells between two
+   rules; the legal row. The panel colour moves to ::after (z -1) so the glow (::before, z -2) can sit behind it. */
+@media (min-width: 992px){
+  .contact{
+    margin-top: calc(var(--dr) * -5); border-radius: calc(var(--dr) * 5) calc(var(--dr) * 5) 0 0;
+    padding-block: var(--section-pad) calc(var(--dr) * 3 + env(safe-area-inset-bottom, 0px));
+    background: transparent;
+  }
+  .contact::after{ content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--bg-dark); pointer-events: none; }
+  /* the glow lifts the page above the panel's edge (Vanilla over the gallery's Surface end: lighter, like Lando's),
+     where the Tobacco one read as a muddy shadow */
+  .contact::before{
+    content: ""; position: absolute; left: 50%; top: 0; z-index: -2; width: 70vw; height: 30vw; translate: -50% -50%;
+    background: radial-gradient(closest-side, rgba(241,234,218,.8), rgba(241,234,218,0)); pointer-events: none;
+  }
+  .contact__inner{ text-align: center; }
+  .contact .contact__eyebrow{ --d-col: 1 / -1; --d-row: 1; justify-self: center; }
+  .contact .sig--footer{ --d-col: 1 / -1; --d-row: 2; justify-self: center; width: calc(var(--dr) * 46); max-width: none; margin: calc(var(--dr) * 2) 0 0; }
+  .contact__card{ --d-col: 3 / span 2; --d-row: 1 / 3; align-self: end; width: 100%; margin: 0 0 calc(var(--dr) * 3.5); transform: rotate(-4deg); }
+  .contact .t-lockup{ --d-col: 1 / -1; --d-row: 3; position: relative; z-index: 0; margin-top: -.2em; }
+  .contact__intro{ --d-col: 3 / span 8; --d-row: 4; justify-self: center; width: 100%; max-width: 30em; margin-top: calc(var(--dr) * 2.5); }   /* a fixed box: the oval split must not resize it (CLS) */
+  .contact__rows{
+    --d-col: 1 / -1; --d-row: 5; margin-top: var(--d-module);
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: var(--d-gutter);
+    border-top: 1px solid var(--line-on-dark);
+  }
+  .contact__row{ border-top: 0; padding: calc(var(--dr) * 2) 0 calc(var(--dr) * 2.4); gap: calc(var(--dr) * .9); min-width: 0; }
+  .contact__line{ flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: calc(var(--dr) * 1.2); }
+  .contact__actions.contact__actions--d{ display: inline-flex; }   /* every cell: label, value, pills (one structure) */
+  .contact__value{ font-size: max(15px, calc(var(--dr) * 1.5)); line-height: 1.2; overflow-wrap: normal; white-space: nowrap; }   /* = the roll's 1.2em box */
+  a.contact__value{ min-height: 0; }
+  a.contact__value .roll, a.contact__value .roll span{ font-size: 1em; }   /* the arrow's ".8em" span rule must not compound into the roll's spans */
+  .contact__legal{ --d-col: 1 / -1; --d-row: 6; margin-top: calc(var(--dr) * 3); }
+}
+/* the pills' hover fill (.pill:hover: --ink ground, --bg label) lost its label to .contact .pill--line's Vanilla colour
+   (same specificity, later): Mahogany-deep label on the Vanilla fill. Mouse only, so phones never match it. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine){
+  .contact .pill--line:hover{ color: var(--bg-dark); }
+}
+/* === /desktop: contact === */
+
+/* === tablet === */
+/* spec §4.10: every builder, one sub-comment per section (hero, instagram, about, content, chapters, numbers,
+   brands, gallery, contact). The mobile flow in its 640 px column, plus the two-cell layouts the spec names. */
+@media (min-width: 768px) and (max-width: 991.98px){
+  /* hero: the mobile cover and lockup, as is (the 640 px column centres the copy) */
+  /* instagram: the mobile layout, the screen up to 520 px */
+  .ig__screen{ max-width: 520px; --ig-shot-width: 520px; }
+  /* about: photo 70 % (the existing min-width: 768 rule), statement at most 14 em; the offset lockup reads as one
+     ("Lorena" tucked under "OUT", as on desktop) instead of two words 180 px apart across the 640 px column */
+  .about__statement{ max-width: 14em; }
+  .about .t-lockup--offset{ width: 5.2em; max-width: 100%; }
+  /* content (fan): the mobile table at --fan-k 1.18 (cards 220 px at 768), swipe and tap; About's bottom padding is
+     the gap from its statement to the fan's icon (no second section-pad on top of it) */
+  .content{ padding-top: 0; }
+  /* chapters + CHANEL spotlight: the mobile flow (centred feature card, scrolling rail, the 520 px pair); no rules */
+  /* numbers: the stats in one row of three (numerals at 72 px: "+7,696" is 174 px in a 186 px cell); the screens stay
+     the full-bleed rail with its tabs. brands, gallery: the mobile layouts (the wrapping logo grid / marquee rows,
+     the photo groups) in the 640 px column; no rules */
+  .stats{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; width: 100%; }
+  .stat .t-number{ font-size: 72px; }
+  /* contact: the four rows as a 2 x 2 grid (label, value, then the pills under it) */
+  .contact__rows{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .contact__line{ flex-direction: column; align-items: flex-start; justify-content: flex-start; }
+  span.contact__value{ display: inline-flex; align-items: center; min-height: 44px; }   /* lines up with the 44 px links */
+}
+/* === /tablet === */

@@ -50,3 +50,33 @@
 /* Rising handle: Sand eyebrow, centred 24 px above the card; the line box clips the rising chars. */
 .hero__handle{ left: var(--pad-x-l); right: var(--pad-x-r); top: calc(20% - 24px); translate: 0 -100%;
   margin: 0; text-align: center; color: var(--sand); overflow: clip; padding-block: .15em; }
+
+/* ------------------------------------------------------------------ desktop (≥ 992, docs/desktop-spec.md §4.1)
+   The card is portrait 3:4 at .62 H with its top at .19 H (hero.js cardGeometry), so the handle sits 24 px above
+   .19; the 80 px bar's theme line is at 48 px, so the dark zone's top is 50svh + 48 px. The signature is
+   min(60 dr, 800px) wide (hero.js narrows it to fit above the stage's foot, --sig-w). */
+.hero__marquee{ display: none; }
+@media (min-width: 992px){
+  .motion .hero__dark-zone{ top: calc(50svh + 48px); }
+  .hero__handle{ top: calc(19% - 24px); }
+  .sig--hero{ width: var(--sig-w, min(calc(var(--dr) * 60), 800px)); }
+  /* text marquee (hero.js builds it, motion only): two rows centred on the card's centre line (50 % of the stage),
+     between the stage background and the photo; Tobacco at 80 %, never read (it repeats approved copy) */
+  .motion .hero__marquee{
+    display: flex; flex-direction: column; align-items: flex-start;
+    position: absolute; left: 0; right: 0; top: 50%; z-index: 0; translate: 0 -50%;
+    overflow: hidden; overflow: clip; pointer-events: none; user-select: none; -webkit-user-select: none;
+    color: rgba(181,158,125,.8); opacity: 0;
+  }
+  .hero__mrow{ margin-left: -10vw; font-size: calc(var(--dr) * 9); line-height: .9; white-space: nowrap; }   /* room for the ±4vw drift */
+  .hero__mtrack{ display: flex; width: max-content; }
+  .hero__mtrack > span{ flex: none; white-space: pre; }
+  .hero__mrow--sans{
+    font-family: var(--font-sans-lockup); font-weight: calc(var(--sans-lockup-wght) - 40); font-stretch: 80%;
+    letter-spacing: -0.015em; text-transform: uppercase;
+  }
+  .hero__mrow--serif{
+    font-family: var(--font-serif-lockup); font-style: italic; font-weight: 400; letter-spacing: -0.012em;
+    padding-bottom: .08em;
+  }
+}

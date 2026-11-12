@@ -675,3 +675,336 @@ The version then holds 166 files and 114.9 MB, inside the 511-file and 256 MB li
 - **Desktop:** at 1440 × 900 the signature's baseline is only just inside the card (11 px) and the M's loop hangs well below; the spotlight pair stays 520 px wide. Both are for the desktop pass.
 - **`wine-tasting.mp4`** re-encode cropped to the picture (§9.7) is still open.
 - **Copy and choices for client approval:** the §9.7 list, plus the bigger spotlight head and the overhead kitchen photo leaving the Stays rail (one line in `data/videos.json` puts it back).
+
+## 11. Desktop v1 (2026-11-12): integration, desktop QA and mobile regression
+
+This round brings together the three desktop builders' work (HERO: hero, Instagram, About, contact; CONTENT: fan, chapters, CHANEL spotlight, video; PROOF: Numbers, Brands, pinned Gallery) on top of the desktop foundation. It was checked against `docs/desktop-spec.md` §7.
+
+The test scripts are temporary, in `/tmp/claude-0/-home-user-lorena/c832ad17-6cd8-58af-aaaa-5c402c797f09/scratchpad/desktop/integrate/`:
+
+| Script | What it checks |
+|---|---|
+| `qa.js` + `runall.sh` | One size and mode: console, scroll-through, at-rest checks, viewport screens and a contact sheet |
+| `rt-state.js`, `rt-capture.js` | The breakpoint round trip |
+| `orient.js`, `mqrev.js` | iPad rotation and the marquee teardown |
+| `grid.js` | Column alignment |
+| `hdr.js` | Header theme, nav marker, keyboard roll, reduced motion turned on mid-session |
+| `herochk.js` | Card and signature at 1.0 H |
+| `router.js` | Anchor landings |
+| `wheelvid.js` | Recorded wheel scroll-through (frames in `vid/`) |
+| `perfmap.js` | Slow frames by section |
+| `firstview.js` | First-view bytes |
+| `vplay.js` | Playing-video count |
+| `files.js` | The publish list |
+
+The builders' suites were re-run from copies: `foundation/dtest.js` and `smooth.js`, `proof/tools/roundtrip.js`, `editorial/cls.js`, `content` `desk-test.js`, and batch 2's `test.js` and `main.js`.
+
+### 11.1 Verdict
+
+- **Mobile is unchanged.** `compare.js`, run after the last change, gives 72 region checks with 0 failures in all 6 combinations.
+  - 69 regions are pixel-identical even at tol 0.
+  - The 3 others are full-page shots, at 0.0006–0.0041 %. That is poster raster noise, inside the measured noise floor (§0.1).
+- **Desktop meets §7 B and C at 1440 × 900, 1280 × 800, 1920 × 1080, 1024 × 768, 992 × 744 and 1440 × 720**, plus 2560 × 1440 for the 1920 cap. Every desktop size was run in motion, reduced and no-JS modes. Both tablet widths, 768 and 991, were run with touch emulation.
+  - No console errors, failed requests or horizontal scroll. The only exception is no-JS mode, where the browser aborts the `modulepreload` links; that is expected.
+  - Nothing is left armed, split or under opacity 1.
+  - No text sits inside the frame margin.
+- **One real bug was found and fixed:** a teardown error in the hero marquee (finding 1).
+- **Two items need a decision:**
+  1. The code-size budget (§11.5).
+  2. Frame pacing at 1920 in headless Chromium (§11.5), which needs a check on a real GPU.
+
+### 11.2 Integration findings
+
+| # | Finding | What changed | Verified |
+|---|---|---|---|
+| 1 | **Hero marquee threw on teardown after scrolling up** (must). Rotating an iPad from landscape (desktop) to portrait, or resizing below 992 px after an upward scroll, logged `[desktop] revert failed InvalidStateError: … Cannot play reversed Animation with infinite target effect end`, plus 10 more of the same. The registration's cleanup cancels the WAAPI loops. The gsap context revert that follows then re-renders the direction ramp (`quickTo`), whose `onUpdate` calls `sync()` → `pause()` on a cancelled loop with a negative rate. | `js/hero.js` `setupMarquee`: a `live` flag goes false before the loops are cancelled; `sync()` and `build()` return when it is false. The change is desktop-only: this code runs only inside the `onDesktop` registration. | `orient.js` (768 → 1024 → 768 touch, twice): no errors. `mqrev.js`: 3 rounds of wheel down, wheel up (rate −0.66 and −1), 1440 → 390 → 1440: no errors; the loops come back `running`, or `paused` when the hero is off screen. `rt-state.js`: no console errors or warnings. |
+| 2 | **Above 1920 px the header was not on the frame** (should). The bar used `--d-margin` from the screen edge. At 2560 the wordmark sat at x 44 and the Contact pill ended at 2516, while every section (and the hero lockup) starts at 364 and ends at 2196: a broken left edge on the "one grid" rule. | `css/site.css` (`desktop: chrome`): `.hdr` inline padding is `max(var(--d-margin), calc((100% - var(--d-max)) / 2 + var(--d-margin)))`, the same frame edge the hero and gallery use. It is identical to before at ≤ 1920. | `grid.js` 2560 × 1440: brand left 364.4 = col 1; Contact right 2195.6 = col 12 end. The nav is still centred. 1440: unchanged. |
+| 3 | **The contact print was soft on desktop** (nice). It is 2 columns wide on desktop (212 px at 1440, 283 at 1920), but its `sizes="136px"` kept it on the 320 w file even on DPR-2 screens. | `site.html`: `sizes="(min-width: 992px) 15vw, 136px"`. No candidate was added, and phones never match the media condition, so they choose exactly as before (spec §0 rule 4). | 1440 at DPR 2: `contact-06-480`. 1920 at DPR 1: 320. 390 at DPR 3: 480, as before. The mobile compare passes. |
+| 4 | **No-JS Instagram: the fallback line floated alone on the right** (nice). It sat on cols 7–11, under nothing, because the screen does not exist without JS. | `css/site.css` (`desktop: instagram`): without JS it moves to cols 2–6 under the Follow link. With JS it is unchanged: under the screen, and hidden once the screen renders. | `nojs-ig.png`: eyebrow, intro, Follow and the stats line form one left column. |
+| 5 | **Duplicated doc comment** in `js/brands.js` (the desktop paragraph appeared twice). | Removed. | |
+
+**Reviewed and left as they are:** the lifecycle (§11.3 A3), the CSS fences (every desktop rule sits in a `min-width: 992px` or tablet query, or under a desktop-only class or attribute), the z-index (`.contact` is `z-index: 1`, so its `::after` panel and `::before` glow stay inside its own stacking context), and the theme zones (§11.3 item 7).
+
+**Builder test failures that are test artifacts, not site bugs:**
+- `dtest.js` "nav click … (NumbersNumbers)": `textContent` now includes the roll's `.sr-only` copy; `aria-current` is on Numbers.
+- `dtest.js` "one ScrollTrigger fewer": that expectation predates the section builders.
+- `dtest.js` "d-oval unsplit after playing": the test injects its blocks into `#numbers .wrap`, which is now `display: contents` inside the section's 12-column grid. Injected before `#numbers` instead (`dtest4.js`), all 5 checks pass.
+- Batch 2 `main.js` item 38: it counts the 4 desktop nav links as 0 × 0 targets on mobile, but their parent `nav` is `display: none` there.
+
+The old foundation `test.js` is superseded by batch 2's `test.js`, which passes 35/35.
+
+### 11.3 Desktop acceptance (desktop-spec §7)
+
+| # | Result | Evidence |
+|---|---|---|
+| A1 | PASS | `compare.js` after every change. Final run: 72 region checks, 0 failed. Three runs this round: before the integration fixes (0 failed), after fixes 2–5 (0 failed), after fix 1 (0 failed). |
+| A2 | PASS | Batch 2 `test.js`: 35/35. Batch 2 `main.js`: 55 PASS, plus the item-38 artifact above. Both cover no horizontal scroll from 320 to 430, the arming invariant, aria, the menu, the router and contrast. |
+| A3 | PASS, with a note | `rt-state.js` (mouse context), fresh 390 against 1440 → 390. Both have 18 ScrollTriggers, nothing armed, no reveal wrappers, no marquee, no roll spans and no inline transform on desktop-only targets. The gallery static (`--gal-x` cleared), the hint restored, document height 14,532 in both. **Pixels** (`rt-capture.js`, iPhone 13 at 1440 → 390, against the baseline): 18 of 24 regions pass. About, gallery and their full pages differ by 0.06–1.1 %, all inside photo boxes: the browser keeps the 800 w candidates it already loaded at 1440, where a fresh 390 load picks 480 w (`src.js`: `about-800`, `gallery-03-800` …). That is resampling noise from the round trip, not a layout change. |
+| 4 | PASS | Every size and mode (`r2/`, `r4/`): no console errors, failed requests or page errors; `scrollWidth` equals the viewport during and after the scroll-through. |
+| 5 | PASS | Reduced motion and no JS show each section's final desktop layout. The gallery is the static zigzag grid (left frame on cols 2–6, right on cols 8–11 12 dr lower, single on cols 5–8, the serif line on cols 3–10). Without JS, the chapters show their heads (their media are JS-rendered by design, as on mobile). |
+| 6 | PASS (1 deviation) | `grid.js` at 1440: 43/44 edges on their column lines (± 1.5 px) across the spreads, the stats, the brands caption and the contact cells. The contact print is rotated −4°, so its box is 9 px wider; that is expected. No text inside `--d-margin` at any size. Lockup lines never wrap from 992 to 2560 (`qa.js`; the hero's "wrap" flag is its split chars mid-wipe, one line at rest per `h1.js`). Deviation: the hero lockup ends on col 6, not ≤ col 5 (§11.6). |
+| 7 | PASS | Two-line wordmark, centred nav, Contact pill, no menu button. Theme dark over Instagram and Contact, light elsewhere. `aria-current` follows Content, Numbers, Brands and Gallery (`hdr.js`). The roll moves on hover (`dtest.js` frames) and on keyboard focus (`translateY(-14.4px)` at 0.7 s). All in-page links land 88 px from the top (80 px bar + 8) in motion and reduced modes, and "Back to top" focuses `main` (`router.js`). |
+| 8 | PASS | Lockup bottom-left, clear of the eyes and lips at 1440 and 1920 (its "h" reaches the jaw line at 1920 and 2560). At ≥ 1.0 H at 1440, 1280, 1920, 1024 and 1440 × 720 (`herochk.js`): card top .19 H, height .62 H, ratio .75, corners 2.4 dr; signature complete (mask detached), overflowing the card 105 px each side at 1440; marquee opacity 1. Marquee absent below 992 (`rt-state.js`: 0 nodes). |
+| 9 | PASS | Every frame was reviewed by eye at 1440, 1920, 1280, 1024, 2560 and 1440 × 720 (`r1/`, `r2/`, `r3/` sheets). 1920 is the 1440 layout at 1.33×; at 2560 the frame is capped at 1920 and centred (the header now too). |
+| 10 | PASS | Track 2,307 px of overflow at 1440; section 3,274 px = 900 + 2,307 + 5 dr. Wheel frames (`vid/gal.png`) show no jump entering or leaving the pin; captions highlight as they enter. 1440 → 900 → 1440 inside the pin: one track tween, the same `translateX(-1153px)` at the same scroll, the vertical scrubs handed back at 900 (0 disabled). Reduced motion turned on inside the pin: static grid, the view kept on the gallery head, 0 ScrollTriggers, no stray transforms (`hdr.js`). |
+| 11 | PASS | After every wheel scroll-through: `data-armed` 0, no `.rv-*` wrappers, nothing under opacity 1. After a resize round trip the played desktop reveals are not re-armed (5 fewer once-triggers: the contact reveals never reach their `end` at the page foot, so they are disposed on teardown and not re-created). |
+| 12 | PASS | `desk-test.js` 13/13: hover spread, side-card click, 33c, 33d (click unmutes and pins, second click mutes, hover-to-hear after unlock, 400 ms re-mute, 100 ms pass-over, hover then click). `vplay.js` at 1440 and 1920: at most 2 playing, never unmuted without a click. |
+| 13 | PASS at 1440, informative at 1920 | `smooth.js`: a 100 px notch reaches 90 % in 350 ms at 1440 and at 1920. Full wheel scroll-through (`perfmap.js`): see §11.5. |
+| 14 | Partly met | CLS 0.0001 at every desktop size in motion and reduced modes. First view within budget. Code size over (§11.5). |
+| 15 | PASS | 768 × 1024 and 991 × 1024, touch: the mobile flow in the 640 px column, menu header, scrolling numbers rail, stats in one row of three, contact 2 × 2, no hover effects, no horizontal scroll. iPad rotation 768 ↔ 1024 is clean (finding 1). |
+
+### 11.4 Motion read from frames
+
+`vid/wheel-1440x900.webm`, a 25 s wheel scroll-through at 100 px every 60 ms, with frames at 4 fps.
+
+- **Hero:** full bleed → card with the two marquee rows uncovered → signature written over the robe → the IG intro's oval line reveal.
+- **Content:** the fan deals and spreads; the chapters deal their cards beside the contact sheets.
+- **Gallery:** the track glides with the wheel and the captions' highlights play as they enter.
+- **Contact:** the pin releases into the contact panel, and the footer signature draws.
+
+No flash, jump or stuck state anywhere.
+
+### 11.5 Performance and budget
+
+**Scroll** (headless Chromium, software raster, `perfmap.js` by section):
+
+| Size | Long tasks | Frames ≤ 20 ms | Where the slow frames are |
+|---|---|---|---|
+| 1440 × 900 | 0 | 98.3 % (97.7 % on another run) | — |
+| 1920 × 1080 | 0–1 (60 ms) | 87–90 % | the hero, the chapters (3 decoding videos) and Numbers (three IG screens painting their count-ups at once) |
+
+- At 1920, hiding the IG screens takes Numbers to 0 slow frames; `will-change` on the drifting figures did not help.
+- Lenis is untouched (`lerp .1`, `smoothWheel`, `wheelMultiplier 1`).
+- **To confirm on a real GPU before launch.**
+
+**First view** (cold, no scroll, text gzipped):
+
+| Size | Transferred |
+|---|---|
+| 1440 × 900 | 476 KB from a caching server |
+| 1920 × 1080 | ≈ 500 KB |
+
+- Budget: 1.1 MB. `hero-2048.webp` is 100 KB.
+- The test server's `no-store` makes Chromium fetch the LM Sans file twice, once for each of its two `@font-face` rules: 552 KB. On a caching host it is one request.
+
+**Code size: over the §6 targets in raw bytes.**
+
+| | Raw | Gzip | At batch 2 |
+|---|---|---|---|
+| Own CSS (site + hero + content + proof) | 95.8 KB | 25.7 KB | 57.3 KB |
+| Own JS (excluding the reused `insights.js` / `motion.js`) | 172.7 KB | 53.0 KB | 134.1 KB |
+
+- Desktop added ≈ 38.5 KB of CSS against ≈ 18 KB allowed, and ≈ 38.6 KB of JS against 24 KB.
+- `desktop.js` is 6.8 KB, within its own 7 KB target.
+- 30 % of the CSS and 28 % of the JS is comments: the CSS without comments is 67 KB, under the 75 KB cap.
+- The transfer budget, which is what the cap protects, is met with room to spare.
+- As in §5 item 1, the fix is a comment-stripping or minify step. It can only go in the Pages workflow, because the Artifact publishes the sources as they are.
+- **Decision needed:** accept, or add the Pages minify step.
+
+### 11.6 Deviations accepted
+
+1. **The hero lockup ends on col 6** (spec: ≤ col 5). At `--fs-display` (128 px at 1440) with the kit's 1.6 em offset, "Maruch" needs about 680 px, so 5 columns cannot hold it. The face test passes: no part of the lockup touches the eye or lip region, contrast is ≥ 5.3 for the lockup, and its "h" meets the jaw line at 1920 and 2560 only.
+2. **No sticky chapter head** (CONTENT). Chromium bounds a sticky grid item by the whole grid, so the head slid under the sheet. The card and sheet share one viewport anyway, so a thumb swap is always in view.
+3. **Spotlight desktop sources via `data-srcset-d`, not a `<picture>`** (CONTENT). `video.js` picks the 1200 w set only when ≥ 992 matches at load; a `<picture>` would break the `.frame > img` hooks. Phones never get the larger files.
+4. **Reduced motion on desktop keeps "Swipe to browse · click for sound".** The hover spread is motion-only. A mouse drag does swipe the fan (pointer events), so the line is still true.
+
+### 11.7 Publish list changes (Artifact)
+
+**167 files, 115.2 MB:** 166 referenced files plus `site.html`. `files.js` now also reads `data-src`, `data-srcset` and `data-srcset-d`. All paths are relative and every one answers 200.
+
+**Added:**
+- `js/desktop.js`
+- `js/gallery.js`
+- `assets/img/web/hero-2048.webp`
+- `assets/img/web/chanel-chance-1200.webp`
+- `assets/img/web/chanel-n5-boutique-1200.webp`
+
+**Left out** (no longer referenced since the client removed the black gown and zebra print from the Fashion rail; they stay in the repo):
+- `assets/img/web/fashion-gown-{card,thumb}.webp`
+- `assets/img/web/fashion-print-{card,thumb}.webp`
+
+**Changed in place:**
+- `site.html`
+- every CSS file except `insights.css`
+- `js/site.js`, `scroll.js`, `reveals.js`, `ui.js`, `hero.js`, `fan.js`, `video.js`, `brands.js`
+
+`scripts/make-images.py` and `scripts/wrap-site.sh` are not published.
+
+**Three calls to the same URL, back to back:**
+
+| Call | Contents | Files | Size |
+|---|---|---|---|
+| 1 | `site.html`, every non-video file and the Stays MP4s | 157 | 45.8 MB |
+| 2 | The Food MP4s | 4 | 30.9 MB |
+| 3 | The Fashion MP4s | 6 | 38.5 MB |
+
+### 11.8 Still open
+
+- **The budget decision** (§11.5).
+- **A real-GPU check of the 1920 scroll** (§11.5).
+- **The iPhone checks** from §10.5.
+- **Design review, optional:** About → fan is the largest gap on the page, 320 px at 1440 (About's bottom padding plus the fan's top padding, both `--section-pad`). The Food contact sheet is a single row of 4, so it leaves ≈ 300 px of air under Food's head. Both follow the spec; tightening either is a one-line CSS change.
+- **The local check server** (pid in `…/desktop/integrate/server.pid`) was stopped after this run. An `http-server` started at 15:24 by an earlier session (pid 1102, serving this repo) was still running; it was left alone.
+
+## 12. Desktop fixes round 1 (2026-11-12)
+
+All 32 findings of the desktop design, motion and tech reviews were handled: the 2 musts first, then the shoulds, then every nice-to-have that was cheap. Two items are decisions or need hardware (§12.4). The spec changes are recorded in `docs/desktop-spec.md` §9.
+
+Everything new on desktop sits in a `min-width: 992px` (or tablet) query, a desktop-only class or attribute, or a `js/desktop.js` registration / `isDesktop()` branch chosen when the code is set up. The one exception is finding 27 (§12.4).
+
+The test scripts are temporary, in `/tmp/claude-0/-home-user-lorena/c832ad17-6cd8-58af-aaaa-5c402c797f09/scratchpad/desktop/fix1/tools/`. Most are the reviewers' scripts, re-run unchanged or with their output paths moved:
+- `ipad.js`, `life2.js`, `rt-state.js`: lifecycle
+- `galt.js`, `fant.js`: gallery and fan timing from two viewports above
+- `fanfit.js`, `fangap.js`: fan stage height and hover gap
+- `quote.js`: gallery quote lines
+- `face.js`: hero lockup against the face, with a jaw box added
+- `sigtest.js`, `sighash.js`, `sigmore.js`, `sigback.js`: hero signature
+- `mq0.js`: hero marquee loops
+- `menu.js`: menu auto-close
+- `curtain.js`: curtain cover time
+- `chanel.js`: the white band
+- `herobg.js`: stage colour, clip and handle
+- `misc.js`: statement spacing, header timing, roll lifecycle
+- `meas2.js`, `shot.js`: alignment and screens
+- `perfmap.js`: frame pacing
+- `dpr.js`: hero candidate per DPR
+
+### 12.1 Findings
+
+| # | Finding | What changed | Verified |
+|---|---|---|---|
+| 26 | **Must: shrinking below 992 px could jump the page** to wherever desktop mode last started (iPad rotation, window narrowed and widened mid-page). | `js/gallery.js` teardown: the foreign scrubs are re-enabled with `st.enable(false, false)` (no reset, no solo refresh, so no `scrollTo` of a stale position). desktop.js's coalesced `refresh()` re-measures them. | `ipad.js`: touch and mouse both stay at y 300 (were 4,705 and 7,000). `life2.js`: the 800 px step stays at 960 (was 8,575); no console errors. `rt-state.js`: 1440 → 390 has the same 18 ScrollTriggers, document height (14,532) and clean state as a fresh 390; 1440 → 390 → 1440 → 800 → 1920 are clean. |
+| 18 | **Must: "Photo Diary" was never seen fully revealed** before the pin slid it away. | `js/gallery.js`: a lead-in hold. The pin stays still for 0.35 of its height (315 px at 900) before the track moves. The tween and the background scrub start at `top top-=hold`, `--gal-x` includes the hold, and the containerAnimation triggers follow. The head's title (generic `data-oval`, still armed by `reveals.scan` at every width) is played early, at 1.2×, from its own `top bottom`. This uses a new `scroll.js` helper `playArmed(el, timeScale)`, called only here. The generic `top 90%` trigger is unchanged for mobile. | `galt.js` at 1440, 100 px per 250 ms: the reveal completes before the pin engages, and the whole revealed title is on screen for 1.3 s (mostly on screen 1.9 s; was 0 and 417 ms). At 100 px per 100 ms: mostly on screen 334 ms (was 0). At 1920, slow: 1.87 s whole, 2.48 s mostly (was 683 ms); brisk: 217 and 567 ms. |
+| 1 | Food's sheet left a 316 px void under the head and 2 empty columns. | `js/video.js` writes the sheet shape on the rail (`--sheet-cols` / `--sheet-rows`; unused below 992). Rows hold at most 6, as few rows as possible, columns spread evenly: 11 → 6 + 5, 8 → 4 + 4, 4 → 4. In `desktop: chapters`, `--thumb-w` is computed per rail from its row count; the thumbs fill the 6 columns, as large as the card's height allows. | Food at 1440: 4 thumbs 157 × 279 over the whole span (730–1407), the foot on the card's foot (5,570). The gap from the head is 213 px (was 316). |
+| 2 | Fashion's 8 thumbs fell 6 + 2, with air above. | The same shape rule: 4 + 4 at 120 × 213. | 1440: full rows, the sheet 50 px under the head (the 2 dr margin plus 24), its foot on the card's foot (6,488). The same at 1024 and 1920 (`shots/ch/`). Stays stays 6 + 5. |
+| 3 | The feature cards were centred in their span (30 px near-misses). | `--card-align`: `end` for text-left chapters (right edge on col 11's end, with the About photo and the IG screen), `start` for Food (left edge on col 2). The caption follows. | 1440: Stays and Fashion at x 905.8–1290.5 (About photo 846.1–1290.5); Food at 149.4–534.2 (col 2 = 149.4). |
+| 4 | The fan stage was taller than the screen at every size. | `desktop: content`: `.content` has no top padding (see 9). The icon is 40 px, the intro tighter, and the caption row is 1.5 u under the box. The fan unit is fitted to the height: `--r: clamp(.72 dr, (100svh − 80px − 142px − 16.4 dr) / 43.7, dr)`, where 142 px + 16.4 dr is the measured fixed part. | `fanfit.js`, icon to counter: 808 px at 1440 × 900 (target ≤ 820; was 978), 988 at 1920 × 1080 (≤ 1,000; was 1,248), 711 at 1280 × 800 (was 888), 683 at 1024 × 768. Cards are 210 × 373 at 1440. A nav jump to Content puts the icon at 88 and the counter at 896 (`shots/1440-fan_intro.png`). |
+| 5 | The quote broke "Light, / texture and a / little slowness." at 1024–1366. | `css/proof.css`: the track box is `6.6em` with `text-wrap: wrap`. The longest phrase is 5.85 em; "Light, texture and" is 7.56 em in both serifs. | `quote.js`, motion, after the reveal: "Light, texture / and a little / slowness." at 1024, 1280, 1366, 1440, 1600 and 1920, with The Seasons (Pages) and the LM serif (`site.html`, Artifact). |
+| 6 | A white band at the foot of the CHANEL boutique media. | `css/content.css`, desktop: `fashion-07`'s poster and video (fan card, feature card) and its thumb are grown with `scale: 1.013` from the top edge. The hook is `data-id`, which follows thumb swaps. | `chanel.js` at 1440, video playing: no pixel ≥ 245 in the last 12 rows of the fan centre card or the Fashion feature (`hov/chanel-*.png`). |
+| 7 | At 16:9 the "h" of "Maruch" met her jaw. | `desktop: hero`: under `(min-aspect-ratio: 16/9)` the lockup is `min(--fs-display, 14svh)`. | `face.js` and screenshots (`shots/hero/`): 1920 × 1080 at 151 px, "Maruch" ends at x 851 (was ≈ 990), in her hair; 1366 × 768: 605; 1536 × 864: 681. 1440 × 900 is unchanged (128 px, 716). No eye or lip overlap at any size. |
+| 8 | The logos were the only `#000` on the page. | `desktop: brands`: `filter: invert(40%) sepia(5%) saturate(2000%) hue-rotate(346deg) brightness(71%)`, solved for black → #584738. It is a static filter on each logo, so the moving rows only translate. Applies to the marquee and the reduced-motion grid. | A test render reads (88, 71, 56). `shots/1440-brands.png`. |
+| 9 | About → Content had a 320 px void. | `.content{ padding-top: 0 }` on desktop and tablet. About's bottom padding is the whole gap. | Statement to icon: 160 px at 1440 (was 318), 213 at 1920, 114 at 1024, 160 at 768 (was ≈ 330). |
+| 10 | The IG screens sat 7 px inside the column lines, and their staircase never settled. | `justify-self: start`. A new `data-d-drift-end` (reveals.js `scanDesktop`, desktop only) is set to `center center` on Performance and Audience. | Stats, captions and screens all at x 33.3 / 497.8 / 962.2 (1440) and 44.4 / 663.7 / 1283 (1920). |
+| 11 | The hover titles stacked 3–5 caps words over the thumb. | Sentence-case serif, 12–15 px, `line-clamp: 2`. The bottom inset is a transparent border, so no third line shows. | `hov/thumbs-sheet.png`: 1440 shows the full titles in 2 lines. At 1024 (71 px thumbs) they are clamped with an ellipsis; the button's name keeps the full title. |
+| 12 | The Instagram and TikTok cells had no pills. | `site.html`: an "Open ↗" pill (`aria-label` "Open Instagram profile" / "Open TikTok profile", `data-roll`) in a `.contact__actions--d` span. It is `display: none` below 992, so phones and tablets are unchanged and it is never focusable there. | All four cells end at the same line (775 at 1440) with one structure (`shots/1440-contact_contact_rows.png`). |
+| 13 | The Tobacco glow read as a muddy shadow. | It is Vanilla at .8: lighter than the Surface it sits on. | `m1440/s15`. |
+| 14 | A double-looking space after "slow," and "places,". | `.about__statement .t-accent:not(:last-of-type){ margin-right: -.16em }` (desktop). | Box gap 3 px (was 15); ink gap ≈ 13 px, like "& STYLE" (`m1440/s03`). |
+| 15 | The static desktop gallery was 5,512 px. | Each group is one staircase band: M (4 columns), S (3), S (3), stepping 8 dr. The middle group is mirrored. | Reduced motion: 3,083 px at 1440 (was 5,512), 4,083 at 1920, 2,220 at 1024 (`shots/red/`). |
+| 16 | The khaki mid-shrink, and a 1 px seam. | `hero.js` (desktop registration): `--hero-bg-d` (CSS `background: var(--hero-bg-d, var(--hero-bg))` at ≥ 992) runs Vanilla → Tobacco by 0.35 H, then Mahogany-deep by 0.65 H. The mobile path is untouched. The clip is rounded to whole pixels on desktop. | `herobg.js`: (84, 60, 51) at 0.57 H (was ≈ (154, 130, 104)); every inset is a whole pixel at 1440 and 1024 (`hov/hero-1440-0.57.png`). |
+| 17 | At 768 the About lockup read as two words. | Tablet block: `.about .t-lockup--offset{ width: 5.2em }`, the desktop proportion. | "Lorena" x 222–480 under "ABOUT" 64–262 (`shots/tab/`). |
+| 19 | The fan dealt too late on desktop. | `fan.js` `armEntrance`, desktop chosen at arming: start at `top 85%`, rise 0.5 s (stagger 0.25), spread label at −0.2. The watchdog `due()` matches. Phones keep `center 75%` and 0.8 / 0.5 / −0.4. | `fant.js` at 1440, slow: the spread starts with the box top at 534 (was 59) and lands at 112 (box centre 322). Brisk: it starts at 294 (was −194). Stack-only time is 0.8–1.0 s (was 1.8–2.5). At 1920, slow: top 711 → 295, centre 554 of 1080 (was 135 → −259). |
+| 20 | The hovered centre card touched the hint. | `fan.js spread()`: the centre card lifts 1.2 u (others 2.5). The fan's top margin is 2.2 u. | `fangap.js`, gap when hovered: 18 / 16 / 24 / 38 / 18 px at 1440 / 1280 / 1920 / 1024 / 1440 × 720 (was −3 / −2 / −4 / −2 / off screen). |
+| 21 | 1920 frame pacing (verification). | No targeted change. The fitted fan is smaller at 1920 (263 px cards, not 356). | `perfmap.js`, no video recording: 1440: 96.6–97.2 % of frames ≤ 20 ms, 0 long tasks. 1920: 86.4–87.4 % (was 81–86 %), 0 long tasks. The slow frames are in the hero, the chapters, Numbers and the gallery. **Still needs a real-GPU check** (§12.4). |
+| 22 | The serif line played its reveal off screen. | `gallery.js`: a reveal takes the vertical trigger only if it is already left of its own sideways start line (92 % / 85 %) when the pin starts. The serif line (left 1,418 of 1,440) now waits for the track. | `galt.js`: armed at 1,418, done at left 599 (1440 slow) and 1,016 (1920 slow), so it plays in view. |
+| 23 | Strokes stayed on her face when scrolling back up. | `hero.js`, desktop: leaving the signature's range upward always snaps it to 0. The handle's opacity follows the clip (`k` 0.88 → 0.98). `finish()` drops the inline opacity, and below 992 it is never set. | `sigback.js`, brisk wheel up from 1.33 H: inked until 0.55 H, 0 just past it. |
+| 24 | Curtain frames rose as flat slabs. | `reveals.js`, desktop chosen at boot: `top 95%`, and the wash clears from 0.2 s. Phones keep `top 85%` and 0.4 s. | `curtain.js` at 1440: About photo fully covered 283 ms (was 567), wash gone at top 380 (was 162). Spotlight 283 / 50 ms (was 617 / 400). Contact print 283 ms (was 633). |
+| 25 | The dark bar lingered over the gallery. | `desktop: chrome`: `.hdr:not(.hdr--quick){ transition-duration: .2s, .2s, .45s }`. | Computed `0.2s, 0.2s, 0.45s`. |
+| 27 | The hero signature was erased by any refresh. | `hero.js`: the signature trigger drops `invalidateOnRefresh`. Its tween has no layout values; start and end are re-read anyway. | `sigtest.js`: after 1440→1280, →390, →1100, 390→430 (iPhone) and 900→800, at 1.1 H and 1.5 H, the mask stays off and both pens stay drawn (all 10 failed before). `sighash.js`: 1440 and 390 deep link, then back at the hold: drawn. `sigmore.js`: "Show the full screen", then back: drawn. **This touches mobile in that broken state** (§12.4). |
+| 28 | The marquee loops ran behind the cover at rest. | `hero.js setupMarquee`: the loops run only while the hero is visible and the fade's progress is > 0. | `mq0.js`: paused at scroll 0, running at 0.6 H, paused back at 0, paused far below, running at 0.9 H after 1440 → 1280. |
+| 29 | Focus dropped to `<body>` when the menu auto-closed. | `ui.js` 'menu-close': focus inside the menu moves (`preventScroll`) to the desktop nav link with the same `href`, else to the wordmark. | `menu.js`: focus on the "Numbers" nav link; the next Tab goes to "Brands"; nothing stays inert; Lenis runs. |
+| 30 | Roll undo closures piled up. | `ui.js initRoll`: one undo map per registration, run by a single cleanup. Entries whose element left the page are dropped on the next scan. | `misc.js`: 20 fan category changes keep 16 `.roll`s. The 900 px teardown leaves 0; back at 1440, 16 again. |
+| 31 | Code size over the targets (raw). | No change (decision, §12.4). | Own CSS 101.4 KB raw, 27.7 KB gzip (site.css 80.3 / 21.8). The first view is unchanged at DPR 1. |
+| 32 | The hero was soft at 1440 @ 2. | `hero-2688.webp` (q68, 168 KB, from `_source/drive-2/foto-de-capa.jpg`) is added to the desktop `<source>` only; `scripts/make-images.py` builds it. The 768 w feature posters were left out: video replaces the posters. | `dpr.js`: 1440@2 → 2688; 1440@1 → 1527; 1920@1 → 2048; iPhone 13 → 1527 (unchanged). |
+
+### 12.2 Checks
+
+- **Mobile regression** (`compare.js`, all 6 combinations, after the last mobile-relevant change): 72 region checks, **0 failed**. 69 regions are pixel-identical. The 3 full-page shots differ by 0.0031–0.0054 %: 127–363 px inside the video poster boxes, the known raster noise. The last two edits after the run (the hover-label inset and the docs) only affect `(min-width: 992px) and (hover: hover)`.
+- **Mobile suites:**
+  - Batch 2 `test.js`: 35/35.
+  - Batch 2 `main.js`, with `artifact.html` served: 58 PASS, plus item 38. Item 38 is the known test artifact: it counts 0 × 0 links inside `display: none` parents, now the 4 desktop nav links plus the 2 desktop-only "Open" pills.
+- **Content suite:** `desk-test.js` passes 13/13, including the hover spread, side-card click and 33c/33d (sound ownership).
+- **Scroll-throughs:** at 1440, 1920, 1024 and 768 in motion, and 1440 reduced, there are 0 console errors (`m1440/`, `m1920/`, `m1024/`, `m768/`, `r1440/`, with sheets).
+- **Publish list:** `files.js` finds 167 referenced files, all relative and served with 200.
+
+### 12.3 Publish list changes (Artifact)
+
+- Added: `assets/img/web/hero-2688.webp`.
+- Changed in place:
+  - `site.html`
+  - `css/site.css`, `css/content.css`, `css/proof.css`
+  - `js/gallery.js`, `js/scroll.js`, `js/fan.js`, `js/hero.js`, `js/ui.js`, `js/reveals.js`, `js/video.js`
+- Total: 168 files with `site.html`.
+- `scripts/make-images.py` changed but is not published.
+
+### 12.4 Still open
+
+- **Finding 27 needs the lead's sign-off.** It changes mobile behaviour in the broken state only: after a refresh, the held card keeps its signature instead of losing it. Pixels at rest are identical and `compare.js` passes. To keep mobile exactly as before, the option could be restored below 992. The bug would then remain on phones.
+- **The 1920 frame pacing** (21) still needs profiling on a real GPU. If it reproduces, check video decode (cap 2 playing on desktop) and Numbers (stagger the screens' chart animations) first.
+- **The code-size budget** (31): accept it, or add a minify or comment-strip step to the Pages workflow.
+- **The CHANEL band:** the clean fix is a re-encode of `chanel-boutique.mp4` and its poster and thumb with `crop=720:1272:0:0`. It changes mobile pixels, so it needs an explicit OK. Until then, the desktop crop stands, and phones still show the 3–4 px band.
+- **The fitted fan:** on short windows (1440 × 720 and below) the stage still exceeds the screen. The fan stops shrinking at .72 dr, so it stays readable.
+- **The iPhone checks** from §10.5 (unchanged).
+- **Local servers:** the check server (port 8637, pid in `…/desktop/fix1/server.pid`) is stopped after this run. The scratch Artifact server on port 8638 is stopped too.
+
+## 13. Desktop fixes round 2 (2026-11-12)
+
+This round handles the six findings left by the round-1 verification:
+- 1, 4 and 5 changed code (`js/fan.js`, `js/gallery.js`).
+- 2 and 3 were profiled in headless Chromium. There is no GPU here. The measurements call for no code change (details below), and a real-GPU check is still worth doing.
+- 6 are decisions for the lead (§13.4).
+
+Nothing below 992 px changed:
+- In `fan.js`, the new resize rule and the new deal handling only run while `(min-width: 992px)` matches. Below that, the resize rule (only a width change counts) and the deal (the unit is fixed when the deal is armed) are the old code paths.
+- `gallery.js` runs only in its desktop registration.
+
+The test scripts are temporary, in `/tmp/claude-0/-home-user-lorena/c832ad17-6cd8-58af-aaaa-5c402c797f09/scratchpad/desktop/fix2/tools/`:
+- `fanrs.js`: fan arc after height-only resizes, against a fresh load.
+- `fanpend.js`: resize while the deal waits, mid-deal, and while hovered.
+- `fanmob.js`: phone toolbar resize and width change; 1024 height change.
+- `galt.js`, `galrec.js`: gallery title and serif line timing, recorded frames.
+- `perfmap.js`: frame pacing per section.
+- `trace.js` with `tframe.py`, `tpaint.py`, `tinv.py`: Chrome traces, split into software compositor draw, raster and main thread.
+- `layers.js`: composited layers.
+- `wheelrec.js`: scroll-through with console capture.
+
+### 13.1 Findings
+
+| # | Finding | What changed | Verified |
+|---|---|---|---|
+| 1 | **The fan arc went stale after a height-only resize** (the fitted `--r` reads `svh`; the resize handler only reacted to width). | `js/fan.js`, at ≥ 992: after the 150 ms debounce the resize handler compares the unit (the probe's width) with its last value, so any unit change re-fits the arc. `relayout()`, desktop: a deal still waiting is re-stacked at the new unit, and its spread now reads the unit when it opens (it used the unit from arming time); a deal under way is landed, then placed; a hovered fan spreads again from the new arc. | `fanrs.js`, card 0's left edge: 1440 × 900 → 1000 is 180 right after the resize (was 249), equal to a fresh 1440 × 1000 load and to the arc after hover and leave, so the first hover no longer jumps. 900 → 700: 315 (fresh 315; was 288). 1920 × 1080 → 900 → 1080: 420 at 900 tall, then 413 back at 1080, the same as a fresh 1920 × 1080 load. `fanpend.js`: a resize while the deal waits (armed, 900 → 1000), 450 ms into the deal, and while a card is hovered (900 → 700) all end on the fresh arc (180 / 180 / 315). No console errors. |
+| 4 | **The end of the "Photo Diary" reveal overlapped the start of the track** at a brisk wheel. | `js/gallery.js`: `TITLE_SPEED` 1.2 → 1.8. The reveal takes 0.98 s (was 1.47). | `galt.js`, 100 px every 100 ms: the reveal is done before the track moves at 1440 (317 ms before; the whole title on screen 434 ms after it lands, was 0), at 1280 (50 ms before; 166 ms whole, 483 ms mostly; was 0 / 150) and at 1920 (567 ms before; 700 ms whole). At 100 px every 250 ms the whole landed title is on screen for 1.78 s (1440), 1.47 s (1280) and 2.32 s (1920). Frames (`galrec.js`, 1440 brisk): the drawn title is still for about 0.75 s before it slides. |
+| 5 | **The serif line was still revealing while it crossed the screen** at a brisk wheel. | `js/gallery.js`: the sideways reveal runs at `LINE_SPEED` 1.5: 1.23 s for its 3 lines (was 1.85). The start line stays `left 85%`, so which reveals take the vertical trigger is unchanged. | `galt.js`, brisk: done at left 397 at 1440 (was −14), 153 at 1280 (was −151) and 810 at 1920 (was 394). Slow: 800, 672 and 1,220. In the frames it lands, then crosses fully drawn. |
+| 2 | **1920 smoothness** (headless: 86–92 % of frames ≤ 20 ms, against 97 % at 1440). | No code change. Profiled with Chrome traces (`trace.js`). | See the profile below the table. The slow frames at 1920 come from the software display compositor; a GPU does that work on real hardware. |
+| 3 | **The logo tint filter** seemed to cost frames at 1920. | No change: it does not reproduce. | `perfmap.js` at 1920, 3 runs each, Brands slow frames: 5 / 2 / 4 with the filter, 2 / 4 / 8 with `filter: none`. Traces of one Brands pass, 3 each: raster 602 / 581 / 604 ms with the filter, 578 / 591 / 614 without; compositor draw 15.2–15.9 ms median either way; slow frames 16 / 14 / 14 against 21 / 12 / 26. The filter is rasterised once into the rows' layers, which the WAAPI loops only translate, so it costs nothing per frame. Pre-tinted logos would add 46 files for no measured gain. |
+| 6 | **Decisions** (finding 27 on mobile, the CHANEL re-encode, the code-size budget). | No change. | See §13.4. |
+
+**Profile for finding 2.** Each row is one wheel pass through the section (100 px every 50 ms), headless Chromium.
+
+| Section | Compositor draw per frame, median / p90 (1920 / 1440) | Main thread per frame, median (1920 / 1440) | Raster, share of one core (1920 / 1440) |
+|---|---|---|---|
+| Hero | 14.9 / 24.6 ms vs 9.0 / 14.3 ms | 4.7 / 5.4 ms | 66 / 43 % |
+| Numbers | 14.0 / 23.4 ms vs 10.6 / 16.7 ms | 4.2 / 4.8 ms | 9 / 12 % |
+| Gallery | 14.4 / 18.8 ms vs 10.1 / 12.9 ms | 3.1 / 3.3 ms | 52 / 43 % |
+
+- The compositor draw is `DirectRenderer::DrawFrame` on the viz thread. It grows with the pixel count (2.07 MP against 1.30 MP, × 1.6) and pushes p90 past 16.7 ms only at 1920.
+- The main thread costs the same at both sizes, with no long tasks. Nothing in our code grows with the viewport the way the draw does.
+- One raster source for the real-GPU check: the hero's scrim and shade fade through opacity tweens, which repaint their gradient layers every frame. `will-change: opacity` on both cut the hero's raster by about 38 % (3.3 → 2.0 s per pass), but the slow-frame count did not change (5–8 % → 9 %), because the frames are compositor-bound here. It is not applied. If a real GPU shows raster-bound frames in the hero, try it first, in a `min-width: 992px` block.
+
+### 13.2 Checks
+
+- **Mobile regression** (`compare.js`, all 6 combinations, after the last code change): 72 region checks, **0 failed**. 69 regions are pixel-identical. The 3 full-page shots differ by 0.0015–0.0085 % (101–481 px), in small clusters inside the chapter video poster boxes: the known raster noise.
+- **Phone fan** (`fanmob.js`, iPhone 13):
+  - Height-only resizes (844 → 750 → 664 → 750, the toolbar case) touch no card: no `killTweensOf`, transforms unchanged.
+  - A width change (390 → 360) re-lays the arc out, as before.
+  - At 1024 × 768 → 700 → 768 the arc re-fits and returns exactly to its first transforms.
+- **Content suites:**
+  - `desk-test.js` (1440): all PASS, including the hover spread, hover leave, side-card click and 33c/33d (sound ownership).
+  - `fan-test.js` (390, touch): 20/20 PASS.
+  - Neither suite logged console errors.
+- **Lifecycle** (`rt-state.js`, motion): a 1440 → 390 round trip matches a fresh 390 (18 ScrollTriggers, document height 14,532, no desktop leftovers). 390 → 800 → 1920 is clean. No console errors or warnings.
+- **Scroll-throughs** (`wheelrec.js`, 100 px every 100 ms): 1440 down and back up, and 1920 down. The only console entries are aborted `.mp4` range requests from videos pausing as they leave the view (14 and 12; 16 in the round-1 run). Frames of the fan deal and the gallery entry look right (`out/rec1440/fan-sheet.png`, `out/galrec1440/sheet1.png`).
+
+### 13.3 Publish list changes (Artifact)
+
+- Changed in place: `js/fan.js` (+1.5 KB raw, +0.5 KB gzip, mostly comments) and `js/gallery.js` (+0.2 KB).
+- No files added or removed: 168 files with `site.html`, as in §12.3.
+- `docs/desktop-spec.md` gains §10 (not published).
+
+### 13.4 Still open (the lead's decisions)
+
+- **Finding 27 needs the lead's sign-off** (unchanged from §12.4). It changes mobile behaviour in the broken state only: after a refresh, the held card keeps its signature instead of losing it. Pixels at rest are identical. To keep mobile exactly as before, restore `invalidateOnRefresh` below 992, but the bug then stays on phones. Recommendation: keep the fix.
+- **The CHANEL band:** the re-encode of `chanel-boutique.mp4` and its poster and thumb with `crop=720:1272:0:0` still needs an explicit OK, because it changes mobile pixels. It has not been done. Desktop keeps its `scale: 1.013` crop, and phones still show the 3–4 px band.
+- **The code-size budget** (31): accept it, or add a minify or comment-strip step to the Pages workflow. The own JS grew by 1.7 KB raw this round.
+- **A DevTools profile at 1920 × 1080 on real hardware** (findings 2 and 3), at DPR 1 and 2. Headless has no GPU, and what it shows does not point at our code (§13.1). If the hero is raster-bound there, try `will-change: opacity` on `.hero__scrim` / `.hero__shade` (≥ 992) first. The logo filter needs no change unless the profile shows it.
+- **Carried over from §12.4:** the fitted fan on short windows (1440 × 720 and below), and the iPhone checks from §10.5.
+- **Local servers:** the check server (port 8505, pid in `…/desktop/fix2/server.pid`) is stopped after this run.
