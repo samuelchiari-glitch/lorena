@@ -15,10 +15,12 @@
  * armed or running (0 <= progress < 1) and detached at 1. Stroke widths are in viewBox units: never vector-effect.
  *
  * Exports:
- *   createSignature(svg, {pause=.045})   the kit controller: { render(p), penPoint(p), lengths, length, clear() }.
+ *   createSignature(svg, {pause=.045})   the kit controller: { render(p), clear() }.
  *                         render(p) is idempotent: pens dashed to p at constant pen speed (each pen's share = its
  *                         length; a pen lift of pause × total between them), guards lifted, mask on below 1, off at 1.
- *                         A pen that has not started is visibility:hidden (no round-cap dot).
+ *                         A pen that has not started is visibility:hidden (no round-cap dot). The site draws no pen
+ *                         tip, so the kit's penPoint() is not carried here (lab/signature.html and the kit README
+ *                         keep the full recipe).
  *   signatureTimeline(svg, {penLift=.045}) PAUSED GSAP timeline, duration 1, ease none: progress 0 -> 1 writes the
  *                         signature. It arms the copy at once (render(0): nothing inked). Hero: scrubbed.
  *   playSignature(svg, {duration=2.2, ease='none', paused=false})
@@ -67,17 +69,6 @@ export function createSignature(svg, { pause = 0.045 } = {}) {
     else if (ink.getAttribute('mask') !== maskRef) ink.setAttribute('mask', maskRef);
   }
 
-  /** Where the pen is, in viewBox units (null at rest and during the pen lift). */
-  function penPoint(progress) {
-    if (!(progress > 0 && progress < 1)) return null;
-    let t = progress * span;
-    for (let i = 0; i < pens.length; i++) {
-      if (t <= lens[i]) return t >= 0 ? pens[i].getPointAtLength(t) : null;
-      t -= lens[i] + gap;
-    }
-    return null;
-  }
-
   function clear() {
     dead = true;
     const unstyle = (el, ...props) => {
@@ -90,7 +81,7 @@ export function createSignature(svg, { pause = 0.045 } = {}) {
     if (live.get(svg) === ctl) live.delete(svg);
   }
 
-  const ctl = { render, penPoint, clear, lengths: lens, length: total };
+  const ctl = { render, clear };
   live.set(svg, ctl);
   return ctl;
 }

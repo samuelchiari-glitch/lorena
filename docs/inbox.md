@@ -14,9 +14,9 @@ Raw files are in `_source/drive-2/` (gitignored, downloaded from the client's Dr
 | `img-9560.jpg` (lying on a white background) | `assets/img/portrait-white-floor.jpg` | **Gallery**, group 1, left (it opens the gallery): "Portrait · On white". It replaces `08` (glamping dome walk). |
 | `dsc01358.jpg` (A-frame glass deck) | `assets/img/stays/aframe-deck.jpg` | **Stays chapter**, a new photo pair under the thumb rail, left: "Cabin · A-frame". |
 | `dsc02763.jpg` (deck with an ofurô tub) | `assets/img/stays/ofuro-deck.jpg` | **Stays chapter** pair, right: "Deck · Hot tub". |
-| `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | **Gallery**, group 3, single (it closes the gallery): "Stays · Kitchen". It replaces `29` (wine, black & white). |
+| `dsc02755.jpg` (kitchen seen from above) | `assets/img/stays/kitchen-above.jpg` | First the gallery's closing single ("Stays · Kitchen", replacing `29`), then the Stays rail's "The kitchen, from above" (polish round 1). **Not on the page since batch 2 round 1:** the gallery's "Stays · Kitchen view" (`dsc02726`) is the same shoot, outfit and marble island, so the rail dropped it (the item `stays-p-kitchen` and its derivatives stay in the repo; adding it back to the Stays `rail` list restores it). |
 | `img-9204.jpg` | — | Not used. It is a near-duplicate of `img-9201` (same shirt, wall and over-the-shoulder pose), and About already uses this shoot. |
-| `dsc02726.jpg` (kitchen with a view) | `assets/img/stays/kitchen-view.jpg` | **Gallery**, group 2, single: "Stays · Kitchen view" (batch 2). It replaces `09` (massage), where the therapist dominated the frame. `dsc02755` has since moved to the Stays rail, so the gallery had no Stays photo left. |
+| `dsc02726.jpg` (kitchen with a view) | `assets/img/stays/kitchen-view.jpg` | **Gallery**, group 2, single: "Stays · Kitchen view" (batch 2). It replaces `09` (massage), where the therapist dominated the frame. `dsc02755` had moved to the Stays rail, so the gallery had no Stays photo left (and since batch 2 round 1 this is the shoot's only kitchen photo on the page). |
 | `dsc01104.jpg` (deck, parasol, couple) | — | Not used. The couple is the subject, and the site features Lorena alone. Good golden-hour light: the first pick if the client wants a couples' stays image. |
 | `02.jpg`, `03.jpg` (cooking, wooden loft) | — | Not used. They are couple-centred and low-key, and `03` shows mostly her back. They are 9:16 phone frames. |
 | `likeappro-3279.jpg` (bathtub, couple) | — | Not used. The focus is on the couple, and the "bath with a view" story is already told by video `stays-03`. |
@@ -96,8 +96,8 @@ Add them to `data/videos.json` (and the posters/thumbs) after the polish round, 
 **Status: integrated (batch 2, 2026-11-11).** All four restaurant items play their real file, so Food has no placeholder left. Details in `docs/qa-report.md` §9.
 - **Durations and audio:** 23.8 s, 24.5 s, 34.9 s and 31.0 s, all with `audio: true`.
   - Pronto, the garden breakfast and the wine are music or voice at −14 to −16 LUFS.
-  - The salad track is a music fade-in: it rises from about −44 to −23 LUFS, so the first seconds are quiet. It is not noise.
-- **Posters:** `restaurants-01` starts at 15.5 s (her at the table, not the fridge door) and `restaurants-03` at 3.6 s (the first sip). Each poster is that frame (`start` in the data).
+  - The salad track is a music fade-in: it rises from about −44 to −23 LUFS, so the first seconds are quiet. It is not noise. **Re-levelled (batch 2 round 1):** the audio went through the house `loudnorm` pass with `LUFS=-19` (`scripts/encode-video.sh`), so it now measures −15.5 LUFS and a tap for sound is audible at once (about −19, swelling to −13); the video stream is bit-identical.
+- **Posters:** `restaurants-01` starts at 15.5 s (her at the table, not the fridge door), `restaurants-03` at 3.6 s (the first sip) and, since batch 2 round 1, `restaurants-04` at 2.4 s (eating at the plant-filled table; frames 0–2.3 s are a rear view of her walking in). Each poster is that frame (`start` in the data).
 - **`wine-tasting.mp4` is a screen recording of an Instagram carousel.** The picture is only the top 64% of the frame (rows 0–823 of 1280), with a white band below it and the carousel's "2/2" badge and mute icon at its right edge. `view: [0, 0.644]` crops it:
   - the poster and thumb are cut from the picture band;
   - the card scales the `<video>` 1.553× from its top centre, so the band fills the card and the badge and icon fall outside it.
@@ -123,7 +123,7 @@ Add them to `data/videos.json` (and the posters/thumbs) after the polish round, 
   - It loops back to 0:00.
 - **Audio:**
   - `yellow-satin-lake.mp4` is digital silence (−91 dB), so it has `audio: false`.
-  - `picnic.mp4` is music at **−6.9 LUFS**, about 8–10 LU hotter than the rest, so a tap for sound is loud. iOS ignores `volume`, so the only fix is a re-encode with `loudnorm=I=-16`.
+  - `picnic.mp4` was music at **−6.9 LUFS**, about 8–10 LU hotter than the rest. **Fixed:** re-encoded through `scripts/encode-video.sh` (`loudnorm=I=-16:TP=-1.5`); it now measures −15.7 LUFS.
   - The rest are −14 to −16 LUFS.
 - **Posters:**
   - `fashion-02` starts at 3.0 s (the full-length back view; frame 0 is a hem and feet).

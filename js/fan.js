@@ -6,7 +6,8 @@
  *   without GSAP; focus carousel (swipe, tap, prev/next, ← →), caption/counter/labels, a roving tabindex (only
  *   the focused card is a tab stop; keyboard focus follows the focus change), video eligibility, the icon cycle.
  * ready (motion only): the elastic entrance (armed on approach, plays when the stack's centre reaches 75% of the
- *   viewport, so the spring opens in full view), elastic focus tweens with the wrap-around park, the cards follow
+ *   viewport, so the spring opens in full view; the focus card holds its poster until the spread and the caption
+ *   fades in with it), elastic focus tweens with the wrap-around park, the cards follow
  *   the finger during a horizontal drag, desktop hover spread. GSAP's inline transform then overrides the CSS
  *   slot transform; finish() drops it again. Static modes change focus instantly.
  * Click ownership: fan.js owns every click on a fan card; it calls video.toggleSound / video.setEligible only.
@@ -44,6 +45,7 @@ let cats = [];
 let focus = 3;
 let gsapOn = false; // GSAP owns the card transforms (motion mode)
 let entrance = null; // the entrance timeline while it has not finished
+let held = null; // the focused card, kept on its poster (= its `start` frame) until the deal opens
 let hovered = null;
 let leaveT = 0;
 let swipedAt = 0;
@@ -214,6 +216,7 @@ function bindInput() {
     if (performance.now() - swipedAt < 400) return;
     const card = e.target.closest('.fan__card');
     if (!card || e.target.closest('.vcard__sound, .vcard__pause')) return;
+    if (entrance) entrance.progress(1); // a tap while the deck waits deals it at once (and releases the held card)
     const idx = cards().indexOf(card);
     if (idx !== focus) { setFocus(idx, { inherit: true }); return; }
     const it = items[idx];
@@ -295,23 +298,40 @@ function bindHover() {
 
 /* ------------------------------------------------------------------ entrance (Lando §3.3; armed on approach) */
 
+/** The held focus card may play again (it starts on its `start` frame, the poster it has been showing). */
+function unhold() {
+  const card = held;
+  held = null;
+  if (card && slotOfCard(card) === 3) setEligible(card, true);
+}
+
 function armEntrance() {
   if (!isMotion()) return;
   scope(() => {
     const { gsap, ScrollTrigger } = window;
     const list = cards().sort((a, b) => slotOfCard(a) - slotOfCard(b));
+    const caption = document.querySelector('#content .fan__caption');
     const u = unit();
     gsap.set(list, { x: 0, y: 10 * u, rotation: 0, scale: 1, opacity: 1 }); // stacked lower, visible
+    // the lowered stack would cover the caption: it fades in as the deck opens
+    if (caption) gsap.set(caption, { opacity: 0 });
+    // The focus card (the CHANEL film) waits on its poster, which is its `start` frame, and starts playing as the
+    // deck springs open: its best shot lands on the spread, not on the stack rising half off screen. It warms up.
+    held = list.find((c) => slotOfCard(c) === 3) || null;
+    if (held) setEligible(held, false, { warm: true });
     gsapOn = true;
     const tl = gsap.timeline({ paused: true, onComplete: () => release(fanEl) });
     tl.to(list, { y: 0, duration: 0.8, ease: 'power2.out', stagger: { amount: 0.5, from: 'end' } });
+    tl.addLabel('spread', '-=0.4');
+    tl.call(unhold, null, 'spread');
     tl.to(list, {
       x: (k, el) => target(slotOfCard(el), u).x,
       y: (k, el) => target(slotOfCard(el), u).y,
       rotation: (k, el) => target(slotOfCard(el), u).rotation,
       scale: (k, el) => target(slotOfCard(el), u).scale,
       duration: 1.2, ease: EASE, stagger: { amount: 0.2, from: 'center' },
-    }, '-=0.4');
+    }, 'spread');
+    if (caption) tl.to(caption, { opacity: 1, duration: 0.4, ease: 'power1.out' }, 'spread');
     entrance = tl;
     // the deal plays when the stack's centre reaches 75% of the viewport (in full view on a phone); the
     // watchdog only counts from that point, so a visitor pausing above it never gets a forced, frozen fan
@@ -376,6 +396,7 @@ export function ready(ctx) {
 }
 
 export function finish() {
+  unhold();
   gsapOn = false;
   entrance = null;
   hovered = null;

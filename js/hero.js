@@ -18,8 +18,10 @@
  *   0.4 → 1.0 H  shade (bottom-weighted Mahogany-deep gradient: the signature reads on the robe)  power1.out, scrub
  *   0.12 → 0.45 H copy clip ellipse wipe + yPercent −8, sans chars yPercent −100 inside their own line
  *                (stagger .02; never up into the header), the copy's scrim fades out             power1.inOut, scrub
- *   0.55 → 1.15 H signature (Lorena's real one, written through its pen mask by signature.js) at constant
- *                pen speed, + the Lando snap on a fast exit; placed under her chin (heroSigTop)  ease none, scrub .5
+ *   0.55 → 1.0 H signature (Lorena's real one, written through its pen mask by signature.js) at constant
+ *                pen speed, + the Lando snap on a fast exit; placed under her chin with its baseline on the
+ *                card (heroSigPlace). It completes with the card: card, signature and handle hold from
+ *                1.0 to 1.2 H, then the stage leaves (spec §4.1)                              ease none, scrub .5
  *   0.7 → 1.0 H  handle chars yPercent 100 → 0 (stagger .02)                                    power3.out, scrub
  * The header (backing, hide/show, theme IO) is ui.js's. Theme: .hero is dark (Vanilla ink on the scrim);
  * .hero__light-zone takes over when the photo's top edge reaches the header controls (--hero-light-top,
@@ -74,22 +76,28 @@ function cardImageEnd(stage, img) {
 }
 
 /**
- * Hero signature placement. Its width is CSS (css/hero.css: 92% of the stage, max 560 px, at most 50svh so short
- * screens keep it in proportion to the card). Its top follows the card's image: the chin line of cover.jpg (.54 of
- * its height) mapped through the card-end transform, minus SIG_CLEAR, so the letters start under her face in every
- * context (on short screens the face fills more of the card and the signature straddles the card's lower edge).
- * The L's loop, the only stroke that high, sits left of the chin; the ink starts ≈ 3% of the box height lower.
- * Kept SIG_FOOT px above the stage bottom. Read at refresh, never in scroll callbacks.
+ * Hero signature placement and size (read at refresh, never in scroll callbacks). Its width is CSS (css/hero.css:
+ * 92% of the stage, max 560 px, at most 50svh). Its top follows the card's image: the chin line of cover.jpg (.54
+ * of its height) mapped through the card-end transform, minus SIG_CLEAR, so the letters start under her face.
+ * Its baseline (SIG_BASE of the box: the feet of the L and the M; only the M's lower loop hangs below) stays
+ * SIG_IN px inside the card's bottom edge, so the ink sits on the card instead of straddling its edge. On short
+ * stages, where the face fills more of the card, the signature narrows to fit (--sig-w), down to SIG_MIN of the
+ * stage height; below that it rises over the chin. Kept SIG_FOOT px above the stage bottom.
  */
 export const COVER_CHIN_Y = 0.54;
-const SIG_CLEAR = 16, SIG_FOOT = 12;
-function heroSigTop(stage, img, sig) {
-  const H = stage.offsetHeight;
-  const h = sig.getBoundingClientRect().height;
-  if (!img) return Math.round(0.54 * H);
+const SIG_CLEAR = 16, SIG_FOOT = 12, SIG_BASE = 0.82, SIG_IN = 10, SIG_MIN = 0.44;
+function heroSigPlace(stage, img, sig) {
+  const H = stage.offsetHeight, W = stage.getBoundingClientRect().width;
+  sig.style.removeProperty('--sig-w'); // measure the CSS size
+  const { width: w0, height: h0 } = sig.getBoundingClientRect();
+  if (!img || !w0) return { top: Math.round(0.54 * H), width: null };
   const { y, scale } = cardImageEnd(stage, img);
   const chin = H / 2 + (img.offsetTop + COVER_CHIN_Y * img.offsetHeight - H / 2) * scale + y;
-  return Math.round(Math.min(chin - SIG_CLEAR, H - h - SIG_FOOT));
+  const base = cardGeometry({ W, H }).box.bottom - SIG_IN; // the lowest the baseline may sit
+  let h = h0;
+  if (chin - SIG_CLEAR + SIG_BASE * h > base) h = Math.max(Math.min(h0, SIG_MIN * H * (h0 / w0)), (base - chin + SIG_CLEAR) / SIG_BASE);
+  const top = Math.min(chin - SIG_CLEAR, base - SIG_BASE * h, H - h - SIG_FOOT);
+  return { top: Math.round(top), width: h < h0 ? +(h * (w0 / h0)).toFixed(1) : null };
 }
 
 /** Inverse of power1.inOut (the scrub's ease: 2t² below .5, 1 − 2(1 − t)² above), for the light zone. */
@@ -126,7 +134,7 @@ export function finish() {
     if (photo) photo.style.removeProperty('--hero-clip');
     delete heroEl.dataset.clearUntil;
     const sig = heroEl.querySelector('.sig--hero');
-    if (sig) { clearSignature(sig); sig.style.removeProperty('--sig-top'); }
+    if (sig) { clearSignature(sig); sig.style.removeProperty('--sig-top'); sig.style.removeProperty('--sig-w'); }
   }
 }
 
@@ -169,7 +177,11 @@ function setupHero() {
     geo = { a, b: cardGeometry(a), W: a.W, Hh: a.H };
     lastClip = '';
     writeClip();
-    if (sig) sig.style.setProperty('--sig-top', `${heroSigTop(stage, img, sig)}px`);
+    if (sig) {
+      const { top, width } = heroSigPlace(stage, img, sig);
+      sig.style.setProperty('--sig-top', `${top}px`);
+      if (width) sig.style.setProperty('--sig-w', `${width}px`);
+    }
   };
 
   scope(() => {
@@ -251,7 +263,8 @@ function setupHero() {
       }).fromTo(split.chars, { yPercent: 100 }, { yPercent: 0, duration: 1 - 0.02 * (n - 1), stagger: 0.02 });
     }
 
-    // 0.55 → 1.15 H: the signature writes itself (constant pen speed: ease none, scrub .5) + the Lando snap.
+    // 0.55 → 1.0 H: the signature writes itself (constant pen speed: ease none, scrub .5) + the Lando snap. It ends
+    // with the card, so the finished signature holds with it through 1.0 → 1.2 H (with the scrub's lag, too).
     // signatureTimeline() arms the copy (mask on, nothing inked); progress 1 detaches the mask (exact artwork).
     if (sig) {
       const tl = signatureTimeline(sig);
@@ -263,7 +276,7 @@ function setupHero() {
         if (tw) tw.progress(1); // jump the scrub to where it is heading (0 or 1): never frozen half-drawn
       };
       window.ScrollTrigger.create({
-        trigger: hero, start: at(0.55), end: at(1.15), scrub: 0.5, animation: tl, invalidateOnRefresh: true,
+        trigger: hero, start: at(0.55), end: at(1), scrub: 0.5, animation: tl, invalidateOnRefresh: true,
         onLeave: snap, onLeaveBack: snap,
       });
     }

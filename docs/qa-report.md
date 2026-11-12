@@ -158,7 +158,7 @@ All 20/20 motion checks and 4/4 reduced checks pass in all five contexts.
 1. **Hero, from client feedback 1–2.** The hero now uses the full-bleed cover (`cover.jpg`, 2:3) with the lockup in Vanilla on a Mahogany-deep scrim. The arch, the `.hero__arch` probe and the About arch are gone. In motion mode `.hero` is `data-theme="dark"`, with a light zone from the scroll where the photo's top passes the header line until the dark zone at 0.5 H. Item 19's "header ink Mahogany" and "arch probe" checks became "header Vanilla over the scrim, ≥ 4.5:1" and "eyes ≥ 24 px under the lockup".
 2. **Clip-path tween.** The 12-value `inset()` is tweened as the custom property `--hero-clip`, which `css/hero.css` feeds to `clip-path`. Chrome re-serializes a `clip-path` tween's ends compactly, and the card jumped at 1.0 H. Item 20a therefore reads `photo.style.getPropertyValue('--hero-clip')`.
 3. **Hero load settle.** It is a CSS animation on `.hero__photo`'s `scale` property. It also runs without JS, and is off under reduced motion.
-4. **Signature dash.** The dash is `len, len+16` with offset `len+4`, so no round-cap dots show at rest. There is also an optional 6 px pen tip.
+4. **Signature draw** (rewritten for Lorena's real signature kit; §10.2). The artwork is a filled outline revealed through a mask, and only the two mask pens are dashed: each pen's dash is `len px, len+20 px` with offset `len × (1 − f)`. A pen that has not started yet is `visibility: hidden`, so no round-cap dot shows. There is no pen tip. The hero draws 0.55 → 1.0 H (spec: 0.55 → 1.15 H) and the footer plays 2.2 s linear (spec: 1.8 s `power1.inOut`).
 5. **Content.**
    - Posters and thumbs load through their own 1.5-viewport `root: document` lookahead (`data-src`), not `loading="lazy"`. Chromium's native lazy margin pulled every fan poster at load.
    - The video fades in over the poster (0.45 s everywhere), instead of the poster fading out.
@@ -170,15 +170,20 @@ All 20/20 motion checks and 4/4 reduced checks pass in all five contexts.
 
 ## 5. Known issues and open decisions
 
-1. **Own code is over the §8.1 size targets** (it does not affect the first-view budget):
-   - **CSS:** own CSS (`site.css`, `hero.css`, `content.css`, `proof.css`) is 47.7 KB against the 40 KB target (12.9 KB gzip).
-   - **JS:** own JS (10 modules) is 106 KB against the 70 KB target (32 KB gzip).
-   - **Comments:** stripped of comments, the totals would be about 37 KB of CSS and 79 KB of JS.
-   - **What's heavy:** `video.js` (22 KB) and `fan.js` (14 KB) carry the full §6 rule set: scheduler, sound owner, desktop hover-to-hear, blocked states.
-   - **Options** (I did not strip documentation to hit the number): accept the overage, or add a minify step to the Pages workflow only. The Artifact publishes the source files as they are.
+1. **Own code is over the §8.1 size targets; accepted** (it does not affect the first-view budget). Re-measured in batch 2 round 1 (§10):
+   - **CSS:** own CSS (`site.css`, `hero.css`, `content.css`, `proof.css`) is 57.3 KB against the 40 KB target: 15.9 KB gzip as one stream, 17.4 KB as the four files are served. It was 47.7 KB (12.9 KB gzip) at integration.
+   - **JS:** own JS (10 modules, without `motion.js` and `insights.js`) is 134.1 KB against the 70 KB target: 41.5 KB gzip as one stream, 47.4 KB as served file by file. It was 106 KB (32 KB gzip) at integration. The heaviest are `video.js` 26.3 KB, `fan.js` 18.4 KB and `hero.js` 17.7 KB.
+   - **Why:** the modules carry the full §6 rule set (scheduler, sound owner, desktop hover-to-hear, blocked states), the real-signature kit and long comments for the next builder: comments are about 29% of the JS and 27% of the CSS.
+   - **Decision (batch 2 round 1):** accepted as is. The first view stays at 431–470 KB against 700 KB, and every module loads in parallel through `modulepreload`. A minify step would have to go into the Pages workflow only (the Artifact publishes the sources as they are), and a build tool could not be installed in this sandbox to measure or test one. Revisit with the desktop pass if the budget matters.
 2. **Items 4 and 6b on the real hosts.** Re-run `html.motion` and the range curl on the published Artifact URL and on the Pages URL. If the Artifact host answers 200 to a range request, iOS Safari will not play the videos in the Artifact preview.
 3. **Snap threshold.** The Lando signature snap uses 100 px per frame of Lenis velocity, so on 120 Hz screens it triggers at about half the real speed.
-4. **iOS is not tested on a device.** Native momentum, the address-bar resize under the sticky stage, and unmute behaviour were emulated only.
+4. **iOS is not tested on a device.** Native momentum, the address-bar resize under the sticky stage, and unmute behaviour were emulated only. Playwright's WebKit and Firefox are not installed here, so the paths that matter most on iPhone ran in Chromium only. **Before shipping, on a real iPhone (Safari 17 or 18) at 390 × 844, check and record here:**
+   - **(a) Hero signature.** Scrub slowly from 0.5 H to 1.2 H: the L, then the M, are written with no stale mask frames (each frame re-rasterises a ~360 px `<mask>` with 2 dashed pens and up to 34 guard visibility flips). Record the frame rate in Web Inspector's Timelines, and the clip-path repaint cost (M19) in the same run.
+   - **(b) CHANEL fan card.** It waits on its poster (the N°5 frame) while the stack rises, starts playing from 21.2 s (`#t=21.2`, `preload=metadata`) as the deck opens, and loops. Note where the loop restarts (Chromium wraps to 0:00) and that the poster and the first played frame match.
+   - **(c) Wine card** (`view`): the `<video>` scaled 1.553× inside the clip-path rounded card shows no white band and no "2/2" badge, in the Food rail swap too.
+   - **(d) Cold load over cellular:** first paint, the hero going live, the lockup fonts (block, ≤ 3 s), and the first video starting.
+   - **Floor:** `translate`, `svh` and `min(92%, 560px, 50svh)` need iOS 15.4 or later; older Safari gets a hero track and a signature width that fall back badly.
+   - **Results:** not yet run (no device in this sandbox).
 5. **The Seasons on Pages:**
    - The kit uses `font-display:auto`. Text waits up to about 3 s for the kit on a cold slow connection, but `fonts.ready` caps the split wait at 1.5 s.
    - The EB Garamond italic stand-in is still preloaded by `site.html` (29 KB on Pages). It serves only as a glyph fallback there.
@@ -227,7 +232,7 @@ Every finding from the round-1 design, motion and tech reviews was applied: the 
 
 | # | What changed | Verified |
 |---|---|---|
-| 3 Signature over the cream robe | `.hero__shade` is now a bottom-weighted Mahogany-deep gradient: .12 down to 46% of the stage, .58–.62 from 64%. It fades in from 0.4 H (`power1.in`). The eye line keeps the old .12 veil. | Frames at 390 and 1440, 1.0–1.2 H: the whole "Lorena" reads on the darkened lower card, and the eyes stay clear. |
+| 3 Signature over the cream robe | `.hero__shade` is now a bottom-weighted Mahogany-deep gradient: .12 down to 46% of the stage, .58–.62 from 64%. It fades in from 0.4 H (`power1.out` since the signature swap, so it is ≈ .45 when the pen starts; it was `power1.in`). The eye line keeps the old .12 veil. | Frames at 390 and 1440, 1.0–1.2 H: the whole "Lorena" reads on the darkened lower card, and the eyes stay clear. |
 | 4 About italic tucked into the wood wall | The photo's negative margin is gone (`margin-top: 10px`). The italic sits 6 px in from the photo's right edge. | Screenshot. |
 | 5 Header clear across the photo's edge (with tech 23) | • hero.js computes, from the scrub's ease, the scroll where the shrinking photo's top edge reaches the header's 44 px controls (≈ 0.17 H at 844). It sets both `--hero-light-top` and `data-clear-until` there.<br>• ui.js turns the backing on at that scroll (it was 0.35 H).<br>• Inside the hero track the bar's colour fades take .15 s (`.hdr--quick`). | Header ink over the real pixels, at every 0.02 H from 0 to 0.4 H plus 0.45, 0.5 and 0.6, at 390 × 844, 375 × 548, 360 × 640 and 430 × 932:<br>• worst 5.43 while clear over the cover;<br>• worst 5.98 while backed.<br>Before: 1.12–1.5 between 0.2 and 0.34 H. |
 | 6 Heavy scrim | • The linear wash is .36 → .34 → .2, gone 40 px under the lockup. It was .62 → .5 → .34, gone 120 px under it.<br>• One softer oval sits behind "Maruch" (.54, 54% × 88 px).<br>• The text shadow is kept. | Item 39 over the cover (5th percentile), at 320–430:<br>• eyebrow 4.78<br>• "LORENA" 4.66<br>• "Maruch" 3.16–3.30 (large text)<br>• header 5.5–5.7 |
@@ -431,13 +436,13 @@ This batch put in the client files from `docs/inbox.md` (restaurant, fashion and
 | Item | File | Duration, audio | Notes |
 |---|---|---|---|
 | `restaurants-01` Gnocchi night with Pronto Light | `pronto-gnocchi.mp4` | 23.8 s, −14.4 LUFS | `start` 15.5 s (at the table; frame 0 is a fridge door) |
-| `restaurants-02` A colorful table | `salad-table.mp4` | 24.5 s, music fading in from about −44 to −23 LUFS | kept `audio: true`: the track is music, not noise |
+| `restaurants-02` A colorful table | `salad-table.mp4` | 24.5 s, music fading in from about −44 to −23 LUFS | kept `audio: true`: the track is music, not noise. Re-levelled in §10: −15.5 LUFS, the intro from about −19 |
 | `restaurants-03` A glass of white | `wine-tasting.mp4` | 34.9 s, −16.2 LUFS | `start` 3.6 s (the first sip), and `view` [0, 0.644], see below |
-| `restaurants-04` Breakfast among plants | `garden-breakfast.mp4` | 31.0 s, −14.4 LUFS | now the Food feature |
+| `restaurants-04` Breakfast among plants | `garden-breakfast.mp4` | 31.0 s, −14.4 LUFS | now the Food feature; `start` 2.4 s since §10 (at the table, not walking in) |
 | `fashion-01` Burgundy blazer, red sneakers | `burgundy-blazer.mp4` | 30.0 s, −14.0 LUFS | |
 | `fashion-02` A teal dress at golden hour | `teal-dress-deck.mp4` | 26.6 s, −15.5 LUFS | `start` 3.0 s (frame 0 is a hem and feet) |
 | `fashion-03` Yellow satin by the lake | `yellow-satin-lake.mp4` | 26.2 s, **`audio: false`** | the track is digital silence (−91 dB) |
-| `fashion-04` Sandals & a picnic | `picnic.mp4` | 18.8 s, **−6.9 LUFS** | `start` 10.6 s; the track is loud (see 9.7) |
+| `fashion-04` Sandals & a picnic | `picnic.mp4` | 18.8 s, **−6.9 LUFS** | `start` 10.6 s; the track was loud (see 9.7). Re-encoded: −15.7 LUFS (§10) |
 | `fashion-07` At the CHANEL boutique (new) | `chanel-boutique.mp4` | 35.6 s, −15.8 LUFS | `start` 21.2 s: she holds N°5 to her cheek (frame 0 is a blurred shop interior). The fan's centre and the Fashion feature. |
 | `fashion-08` Towel turban, ALVA in hand (new) | `alva-towel.mp4` | 7.3 s, −14.1 LUFS | the last item of the Fashion rail |
 | `stays-08` Cushions above the forest (new) | `deck-cushions.mp4` | 22.8 s, **`audio: false`** | the track is a steady hiss at −42 LUFS (LRA 3 LU); 11th of the 12 Stays rail items |
@@ -452,7 +457,7 @@ This batch put in the client files from `docs/inbox.md` (restaurant, fashion and
   - `video.js` scales the `<video>` 1.5528× from its top centre (inline `transform`, set in `cardHTML` and on every `swapSource`). The band fills the card, and the badge and icon fall outside it.
   - Verified: the transform is `matrix(1.5528 …)` with origin `50% 0` after a thumb swap, and back to `none` on the next item. In the screenshot, no white shows.
 - **Rails:**
-  - **Stays:** 12 items, alternating video and photo; `stays-08` comes before the bath photo.
+  - **Stays:** 12 items, alternating video and photo; `stays-08` comes before the bath photo. (§10: 11 items; the overhead kitchen photo left the rail, `stays-08` now closes it.)
   - **Food:** an explicit rail with the feature first: `restaurants-04`, `-01`, `-02`, `-03`. It stays video-only, because the only unused real food photo (`gallery/07`) repeats the salad video.
   - **Fashion is now a mixed rail**, 10 items: `fashion-07`, gown, `-01`, zebra print, `-02`, tailoring, `-03`, boots, `-04`, `-08`.
     - The 4 photo items are real media-kit photos not used anywhere else on the page: `gallery/21`, `26`, `12` and `25`.
@@ -548,19 +553,19 @@ After the spotlight lookahead change it ran again without the hero part (`run-b2
 - **Item 41, first view (3× DPR, excluding the CDN):** 394 KB on Pages and 355 KB on the Artifact. It was 388 / 349 KB. Before the lookahead change it measured 494 / 454 KB.
 - **Hero items 19–22:**
   - All reduced-motion checks pass.
-  - In motion, the only FAILs are two signature checks per context: "21 inked 50% ± 10% at 0.85H" reads 85%, and "back at 0: sig undrawn" reads 0.71. Both come from the real-signature swap in the parallel session (`js/signature.js`, the hero markup), which this batch did not touch. The hero test needs the new signature's draw targets.
+  - In motion, the run showed two FAILs per context: "21 inked 50% ± 10% at 0.85H" read 85%, and "back at 0: sig undrawn" read 0.71. They were the test, not the page: it summed every `path` in the signature (the outline and the guards too), while the real signature is a masked outline in which only the two `.pen` paths are drawn. **Resolved (§10):** with a pen-based measure (visible pens only; no mask attached = complete) both checks passed in every context, 47.7% at 0.85 H and 0 back at 0, before the range change in §10; the current targets and results are in §10.3.
 
 ### 9.7 Still open
 
-- **`picnic.mp4` is loud:** −6.9 LUFS, about 8–10 LU above the other clips. iOS ignores `video.volume`, so the fix is a re-encode, `loudnorm=I=-16:TP=-1.5`, in `scripts/encode-video.sh`'s pass.
+- ~~**`picnic.mp4` is loud:** −6.9 LUFS.~~ **Fixed** (§10.1, finding 4): re-encoded through `scripts/encode-video.sh`'s `loudnorm=I=-16:TP=-1.5` pass; it measures −15.7 LUFS, true peak −7.1 dBFS.
 - **`wine-tasting.mp4`:** a re-encode cropped to the picture (`crop=464:824:128:0,scale=720:1280`) would let `view` go, and would sharpen the card: it is now a 1.55× upscale of a 720 px-wide screen recording.
-- **The Artifact publish is now about 111 MB in 183 files.** 107 MB of it is video: this batch added 11 MP4s, about 72 MB. A single publish takes 64 MB, so publish in two passes to the same URL (for example the videos in a second call), as the tool allows.
+- **The Artifact publish is about 115 MB:** the "videos in a second call" plan cannot work, because the 16 MP4s alone are over the 64 MB per-publish limit. The corrected three-call plan is in §10.4.
 - **Copy for client approval:**
   - the Instagram intro and the About bio (9.4);
   - the spotlight's eyebrow, lockup and caption;
   - the new titles (`restaurants-02`, `fashion-01/02/04/07/08`, `stays-08`, and the 4 Fashion photos);
   - the gallery caption "Stays · Kitchen view".
-- **The hero test's signature checks** must be updated for the real signature (9.6).
+- ~~**The hero test's signature checks**~~ updated for the real signature (§10.3).
 
 ### 9.8 Publish list changes (Artifact)
 
@@ -580,3 +585,93 @@ After the spotlight lookahead change it ran again without the hero part (`run-b2
   - code and data: `data/videos.json`, `site.html`, `css/site.css`, `js/video.js`, `js/proof.js`.
   - `scripts/make-images.py` changed too, but it is not published.
 - **Not published:** the masters `assets/img/fashion/*.jpg` and `assets/img/stays/kitchen-view.jpg`, and the first-frame `.jpg`s next to the MP4s.
+
+## 10. Batch 2 fixes round 1 (2026-11-12)
+
+All 18 findings from the batch-2 design/motion and tech reviews were applied: the shoulds first, then the nice-to-haves. Each was verified with Playwright (Chromium, `devices['iPhone 13']` at 390 × 844 unless noted), and the motion ones from recorded scroll videos read frame by frame. The test scripts are temporary, in `/tmp/claude-0/-home-user-lorena/c832ad17-6cd8-58af-aaaa-5c402c797f09/scratchpad/batch2/fix1/`: `qa/` is the §9 suite (adaptations in §10.3), `fanhold.js` and `rec-fan.js` check the fan, `hero-stills.js` and `touchhero.js` the hero signature, `spot.js` and `degtest.js` the spotlight, `rmplace.js` the mid-session reduced-motion view.
+
+### 10.1 Findings
+
+| # | Finding | What changed | Verified |
+|---|---|---|---|
+| 1 | **Fan: the CHANEL film's best shot was used up before the deck opened** (should). The focus card played from the moment the fan was 35% visible; the deal plays at the stack's centre 75%. The N°5 shot (21.03–22.37 s, 1.3 s long) ran while the stack was still rising half off screen. | `fan.js`: when the entrance is armed, the focus card is made ineligible (`setEligible(card, false, {warm:true})`): it warms up but waits on its poster, which is its `start` frame (N°5 against her cheek). A `call(unhold)` at the entrance's `spread` label (0.9 s in, when the side cards spring out) makes it eligible again, so the film starts from 21.2 s exactly as the deck opens. A tap on the card while the deck waits completes the entrance first (as a swipe already did), so the first tap still gives sound. The watchdog's force, `finishAll()` and `finish()` release the card too. | `fanhold.js`: waiting with the stack's centre at 88%: paused at 21.20, poster `fashion-07.webp`; 0.4 s after the trigger still held (the stack rising); at rest playing from 21.2 (23.18 after about 2.2 s). Tap while waiting: dealt, playing, unmuted, `has-sound`. `rec-fan.js`: the `play` event now comes 3,101 ms into the slow scroll (was 1,683 ms). Frames (`rec/fan390/sheet.png`): the N°5 poster on the rising stack, the N°5 shot playing while the cards spread, then the film moves on (jars) at rest. |
+| 2 | **Food feature opened on a rear view** (should) | `data/videos.json`: `restaurants-04` gets `start: 2.4` (the cut to the table is at 2.33 s). `python3 -I scripts/make-images.py` rebuilt its poster and thumb from that frame. | The poster and thumb show her eating at the plant-filled table, juice and croquettes in front (`media/r04.png`). The item plays from `garden-breakfast.mp4#t=2.4`. |
+| 3 | **The finished hero signature had almost no hold** (should): complete only from 1.15 H, the stage leaves at 1.2 H. | `hero.js`: the signature scrub is now **0.55 → 1.0 H** (was 1.15), still linear with `scrub: .5` and the Lando snap. It completes with the card and the handle, so all three hold through 1.0 → 1.2 H (169 px at 844), as spec §4.1 intends. The start stays at 0.55 H, where the shade is already ≈ .44 and the image ≈ 60% scaled. | `hero-stills.js`, inked at 0.5 / 0.6 / 0.7 / 0.8 / 0.9 / 1.0 / 1.1 / 1.2 H: 0 / .115 / .349 / .535 / .769 / 1 / 1 / 1 at 390 × 844 (664, 548 and 1440 × 900 the same). Touch (`touchhero.js`, CDP touch swipes of 278 px = 0.33 H): after the 2nd swipe 25%, after the 3rd (0.99 H) 97%, then complete on the hold; frames `rec/touch/sheet.png` show the full LM with the card and handle before the 4th swipe takes the stage away. Hero test targets updated (§10.3). |
+| 4 | **`picnic.mp4` 8–10 LU louder than the rest** (should) | It had already been re-encoded through `scripts/encode-video.sh`, whose pass now normalises with `loudnorm=I=-16:TP=-1.5:LRA=11`. Confirmed final. `start` 10.6 s kept. | −15.7 LUFS integrated, true peak −7.1 dBFS, 18.8 s, 720 × 1280, AAC 48 kHz. Its H.264 stream is identical (md5) to a fresh `encode-video.sh` run on the source (`_source/drive-5/f-9.mp4`), and so is the first-frame JPG, so the poster and thumb (rebuilt from 10.6 s) show the same frame. |
+| 5 | **Hero signature straddled the card's lower edge on short and wide stages** (nice) | `hero.js` `heroSigPlace()` (was `heroSigTop()`): besides the chin line, the signature's baseline (82% of its box: the feet of the L and the M; only the M's lower loop hangs below) stays ≥ 10 px inside the card's bottom edge. Where the card is too short for that, it narrows (`--sig-w`, read by `css/hero.css`), down to 44svh; below that it rises over the chin. | Width at 1.0 H: 844: 359 px (unchanged); 664: 301 (was 332); 548: 241 (the 44svh floor, was 274; the floor binds, so its top follows the baseline rule and sits slightly above the chin rule; baseline 10 px inside the card); 320 × 568: 250; 360 × 640: 290; 430 × 932: 396 (unchanged); 768 × 1024: 483 (was 512); 1440 × 900: 450, unchanged (its baseline was already 11 px inside). Screens `hs/`: on every stage the L's baseline and the M's feet sit on the card; the M's lower loop crosses the edge like a descender. At 548 and 664 the first strokes (0.55–0.7 H) still pass over the jaw while the image is scaling; that is the same mechanism as before, with a smaller signature. |
+| 6 | **Stack covered the fan caption** (nice) | `fan.js`: the caption block (`.fan__caption`) starts at opacity 0 in the entrance's from-state and fades in (0.4 s, `power1.out`) at the `spread` label. It is part of the tracked entrance timeline, so the watchdog and `finishAll()` force it to 1, and the gsap context revert drops the inline style. | Opacity 0 while the stack waits, 1 after the deal (`fanhold.js`). Frames: no "At t…que" behind the stack. |
+| 7 | **The CHANEL spotlight read as a footnote** (nice) | `site.html` + `css/site.css`: the lockup is at `--fs-h2` (the `--sm` modifier is gone), the block has 120 px above it (was 88), and a 48 px Tobacco hairline sits over the "Spotlight" eyebrow. The pair is unchanged. | `spot.js`: lockup 45 px at 390, 38 px at 320, 80 px at 1440; each line stays one line at 320 (Pages and Artifact, motion and reduced). Screens `shots/spot-*.png`. |
+| 8 | **"N°5" read as "N5" in The Seasons** (nice) | The lockup's sign is `N<span class="deg">°</span>5`, and `.has-seasons .spotlight .deg{ margin-left: .12em }`. The finding's .06em still left the N's swash over the degree sign; .12em clears it at 1× and 3×. EB Garamond (the Artifact) is untouched. | `degtest.js` at DPR 1 and 3 (`shots/deg-cmp1.png`, `deg-cmp3.png`), and `glyph.js`: The Seasons on Pages, EB Garamond on the Artifact. |
+| 9 | **The gallery's "Stays · Kitchen view" duplicated the rail's "The kitchen, from above"** (nice): same shoot, outfit, beanie and marble island. | The overhead kitchen photo (`stays-p-kitchen`, `dsc02755`) left the Stays rail; the gallery single stays. The rail is now 11 items and still alternates, starting and ending with a video. The item and its derivatives stay in the repo: adding its id back to the `rail` list restores it. | Rails 11 / 4 / 10, one current thumb each (§10.3). Each scene from that shoot now appears once: the ofurô deck in the rail, the kitchen in the gallery. |
+| 10 | **`salad-table.mp4` faded in from about −44 LUFS** (nice) | A `start` could not help: the fade runs the whole clip (still −27 at 20 s). `scripts/encode-video.sh` gained a `LUFS` override for its `loudnorm` target, and the file was re-encoded from the source (`_source/drive-4/food-2.mp4`) with `LUFS=-19`: single-pass `loudnorm` flattens the fade into a gentle swell and lands about 3.5 LU above its target. | −15.5 LUFS integrated (was −27.5); short-term −19 at 2 s rising to −13.4 at 24 s (was −45 → −23); true peak −0.6 dBFS after AAC. Its H.264 stream is bit-identical to the old one (md5) and the first-frame JPG is identical, so its poster and thumb did not change. |
+| 11 | **The "videos in a second call" publish plan cannot work** (should) | The plan and figures are corrected in §10.4 and §9.7. | Sizes measured from the publish list. |
+| 12 | **iPhone/WebKit-only risk in new code paths** (should) | The four device checks (hero mask scrub and frame rate, the CHANEL card's start frame and loop, the wine card's `view`, a cold load over cellular) and the iOS 15.4 floor are listed in §5, item 4, with a place for the results. | Not run: there is no device here, and Playwright's WebKit is not installed. |
+| 13 | **Docs drift after the signature swap** (nice) | §10.2 records the swap. §4 deviation 4 and §7.2 item 3 are corrected; the §9.6 FAIL note is replaced; picnic is marked fixed (§9.1, §9.7). `docs/build-foundation.md` §7 and §9 now describe the kit (no `make-signature.mjs`, no 9 paths or 2855 × 991 viewBox, the 2.2 s linear footer). The footer target is restated for the kit's timing (§10.2). | |
+| 14 | **16 unreferenced files in the publish list** (nice) | The list-building check (`qa/files.js`) now follows what the page can reach: an enabled category's rail and feature, and the fan's picks from enabled categories. The skincare posters and thumbs (12), `stays-02` and `stays-04` (4), and now `stays-kitchen-{card,thumb}.webp` (2) leave the publish; they all stay in the repo. | 165 files plus `site.html`, every one requested or referenced and served with 200. |
+| 15 | **Dead code in `signature.js`** (nice) | `penPoint()` and the controller's `lengths` and `length` are removed; the export comment says the site draws no pen tip and points to the kit README and `lab/signature.html`, which keep the full recipe. | No caller anywhere in `js/`; the hero and footer checks pass. |
+| 16 | **The spotlight added a region landmark** (nice) | It is a `<div class="spotlight wrap">` now; its h4 is unchanged under the Fashion h3. | `probe2.js`: the labelled sections are top, instagram, about, content, numbers, brands and gallery; Chromium's AX tree lists banner, main, contentinfo and those 7 regions, and no CHANEL region. Item 44: 19 heading names, the h4 named "CHANEL Chance & N°5". |
+| 17 | **Mid-session reduced motion jumped the view** (nice, pre-existing) | `scroll.js` `finishAll()` now keeps the view on the same content. Before anything changes it picks an anchor; after the static layout is in place (and `site:static` has run) it restores it with an instant `window.scrollTo` (Lenis is gone by then). In the hero track (the sticky stage holds the viewport's centre line) the view lands where the stage's own scroll-away had got to: the top while the card held. Elsewhere the deepest section block crossing the centre line keeps its offset. This covers the hero's 220svh → 100svh collapse and the brands marquee turning into its taller grid. A hero-only fix was not enough: the static logo grid is 674 px taller than the marquee (`#brands` 727 → 1,401 px at 390), which also sits above the footer. | `rmplace.js`, reduced motion turned on: footer signature mid-draw at 70% of the viewport: its top stays at 591 px (before the fix the view landed on the contact rows and legal line); hero at 0.7 H → scroll 0, the whole static cover; hero at 1.7 H → the Instagram section stays at 422 px; Instagram at 100 px stays at 100; gallery at −300 stays at −300. No console errors. Screenshot `shots/rm-footer.png`: the complete signature in view. |
+| 18 | **Own code over the §8.1 targets** (nice) | Accepted in writing, with the re-measured numbers (§5, item 1). | 134.1 KB JS (41.5 KB gzip as one stream), 57.3 KB CSS (15.9 KB). |
+
+### 10.2 The signature swap (record)
+
+Lorena's real signature replaced the EMS Allure placeholder in a parallel session during batch 2 (`docs/inbox.md`, "Signature"). This is its record.
+
+- **The kit** (`assets/signature/lorena-signature.svg`, details in its README): her "LM" from `_source/drive-3/assinatura-lorena.svg` (an Illustrator outline), cropped to a viewBox of 1056 × 598. The artwork is one filled outline, `.ink`, coloured by `currentColor`. A `<mask>` holds two hand-traced pen centre lines in writing order (`.pen`: the L, 1,407.5 units; the M, 2,230.7; 18.5 units wide), static black guards between them, and 34 timed `.pen-guard` slices at self-crossings.
+- **Two inline copies** in `site.html` (`.sig--hero`, `.sig--footer`), each with its own mask id. The `.ink` has no `mask` attribute in the markup, so without JS, in reduced motion and after a draw, the signature is the untouched artwork.
+- **The mask recipe** (`js/signature.js`): `render(p)` dashes each pen to `p` at constant pen speed (a pen's share of the timeline is its length, plus a 4.5% pen lift between the L and the M). A pen that has not started is `visibility: hidden` (no round-cap dot). Each timed guard shows while its pen has drawn less than its `data-release`. The mask is attached while `p < 1` and removed at 1, so the final frame is the exact artwork. Only the pens are dashed; `vector-effect` stays `none`. There is no pen tip.
+- **Hero:** scrubbed **0.55 → 1.0 H** since this round (it was 0.55 → 1.15 H, as spec §4.1), `scrub: .5`, the Lando snap on a fast exit. Vanilla ink, `width: min(92%, 560px, 50svh)` unless `--sig-w` narrows it. Placement (`heroSigPlace`, formerly `heroSigTop`): its top 16 px above the cover's chin line (.54 of its height) mapped through the card-end transform, so the strokes start beside and under her chin, and since this round its baseline is kept on the card (§10.1, finding 5).
+- **Shade:** the bottom-weighted Mahogany-deep gradient fades in from 0.4 H over 0.6 H with **`power1.out`** (it was `power1.in`), so it is ≈ .44 when the pen starts and the L's hairlines read on the cream robe while they are written.
+- **Footer:** `playSignature()` plays **2.2 s, linear** (the kit's timing: constant pen speed), armed on approach and played at `top 80%`. Spec §7.3 asked for 1.8 s `power1.inOut`; the swap changed it to the kit's linear timing, so the footer writes at the same constant pen speed as the hero, and this was recorded only in the integrator's message until now. **Item 21's footer target, restated for this timing:** the timeline's midpoint is 1.1 s, where 47.7% is inked (target 50% ± 15%). At 0.9 s the pen is in the L → M lift (38.7% inked), which the old "0.9 s" target only passed by 4 points.
+- **Removed:** the placeholder artwork, `scripts/make-signature.mjs`, the optional pen tip and, this round, `penPoint()`. `assets/fonts/LICENSES.md` already says the signature is her own artwork.
+
+### 10.3 Checks (§9 core)
+
+The full suite (`fix1/qa/run-all.sh`, the batch-2 suite with the adaptations below) ran once after the last code change: **182 PASS and 1 FAIL**. The FAIL was the cross-origin iframe's "autoplay muted" check: it scrolls through at about 2,000 px/s and never stops, and the fan's focus card now waits for the deal's spread (finding 1), so it was off screen before it could start. Adapted to stop once at the fan, like a reader, it passes: the fan card and a feature play muted, at most 1 at a time.
+
+- **Test adaptations, all for this round's intended changes:**
+  - **Hero item 21** measures ink by the pens (visible `.pen` paths only; no mask attached = complete), as the real signature needs. Targets: the first pen undrawn at 0.55 H; **50% ± 10% at 0.775 H**, the midpoint of the new range; **complete with the mask detached at 1.0 H**; still complete at 1.15 H (the hold); 0 back at 0.
+  - **Footer item 21** (`proof/sig.js`) measures by the pens too, and is read at the timeline's midpoint, 1.1 s (§10.2).
+  - **Publish list** (`files.js`): only the media the page can reach (finding 14).
+  - **Iframe autoplay:** the scroll-through stops at the fan once (above).
+  - The rails are 11 / 4 / 10.
+- **Items 1–3, 6:** 165 referenced paths plus `site.html`, all relative, all resolving with 200. Hosts unchanged: self, cdnjs and jsdelivr on the Artifact page; Pages adds `use.typekit.net` and `p.typekit.net`.
+- **Item 5:** no console errors, page errors or failed requests through a full wheel scroll-through, on both pages.
+- **Item 7:** no horizontal scroll at 320, 360, 375, 390, 414 and 430, in motion and reduced modes, with the menu open and closed, nor at 1440.
+- **Items 11–12 (complete at rest):** without JS, 14/14 images, nothing under opacity 1, the 3 chapters, the stats and the 9 gallery captions; the spotlight renders as its `<div>`. Reduced motion: no Lenis, nothing armed, the header clear at scroll 0.
+- **Items 13–14, 42:** nothing armed before scrolling; 75 arm records, none while visible; after a wheel scroll-through and back, `data-armed` = 0 and `mo-armed` = 0, and nothing under opacity 1. The fan's caption is part of the tracked entrance. Cross-origin iframe, 844 and 700 tall: 63 arm records, none while visible, including the profile screen, 11 lockups and the footer signature.
+- **Hero items 19–22:** 21/21 motion checks and 4/4 reduced checks in all five contexts (844, 664, 548, iframe 700, iframe 844). Inked at 0.775 H: 47.8% (844) and 48.0% (548). Motion vs reduced stage at rest: ≤ 0.021% of pixels differ.
+- **Items 23–33d, 43–45:** all pass: the fan geometry and carousel, sound inheritance, the centre card playing muted at rest, thumb swaps, the pause button, reduced-motion taps, the blocked states, the desktop table and hover-to-hear, the Ken Burns pass and the rails (one current thumb each). Mid-session reduced motion during the entrance leaves no inline transform and nothing armed.
+- **Item 21 footer:** 39.0% inked at 918 ms, 46.2% at 1,071 ms, 54.1% at 1,224 ms: about 47.7% at 1.1 s.
+- **Items 34, 34a, 35, 36, 38:** the stats end on the `metrics.json` strings; one h1, one h2 per section, one h3 per chapter (the spotlight's h4 sits under Fashion's); 46 logos with correct alts, 92/92 loaded, the marquee pause and direction; the copy buttons; every target ≥ 44 × 44.
+- **Item 39:** 117 (motion) and 112 (reduced) text elements meet their ratio; over the cover at scroll 0, eyebrow 4.79, "LORENA" 4.68, "Maruch" 3.19 (large), header 5.66–5.75; the header ink against its backing passes in every mode.
+- **Item 40:** CLS 0.0000 in motion and in reduced mode.
+- **Item 41, first view (3× DPR, text gzipped):** 396 KB on Pages and 356 KB on the Artifact excluding the CDN (450 / 411 KB with it); 0 MP4 and 0 poster requests. It was 394 / 355 KB.
+- **Spot checks for this round** (§10.1): `fanhold.js`, `rec-fan.js` (with frames), `hero-stills.js` at 8 stage sizes, `touchhero.js` (with frames), `spot.js`, `degtest.js`, `glyph.js`, `rmplace.js` and `probe2.js`. None logged a console error.
+
+### 10.4 Publish list and plan (Artifact)
+
+**The list:** 165 files plus `site.html`, 166 files and **114.9 MB** (109.6 MiB) in total.
+- Everything except the video (page, CSS, JS, JSON, fonts, images, logos): 150 files, 3.43 MB.
+- The 16 MP4s: 111.45 MB. Stays 6 files, 42.04 MB; restaurants 4 files, 30.93 MB; fashion 6 files, 38.48 MB.
+- The largest file is `garden-breakfast.mp4`, 11.12 MB; no file is over the 15 MB limit.
+
+**The video alone is over the 64 MB per-publish limit**, so the "videos in a second call" plan from §9.7 cannot work. Publish to the same URL in **three calls, back to back**:
+1. `site.html`, every non-video file and `assets/video/stays/*.mp4`: 156 files, **45.5 MB**.
+2. `assets/video/restaurants/*.mp4`: 4 files, **30.9 MB**.
+3. `assets/video/fashion/*.mp4`: 6 files, **38.5 MB**.
+
+The version then holds 166 files and 114.9 MB, inside the 511-file and 256 MB limits. Between the calls the page already points at MP4s that are not there yet (the Food and Fashion cards would show only their posters), so run them one after the other. A two-call split also fits but leaves little room: call 1 = the non-video files, the Stays MP4s, `teal-dress-deck.mp4` and `alva-towel.mp4` (158 files, 53.4 MB); call 2 = the Food MP4s and the other four Fashion MP4s (8 files, 61.5 MB, 2.5 MB under the limit).
+
+**Changes this round:**
+- **Left out (not referenced; they stay in the repo):** `assets/video/posters/` and `thumbs/` `skincare-01…06` and `stays-02`, `stays-04` (16 files), and `assets/img/web/stays-kitchen-{card,thumb}.webp` (finding 9). Re-enabling care, or putting the kitchen photo back in the rail, means adding its files to the publish again.
+- **Changed in place:** `assets/video/posters/restaurants-04.webp` and `thumbs/restaurants-04.webp`; `assets/video/restaurants/salad-table.mp4` (audio only); `assets/video/fashion/picnic.mp4` (re-encoded before this round); `site.html`, `css/site.css`, `css/hero.css`, `js/fan.js`, `js/hero.js`, `js/signature.js`, `js/scroll.js`, `data/videos.json`.
+- `scripts/encode-video.sh` changed too (the `LUFS` override); it is not published.
+
+### 10.5 Still open
+
+- **iPhone checks** (§5, item 4): the hero's mask scrub and frame rate, the CHANEL card's start frame and loop, the wine card's `view`, a cold load over cellular. No device here.
+- **The CHANEL fan card waits for the deal.** A visitor who scrolls past the fan without stopping sees its N°5 poster only; the film starts 0.9 s after the deal begins. That is the intended trade (finding 1); `unhold` at the start of the entrance instead of its `spread` label would start it 0.9 s earlier.
+- **Desktop:** at 1440 × 900 the signature's baseline is only just inside the card (11 px) and the M's loop hangs well below; the spotlight pair stays 520 px wide. Both are for the desktop pass.
+- **`wine-tasting.mp4`** re-encode cropped to the picture (§9.7) is still open.
+- **Copy and choices for client approval:** the §9.7 list, plus the bigger spotlight head and the overhead kitchen photo leaving the Stays rail (one line in `data/videos.json` puts it back).

@@ -648,8 +648,13 @@ html:not(.js) .fan__hint{ display: none; }
 .rail__play svg{ width: 12px; height: 12px; margin-left: 1px; }
 
 /* CHANEL spotlight (client, batch 2): after the Fashion rail, an editorial pair; the second frame overlaps the
-   first's lower right, cut out by a Vanilla ring. Curtain (staggered .12 s) + inner parallax as in the gallery. */
-.spotlight{ display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 88px; }
+   first's lower right, cut out by a Vanilla ring. Curtain (staggered .12 s) + inner parallax as in the gallery.
+   A spread, not a chapter footnote: section-size lockup (--fs-h2), more air above, a Tobacco hairline over the
+   eyebrow. A plain block (no region landmark); its h4 sits under the Fashion h3. */
+.spotlight{ display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 120px; }
+.spotlight::before{ content: ""; width: 48px; height: 1px; margin-bottom: 6px; background: var(--accent); }
+/* The Seasons italic: the degree sign touches the N's swash ("N5" at 1x); EB Garamond needs nothing */
+.has-seasons .spotlight .deg{ margin-left: .12em; }
 .spotlight__sub{ max-width: 30ch; }
 .spotlight__pair{ width: 100%; max-width: 520px; margin-top: 18px; }
 .spotlight__item--a{ width: 70%; }

@@ -42,10 +42,10 @@
 .motion .hero:not(.hero--live) .hero__handle{ visibility: hidden; }
 
 /* Signature (Lorena's LM, Vanilla ink): 92% of the stage (max 560 px), and at most 50svh so on short screens it
-   keeps its proportion to the card (.33 H wide); it overflows the card's sides, as in the reference. Its top is
-   set by hero.js (--sig-top: just under her chin on the card), so the lower card and, on short screens, the
-   card's lower edge carry it; 54% is only a fallback. */
-.sig--hero{ left: 50%; top: var(--sig-top, 54%); width: min(92%, 560px, 50svh); color: var(--vanilla); translate: -50% 0; }
+   keeps its proportion to the card (.33 H wide); it overflows the card's sides, as in the reference. hero.js
+   sets its top (--sig-top: just under her chin, its baseline inside the card's lower edge) and, where the card
+   is too short for that, a narrower width (--sig-w, down to 44svh); 54% is only a fallback. */
+.sig--hero{ left: 50%; top: var(--sig-top, 54%); width: var(--sig-w, min(92%, 560px, 50svh)); color: var(--vanilla); translate: -50% 0; }
 
 /* Rising handle: Sand eyebrow, centred 24 px above the card; the line box clips the rising chars. */
 .hero__handle{ left: var(--pad-x-l); right: var(--pad-x-r); top: calc(20% - 24px); translate: 0 -100%;

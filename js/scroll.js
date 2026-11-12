@@ -29,7 +29,8 @@
  *   onFinish(fn)                  register a callback for finishAll() (jump to final state, drop inline styles).
  *   finishAll()                   armed timelines -> progress 1, finishers, revert the gsap context, kill
  *                                 ScrollTriggers, destroy Lenis, remove .motion, motion.js finish(document),
- *                                 then dispatch `site:static` on document. Runs on beforeprint, on reduced
+ *                                 then dispatch `site:static` on document, and keep the view on the content it
+ *                                 showed (the static layout is shorter). Runs on beforeprint, on reduced
  *                                 motion turning on, and when boot throws.
  *   refresh()                     debounced ScrollTrigger.refresh().
  */
@@ -248,9 +249,36 @@ function watchdog() {
 
 /* ------------------------------------------------------------------ finishAll */
 
+/**
+ * finishAll() changes layout above the viewport: the hero track collapses from 220svh to its static 100svh, the logo
+ * marquee becomes the wrapping grid. Keep the view on the same content. Call before anything changes; the returned
+ * function restores the view once the static layout is in place. In the hero track (the sticky stage holds the
+ * viewport's centre line) the view lands where the stage's own scroll-away had got to (the top while the card
+ * held); elsewhere the block crossing the centre line keeps its offset. Lenis is gone by then: a plain window
+ * scroll (html has scroll-behavior: auto, so it is instant).
+ */
+function viewKeeper() {
+  const y0 = scrollY;
+  const mid = innerHeight / 2;
+  const to = (top) => { if (Math.abs(top - scrollY) >= 1) window.scrollTo(0, top); };
+  const hero = document.querySelector('.hero');
+  if (hero && hero.getBoundingClientRect().bottom > mid) {
+    const before = hero.offsetHeight;
+    const top = hero.getBoundingClientRect().top + y0;
+    return () => { if (y0 > top) to(Math.max(top, y0 - Math.max(0, before - hero.offsetHeight))); };
+  }
+  // the deepest block crossing the centre line (a section's padding belongs to the section itself)
+  const blocks = [...document.querySelectorAll('main > section, main > section > *, main article > *, footer, footer > *')].reverse();
+  const el = blocks.find((b) => { const r = b.getBoundingClientRect(); return r.height > 0 && r.top <= mid && r.bottom > mid; });
+  if (!el) return () => {};
+  const t0 = el.getBoundingClientRect().top;
+  return () => to(scrollY + el.getBoundingClientRect().top - t0);
+}
+
 export function finishAll() {
   if (finished) return;
   finished = true;
+  const keepView = viewKeeper();
   clearInterval(watchdogTimer);
   const { gsap, ScrollTrigger } = window;
   armed.forEach(force);
@@ -271,4 +299,5 @@ export function finishAll() {
   root.classList.remove('motion', 'lenis', 'lenis-smooth', 'lenis-stopped', 'lenis-scrolling');
   try { motionFinish(document); } catch (_) { /* ignore */ }
   document.dispatchEvent(new CustomEvent('site:static'));
+  try { keepView(); } catch (_) { /* ignore */ }
 }
