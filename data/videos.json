@@ -52,11 +52,9 @@
       "feature": "fashion-07",
       "rail": [
         "fashion-07",
-        "fashion-p-gown",
         "fashion-01",
-        "fashion-p-print",
-        "fashion-02",
         "fashion-p-tailoring",
+        "fashion-02",
         "fashion-03",
         "fashion-p-boots",
         "fashion-04",
