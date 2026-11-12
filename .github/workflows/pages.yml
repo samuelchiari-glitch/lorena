@@ -1,8 +1,11 @@
 name: Deploy to GitHub Pages
 
+# Live site = www.lorenamaruch.com. Work-in-progress pushes to the working branch do NOT
+# deploy; a reviewed version is published by running this workflow manually
+# (Actions -> Deploy to GitHub Pages -> Run workflow), or by pushing to main.
 on:
   push:
-    branches: [main, claude/upbeat-dirac-mij6ct]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
